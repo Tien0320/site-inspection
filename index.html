@@ -132,6 +132,7 @@ textarea{min-height:72px;resize:vertical}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
 .tdur{min-height:40px;display:flex;align-items:center;font-weight:700;color:var(--ink);font-family:var(--mono)}
 .tsheet td,.tsheet th{font-size:10pt}
+.tsheet .k{word-break:keep-all}
 .mseg{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
 .mseg button{border:0;background:transparent;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:58px}
 .mseg button+button{border-left:1px solid var(--line)}
@@ -416,7 +417,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-74';
+const APP_VERSION='2026.11.06-76';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1589,10 +1590,10 @@ function pipeTable(r){
 
 /* ---------- 給排水・試水（試壓抽查紀錄表） ---------- */
 const TEST_CONTENTS=[
-  {key:'press',name:'給水-持壓試驗',medium:'清水',std:'壓力管：≧10 kg/cm² 持壓≧1 hr'},
-  {key:'drain',name:'排水-滿水試驗',medium:'清水',std:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧15 分鐘'},
-  {key:'fire', name:'消防-水壓試驗',medium:'清水',std:'消防管：加壓至全閉揚程 1.5 倍以上，持續 2 小時無漏水'},
-  {key:'dry',  name:'乾式管系-空氣壓試驗',medium:'空氣',std:'密閉乾式管系：空氣壓 2.8 kg/cm²（0.28 MPa）持續 24 小時，減壓量 ≦0.1 kg/cm²（0.01 MPa）'}
+  {key:'press',name:'給水-持壓試驗',medium:'清水',std:'壓力管：≧10 kg/cm² 持壓≧1hr',short:'壓力管'},
+  {key:'drain',name:'排水-滿水試驗',medium:'清水',std:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧15 分鐘',short:'排水管'},
+  {key:'fire', name:'消防-水壓試驗',medium:'清水',std:'消防管：水壓試驗需加壓至全閉揚程 1.5 倍以上，持續 2 小時無漏水為合格。',short:'消防管'},
+  {key:'dry',  name:'乾式管系-空氣壓試驗',medium:'空氣',std:'密閉乾式管系應併行空氣壓試驗，試驗時，應使空氣壓力達到每平方公分二點八公斤或 0.28 MPa 之標準，其壓力持續二十四小時，漏氣減壓量應在每平方公分零點一公斤以下或 0.01MPa 以下為合格。',short:'密閉乾式管系'}
 ];
 const LOC_PARTS=['柱','牆','樓板'];
 const testC=k=>TEST_CONTENTS.find(c=>c.key===k)||TEST_CONTENTS[0];
@@ -1603,7 +1604,11 @@ function testMinutes(row){
   let d=(+b[1]*60+ +b[2])-(+a[1]*60+ +a[2]);if(d<0)d+=1440;return d;
 }
 const durTxt=m=>m==null?'':m>=60?`${Math.floor(m/60)} 小時 ${m%60} 分`:`${m} 分`;
+const stdsOf=f=>Array.isArray(f.stds)&&f.stds.length?f.stds:[f.std||'press'];
+const rowStd=(f,row)=>row.std&&stdsOf(f).includes(row.std)?row.std:stdsOf(f)[0];
+const contentOf=f=>f.content||(()=>{const k=stdsOf(f);if(k.includes('press')&&k.includes('drain'))return '給排水管壓力試驗';return testC(k[0]).name})();
 function testJudge(f,row){
+  f={...f,std:rowStd(f,row)};
   const dur=testMinutes(row),p0=num(row.p0),p1=num(row.p1),l0=num(row.lv0),l1=num(row.lv1),msg=[];
   let need=0,chk=[];
   if(f.std==='press'){need=60;
@@ -1626,7 +1631,7 @@ function testJudge(f,row){
   return {dur,auto,res:row.res||auto,msg};
 }
 function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.note].filter(Boolean).join(' ')}
-function testSub(r){return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${r.form.std==='drain'?'排水':r.form.std==='fire'?'消防':'給水'}配管施工查驗`}
+function testSub(r){const k=stdsOf(r.form);return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${k.includes('press')&&k.includes('drain')?'給排水':k[0]==='drain'?'排水':k[0]==='fire'?'消防':'給水'}配管施工查驗`}
 function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
   return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}${l.floor&&!floorsOf(r.projectId).includes(l.floor)?`<option selected>${esc(l.floor)}</option>`:''}</select></label>
     <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${LOC_PARTS.map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!LOC_PARTS.includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
@@ -1645,11 +1650,11 @@ function viewTest(r){
       <label class="field"><span>檢查日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${locFields(r)}
       <label class="field" style="grid-column:1/-1"><span>分項工程名稱</span><input type="text" id="t_sub" value="${esc(f.sub)}" placeholder="${esc(testSub({...r,form:{...f,sub:''}}))}"></label>
-      <label class="field"><span>檢查內容</span><select id="t_std">${TEST_CONTENTS.map(c=>`<option value="${c.key}" ${c.key===f.std?'selected':''}>${c.name}</option>`).join('')}</select></label>
-      ${fl('抽查時機',opts('timing',['檢驗停留點','不定期抽驗'],'one',f.timing))}
+      <label class="field" style="grid-column:1/-1"><span>檢查內容</span><input type="text" id="t_content" value="${esc(f.content||'')}" placeholder="${esc(contentOf({...f,content:''}))}"></label>
+      ${fl('抽查時機',opts('timing',['檢驗停留點','隨機抽查'],'one',f.timing==='不定期抽驗'?'隨機抽查':f.timing))}
       ${fl('試壓媒介',opts('medium',['清水','氮氣','空氣'],'one',f.medium))}
-      <div class="fld wide"><span>檢查標準</span><div class="calc" id="t_stdtxt">${esc(testC(f.std).std)}</div></div>
-      <label class="field" id="t_headw" ${f.std==='fire'?'':'hidden'}><span>全閉揚程（kg/cm²）</span><input type="text" inputmode="decimal" data-path="head" value="${esc(f.head)}" placeholder="例：8"></label>
+      ${fl('檢查標準（可複選）',opts('stds',TEST_CONTENTS.map(c=>[c.key,c.std]),'many',stdsOf(f)),1)}
+      <label class="field" id="t_headw" ${stdsOf(f).includes('fire')?'':'hidden'}><span>全閉揚程（kg/cm²）</span><input type="text" inputmode="decimal" data-path="head" value="${esc(f.head)}" placeholder="例：8"></label>
     </div></section>
   <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">試驗紀錄</p>
     <button class="btn small" id="addTRow" type="button">＋ 新增系統</button></div>
@@ -1668,38 +1673,43 @@ function viewTest(r){
   bindLoc(r,()=>{const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}})});
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   $('#t_sub').oninput=e=>{f.sub=e.target.value;dirty()};
-  $('#t_std').onchange=e=>{f.std=e.target.value;f.medium=testC(f.std).medium;$('#t_stdtxt').textContent=testC(f.std).std;$('#t_headw').hidden=f.std!=='fire';
-    document.querySelectorAll('.opt[data-path="medium"]').forEach(x=>{const on=x.dataset.val===f.medium;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
-    const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}});renderTestRows();dirty()};
+  $('#t_content').oninput=e=>{f.content=e.target.value;dirty()};
+  if(!Array.isArray(f.stds))f.stds=stdsOf(f);
   const v=$('#view');
   v.oninput=e=>{const el=e.target;if(!el.dataset.path)return;setP(f,el.dataset.path,el.value);if(el.dataset.path==='head')renderTestRows();dirty()};
-  v.onclick=e=>{const b=e.target.closest('.opt');if(!b||!b.dataset.path)return;const nv=getP(f,b.dataset.path)===b.dataset.val?'':b.dataset.val;setP(f,b.dataset.path,nv);
+  v.onclick=e=>{const b=e.target.closest('.opt');if(!b||!b.dataset.path)return;
+    if(b.dataset.mode==='many'){const path=b.dataset.path,val=b.dataset.val,arr=[...(getP(f,path)||[])],k=arr.indexOf(val);k<0?arr.push(val):arr.splice(k,1);
+      if(!arr.length){toast('至少選一項檢查標準');return}
+      setP(f,path,arr);b.classList.toggle('on',k<0);b.setAttribute('aria-pressed',k<0);
+      if(path==='stds'){f.std=arr[0];$('#t_headw').hidden=!arr.includes('fire');const c=$('#t_content');if(c)c.placeholder=contentOf({...f,content:''});renderTestRows()}
+      dirty();return}const nv=getP(f,b.dataset.path)===b.dataset.val?'':b.dataset.val;setP(f,b.dataset.path,nv);
     b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});dirty()};
   $('#addTRow').onclick=()=>{const last=f.rows[f.rows.length-1],nr=newTestRow();if(last){nr.p0=last.p0}f.rows.push(nr);renderTestRows();dirty()};
   saveBar(r);
 }
 function renderTestRows(){
   const r=cur,f=r.form,box=$('#testRows');if(!box)return;
-  const showLv=f.std==='drain';
-  box.innerHTML=f.rows.length?f.rows.map((x,n)=>{const j=testJudge(f,x);
+  const multi=stdsOf(f).length>1;
+  box.innerHTML=f.rows.length?f.rows.map((x,n)=>{const j=testJudge(f,x),rs=rowStd(f,x),showLv=rs==='drain';
     const inp=(k,ph,type)=>`<input type="${type||'text'}" ${type?'':'inputmode="decimal"'} data-tk="${k}" data-tn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     return `<div class="prow ${j.res==='ng'?'ng':''}">
       <div class="prow-h"><b class="num">${n+1}</b>
         <input type="text" data-tk="sys" data-tn="${n}" value="${esc(x.sys)}" placeholder="系統別，例：冷水 1F~9F 立管" style="flex:1;min-width:160px">
         <span data-tres="${n}">${j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:''}</span>
         <button type="button" class="btn small danger" data-tdel="${n}">刪除</button></div>
+      ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${inp('t0','','time')}</label><label>結束時間${inp('t1','','time')}</label>
         <label>持壓時間<div class="tdur" data-tdur="${n}">${durTxt(j.dur)||'—'}</div></label>
         ${showLv?`<label>開始滿水水位 M${inp('lv0','3.3')}</label><label>最終滿水水位 M${inp('lv1','3.3')}</label>`:''}
-        <label>持壓壓力 kg/cm²${inp('p0',f.std==='press'?'10':'')}</label><label>最終壓力 kg/cm²${inp('p1','')}</label>
+        <label>持壓壓力 kg/cm²${inp('p0',rs==='press'?'10':'')}</label><label>最終壓力 kg/cm²${inp('p1','')}</label>
         <label>檢查結果<select data-tk="res" data-tn="${n}"><option value="">自動判定${j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':''}</option><option value="ok" ${x.res==='ok'?'selected':''}>○ 合格</option><option value="ng" ${x.res==='ng'?'selected':''}>× 不合格</option><option value="na" ${x.res==='na'?'selected':''}>／ 無此項目</option></select></label>
       </div>
       <div class="pwarn" data-tw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
       <div class="fld"><span>此系統照片</span>${phStrip(x.id)}</div></div>`}).join('')
     :'<div class="empty">尚無試驗系統，按「新增系統」。</div>';
   box.oninput=e=>{const el=e.target,k=el.dataset.tk;if(!k)return;const n=+el.dataset.tn,row=f.rows[n];row[k]=el.value;
-    if(k==='res'){renderTestRows();dirty();return}
+    if(k==='res'||k==='std'){renderTestRows();dirty();return}
     const j=testJudge(f,row);
     const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=durTxt(j.dur)||'—';
     const rs=box.querySelector(`[data-tres="${n}"]`);if(rs)rs.innerHTML=j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:'';
@@ -1729,26 +1739,26 @@ function testStatus(r){
   return {k:'warn',t:'填寫中'};
 }
 function testSheet(r){
-  const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,v=x=>esc(x==null?'':x);
+  const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,v=x=>esc(x==null?'':x),K=stdsOf(f);
+  const timing=f.timing==='不定期抽驗'?'隨機抽查':f.timing;
   const rows=f.rows.slice();while(rows.length<6)rows.push(null);
   return `<div class="sheet tsheet">
     <h3>試壓抽查紀錄表</h3>
-    <div class="fno">編號：</div>
-    <table><colgroup><col style="width:15%"><col style="width:45%"><col style="width:13%"><col style="width:27%"></colgroup>
-      <tr><td class="k">工程名稱</td><td colspan="3">${v(p.name)}</td></tr>
-      <tr><td class="k">分項工程名稱</td><td colspan="3">${v(testSub(r))}</td></tr>
-      <tr><td class="k">檢查位置</td><td>${v(testLoc(r))}</td><td class="k">檢查日期</td><td>${rocDate(r.date)}</td></tr>
-      <tr><td class="k">檢查內容</td><td colspan="3">${v(testC(f.std).name)}</td></tr>
-      <tr><td class="k">抽查時機</td><td colspan="3">${cb(f.timing==='檢驗停留點','檢驗停留點')}　　${cb(f.timing==='不定期抽驗','不定期抽驗')}</td></tr>
-      <tr><td class="k">抽查結果</td><td colspan="3">○ 檢查合格　　× 有缺失需改正　　／ 無此項目</td></tr>
-      <tr><td class="k">試壓媒介</td><td class="small">${['清水','氮氣','空氣'].map(m=>cb(f.medium===m,m)).join('　')}</td><td class="k">檢查標準</td>
-        <td class="small">${TEST_CONTENTS.map(c=>cb(f.std===c.key,c.std+(c.key==='fire'&&f.head?`（全閉揚程 ${v(f.head)} kg/cm²，需 ${r2(num(f.head)*1.5)} kg/cm²）`:''))).join('<br>')}</td></tr>
+    <table><colgroup><col style="width:17%"><col style="width:12%"><col style="width:13%"><col style="width:20%"><col style="width:12%"><col style="width:26%"></colgroup>
+      <tr><td class="k">工程名稱</td><td colspan="5">${v(p.name)}</td></tr>
+      <tr><td class="k">分項工程名稱</td><td colspan="5">${v(testSub(r))}</td></tr>
+      <tr><td class="k">檢查位置</td><td colspan="3">${v(testLoc(r))}</td><td class="k">檢查日期</td><td class="c">${rocDate(r.date)}</td></tr>
+      <tr><td class="k">檢查內容</td><td colspan="5">${v(contentOf(f))}</td></tr>
+      <tr><td class="k">抽查時機</td><td colspan="5">${cb(timing==='檢驗停留點','檢驗停留點')}　　　　${cb(timing==='隨機抽查','隨機抽查')}</td></tr>
+      <tr><td class="k">抽查結果</td><td colspan="5">○ 檢查合格　　　╳ 有缺失需改正　　　／ 無此項目</td></tr>
+      <tr><td class="k">試壓媒介</td><td>${['清水','氮氣','空氣'].map(m=>cb(f.medium===m,m)).join('<br>')}</td><td class="k">檢查標準</td>
+        <td colspan="3" class="small">${TEST_CONTENTS.map(c=>cb(K.includes(c.key),c.std+(c.key==='fire'&&f.head?`（全閉揚程 ${v(f.head)} kg/cm²，需 ${r2(num(f.head)*1.5)} kg/cm²）`:''))).join('<br>')}</td></tr>
     </table>
-    <table class="sec"><colgroup><col style="width:6%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:9%"><col style="width:9%"></colgroup>
-      <tr><th rowspan="2">項次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th>開始</th><th>最終</th><th>持壓</th><th>最終</th><th rowspan="2">檢查<br>結果</th></tr>
-      <tr><th>開始</th><th>結束</th><th>持壓</th><th>滿水水位<br>高度</th><th>滿水水位<br>高度</th><th>壓力<br>kg/cm²</th><th>壓力<br>kg/cm²</th></tr>
+    <table class="sec"><colgroup><col style="width:6%"><col style="width:20%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:7%"></colgroup>
+      <tr><th rowspan="2">項<br>次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th rowspan="2">開始<br>滿水水<br>位高度</th><th rowspan="2">最終<br>滿水水<br>位高度</th><th rowspan="2">持壓<br>壓力<br>kg/cm²</th><th rowspan="2">最終<br>壓力<br>kg/cm²</th><th rowspan="2">檢<br>查<br>結<br>果</th></tr>
+      <tr><th>開始</th><th>結束</th><th>持壓</th></tr>
       ${rows.map((x,n)=>{if(!x)return `<tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td>${v(x.sys)}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
+        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c">${v(x.sys).replace(/\s+/,'<br>')}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
         <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym">${SYM[j.res]||''}</td></tr>`}).join('')}
     </table>
     <table class="sec">

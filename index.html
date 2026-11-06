@@ -393,7 +393,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-36';
+const APP_VERSION='2026.11.06-37';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1211,7 +1211,7 @@ function viewDrain(r){
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${FLOORS.map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!FLOORS.includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field"><span>房型</span><select id="f_room">${ROOM_TYPES.map(x=>`<option ${x===f.roomType?'selected':''}>${x}</option>`).join('')}</select></label>
       <label class="field" id="roomOtherWrap" ${f.roomType==='其他'?'':'hidden'}><span>房型名稱</span><input type="text" data-path="roomOther" value="${esc(f.roomOther)}" placeholder="例：雙人房"></label>
       <label class="field"><span>部位</span>${isDorm(r.projectId)
@@ -1563,7 +1563,7 @@ function testJudge(f,row){
 function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.note].filter(Boolean).join(' ')}
 function testSub(r){return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${r.form.std==='drain'?'排水':r.form.std==='fire'?'消防':'給水'}配管施工查驗`}
 function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
-  return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${FLOORS.map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+  return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}${l.floor&&!floorsOf(r.projectId).includes(l.floor)?`<option selected>${esc(l.floor)}</option>`:''}</select></label>
     <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${LOC_PARTS.map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!LOC_PARTS.includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
     <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>
     <div class="field" style="grid-column:1/-1"><span>查驗位置（自動組合）</span><div class="locv" id="locView">${esc(testLoc(r))||'—'}</div></div>`}
@@ -1696,7 +1696,7 @@ function testSheet(r){
 }
 
 /* ---------- 穿樑套管（依「施工抽查紀錄表-(穿梁套管)」） ---------- */
-const FLOORS_ALL=['B3','B2','B1',...Array.from({length:15},(_,i)=>`${i+1}F`),'R1F','R2F','R3F'];
+const FLOORS_ALL=['B3F','B2F','B1F',...Array.from({length:10},(_,i)=>`${i+1}F`),'R1F','R2F','RLF','停機坪']; // 第二期醫療大樓
 const floorsOf=pid=>isDorm(pid)?FLOORS:FLOORS_ALL;
 const newSleeve=()=>({id:uid(),no:'',pos:'',member:'梁',space:'',sys:'',sysOther:'',shape:'套管',sizeD:'',sizeA:'',
   botD:'',botA:'',botRef:false,topD:'',topA:'',topRef:'',ring:'',dir:'',ref:'',distD:'',distA:''});
@@ -1737,7 +1737,7 @@ function viewSleeve(r){
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：頂板"></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(sleeveLoc(f))}</div></div>
     </div></section>
@@ -1865,7 +1865,7 @@ function viewSlab(r){
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：頂板(R1F底板)預埋管-教研棟"></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(slabLoc(f))||'—'}</div></div>
     </div></section>
@@ -1988,7 +1988,7 @@ function viewDf(r){
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：底板(教研棟)排水"></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(dfLoc(f))||'—'}</div></div>
     </div></section>

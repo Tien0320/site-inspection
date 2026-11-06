@@ -1,0 +1,13 @@
+rules_version = '2';
+// 只有名單內的 Google 帳號可以讀寫。請把下面的 email 換成您與同事的帳號。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function allowed() {
+      return request.auth != null
+        && request.auth.token.email in ['your.name@gmail.com', 'coworker@gmail.com'];
+    }
+    match /{document=**} {
+      allow read, write: if allowed();
+    }
+  }
+}

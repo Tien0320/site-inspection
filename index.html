@@ -410,7 +410,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-67';
+const APP_VERSION='2026.11.06-68';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -448,6 +448,8 @@ const MODES = [
 ];
 const modeOf = r => r.mode || 'work';
 const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name+(r.sub&&typeof SUB_NAME!=='undefined'?' '+SUB_NAME[r.sub]:'') : typN(r.cat,r.type).name;
+/* 樓板接線盒可含多系統：在各系統頁也列出含該系統接線盒的紀錄 */
+const inCat=(r,ck)=>r.cat===ck||(r.kind==='slab'&&typeof SYS_OF!=='undefined'&&!!SYS_OF[ck]&&(r.form?.items||[]).some(x=>x.sys===SYS_OF[ck]));
 const backOf = r => modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
 /* 材料查驗：依材料種類分（不分大項） */
@@ -789,7 +791,7 @@ function viewHome(){
         <span class="ic">${MAT_ICON[t.key]}</span><span class="nm">${t.name}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`).join('');
     else html+=`<section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
-      const rs=recs.filter(r=>r.cat===c.key&&modeOf(r)===md);
+      const rs=recs.filter(r=>inCat(r,c.key)&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}</span>
@@ -854,7 +856,7 @@ function viewCat(ck,tk,md){
   const c=cat(ck),p=proj(curProj);
   if(!c||!p)return go('home');
   md=mode(md).key;LS.set('mode',md);
-  const all=records.filter(r=>r.projectId===curProj&&r.cat===ck);
+  const all=records.filter(r=>r.projectId===curProj&&inCat(r,ck));
   if(ck==='beam'&&!BEAM_TYPES.some(t=>t.key===tk)){ // 其他：先選穿樑或穿牆
     setTop(`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,'home');
     $('#view').innerHTML=`<p class="label">請選擇查驗項目</p><div class="pswitch">${BEAM_TYPES.map(t=>{const n=all.filter(r=>r.type===t.key).length;
@@ -881,6 +883,7 @@ function viewCat(ck,tk,md){
   if($('#newDf'))$('#newDf').onclick=()=>newRec(ck,tk,md,'dfit');
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-${ck}-${tk}-${md}`));
   bindRecRows();
+  if(tk==='slab'&&SYS_OF[ck])document.querySelectorAll('[data-rec]').forEach(b=>{const o=b.onclick;b.onclick=()=>{nextSlabTab=SYS_OF[ck];o()}});
 }
 function viewMat(tk){
   const t=MAT_TYPES.find(x=>x.key===tk),p=proj(curProj);
@@ -1922,8 +1925,9 @@ function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.fo
   box.innerHTML=shown.length?shown.map(([x,i])=>slabItemHTML(i,x)).join(''):`<div class="empty">${slabTab==='全部'?'尚無資料':'尚無'+slabTab+'的接線盒'}，按下方「新增一處」。</div>`;
   const c=$('#sbCount');if(c)c.textContent=f.items.length}
 let slabTab='全部';
+let nextSlabTab='';
 function viewSlab(r){
-  slabTab='全部';
+  slabTab=nextSlabTab||'全部';nextSlabTab='';
   const p=proj(r.projectId),f=r.form;
   setTop(`${cat(r.cat).name}・樓板接線盒<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
@@ -2200,7 +2204,7 @@ async function viewPrint(id){
   showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.location||'')}</span>`);
 }
 async function viewPrintAll(ck,tk,md){
-  const list=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));
+  const list=records.filter(r=>r.projectId===curProj&&inCat(r,ck)&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));
   if(!list.length)return go(md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`);
   await Promise.all(list.map(ensurePhotos));
   showPrint(list,md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`,`列印預覽<span class="sub">${md==='mat'?'材料・'+MAT_TYPES.find(x=>x.key===tk).name:cat(ck).name+'・'+typN(ck,tk).name}</span>`);

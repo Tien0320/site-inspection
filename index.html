@@ -387,7 +387,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-25';
+const APP_VERSION='2026.11.06-26';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1139,8 +1139,8 @@ function pipeHTML(si,pi,p,n){
     <div class="fld wide"><span>洩水坡度量測（1m 線上，cm）</span>
       <div class="meas">
         <label>管路長度${inp(b+'.len',p.len,'cm',1)}</label>
-        <label>高點 設計${inp(b+'.hiD',p.hiD,'cm',1)}</label><label>高點 實際${inp(b+'.hiA',p.hiA,'cm',1)}</label>
-        <label>低點 設計${inp(b+'.loD',p.loD,'cm',1)}</label><label>低點 實際${inp(b+'.loA',p.loA,'cm',1)}</label>
+        <label>高點 設計${inp(b+'.hiD',p.hiD,'cm',1)}</label><label>高點 實際（1m線上）${inp(b+'.hiA',p.hiA,'1m線上 cm',1)}</label>
+        <label>低點 設計${inp(b+'.loD',p.loD,'cm',1)}</label><label>低點 實際（1m線上）${inp(b+'.loA',p.loA,'1m線上 cm',1)}</label>
       </div>
       <div class="calc" data-calc="${si}-${pi}">${calcText(p)}</div>
     </div>`;
@@ -1318,7 +1318,7 @@ function drainSheet(r){
       <div>${cb(pp.sweep,'排水彎頭採用順水型式')} ${cb(pp.elbow45,'排水管90度彎頭有使用45度x2只施工銜接')} ${cb(pp.cap,'管口有管帽封閉')}</div>
       <div>${cb(pp.label,'管路種類標示')}${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} 水流方向標示 ${cb(pp.flow==='正確','正確')} ${cb(pp.flow==='不正確','不正確')}</div>
       <div>洩水坡度量測 洩水坡度${cb(pp.slopeStd==='3','(3")含以下者為1/50')} ${cb(pp.slopeStd==='4','(4")含以上者1/100')}</div>
-      <div>管路長度：${u(pp.len)}cm 高點(設計)：${u(pp.hiD)}cm 實際：${u(pp.hiA)}cm；低點(設計)：${u(pp.loD)}cm 實際：${u(pp.loA)}cm(1m↑)</div>
+      <div>管路長度：${u(pp.len)}cm 高點(設計)：${u(pp.hiD)}cm 實際(1m線上)：${u(pp.hiA)}cm；低點(設計)：${u(pp.loD)}cm 實際(1m線上)：${u(pp.loA)}cm</div>
       <div>高低落差：${u(s?s.drop:'')}cm　落差值${u(s?s.drop:'')}／管路長度${u(pp.len)}＝${u(s?s.pct.toFixed(2):'')}%</div></div>`;
   };
   const sg=k=>r.signs[k]||{};

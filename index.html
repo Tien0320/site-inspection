@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-20';
+const APP_VERSION='2026.11.06-22';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1066,7 +1066,7 @@ $('#sigOk').onclick=()=>{if(sigDrawn){(cur.signs[sigKey]??={}).img=cv.toDataURL(
 /* ---------- 給排水・吊管 專用表單（依「施工抽查紀錄表-排水吊管」） ---------- */
 const FLOORS=['B1','1F','2F','3F','4F','5F','6F','7F','8F','9F','R1F','R2F'];
 const ROOM_TYPES=['單人房','三人房','四人房','其他'];
-const SPACE_NAMES=['廁所','浴室','陽台','洗衣間','茶水間','走廊','公共浴廁'];
+const SPACE_NAMES=['浴廁','陽台','臥室']; // 職務宿舍專用
 const BRANDS=['南亞CNS1298','橘紅色','灰管'];
 const D_BR=['1"','1-1/2"','2"','4"'], D_MN=['1-1/2"','3"','4"','5"'];
 const V_BR=['1"','2"','3"','4"'], V_MN=['3"','4"','5"','6"'];
@@ -1194,7 +1194,7 @@ function viewDrain(r){
     <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
     <div class="photos" id="photos"></div>
     <p class="muted" style="margin:6px 0 0">列印時所有照片依上傳順序貼在「施工照片黏貼表」，說明自動帶入樓層、位置與項目。</p></section>
-  <datalist id="spaceNames">${SPACE_NAMES.map(x=>`<option value="${x}">`).join('')}</datalist>`;
+`;
   renderSpaces();renderPhotos();
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
@@ -1256,7 +1256,7 @@ function renderSpaces(){
   const first=!document.querySelector('.space');
   $('#spaces').innerHTML=f.spaces.length?f.spaces.map((sp,si)=>`<div class="space">
     <div class="sphead"><span class="spno num">${si+1}</span>
-      <label class="field grow"><span>空間名稱</span><input type="text" list="spaceNames" data-path="spaces.${si}.name" value="${esc(sp.name)}" placeholder="例：廁所"></label>
+      <label class="field grow"><span>空間名稱</span>${isDorm(cur.projectId)?`<select data-path="spaces.${si}.name"><option value="">請選擇</option>${SPACE_NAMES.map(x=>`<option ${x===sp.name?'selected':''}>${x}</option>`).join('')}${sp.name&&!SPACE_NAMES.includes(sp.name)?`<option selected>${esc(sp.name)}</option>`:''}</select>`:`<input type="text" data-path="spaces.${si}.name" value="${esc(sp.name)}" placeholder="例：廁所">`}</label>
       <label class="field grow"><span>位置</span><input type="text" data-path="spaces.${si}.pos" value="${esc(sp.pos)}" placeholder="例：A 床側／軸線"></label></div>
     <div class="pipes">${sp.pipes.map((p,pi)=>pipeHTML(si,pi,p,pipeNo(sp,pi))).join('')||'<div class="empty">此空間沒有管段</div>'}</div>
     <div class="row sptools">

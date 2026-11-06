@@ -221,6 +221,13 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .phadd:hover{border-color:var(--accent);color:var(--accent)}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
 .phsheet .pgrid{margin-top:6px}
+.dphoto{display:flex;flex-direction:column;gap:8mm}
+.dph{width:100%;border-collapse:collapse;table-layout:fixed;break-inside:avoid}
+.dph td{border:1px solid #000;padding:2px 6px;font-size:11pt;vertical-align:middle}
+.dph .dimg{padding:2px;text-align:center;height:72mm}
+.dph .dimg img{width:100%;height:71mm;object-fit:cover;display:block}
+.dph .dk{text-align:center;font-weight:700;height:7mm;background:#f3f3f3}
+.dph .dv{text-align:center;height:11mm}
 .phsheet .pgrid img,.phsheet .noimg{height:72mm}
 .phsheet .noimg{display:grid;place-items:center;font-size:10pt}
 .phsheet figcaption{font-size:9.5pt}
@@ -417,7 +424,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-79';
+const APP_VERSION='2026.11.06-80';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1065,6 +1072,7 @@ document.addEventListener('change',async e=>{
   refreshPhotos();dirty();
 });
 document.addEventListener('click',e=>{
+  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt('照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
   const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;
   e.preventDefault();
   if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}
@@ -1098,7 +1106,24 @@ function photoTarget(r,p){
   const n=r.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.items[n].t}`:'';
 }
 function photoCaption(r,p){return [photoWhere(r),photoTarget(r,p),p.cap].filter(Boolean).join('　')}
+/* 職務宿舍：照片在左、右欄依序「查驗項目／照片位置／照片說明／備註」，每頁 3 張（比照 ●照片.docx） */
+function photoItemName(r){return modeOf(r)==='mat'?'材料・'+typeName(r):r.kind==='drain'?'排水吊管':r.kind==='wtest'?'試水':r.kind==='slab'?'樓板接線盒':r.kind==='dfit'?'排水樓板接頭':r.kind==='sleeve'?(r.form.label||'穿樑')+'套管':cat(r.cat).name+'・'+typN(r.cat,r.type).name}
+function dormPhotoPages(r){
+  const list=sortedPhotos(r);if(!list.length)return '';
+  const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
+  const where=photoWhere(r)||'職務宿舍工區',item=photoItemName(r);
+  return pages.map(pg=>`<div class="sheet dphoto">${pg.map(p=>`<table class="dph"><colgroup><col style="width:70.3%"><col style="width:29.7%"></colgroup>
+    <tr><td rowspan="8" class="dimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td class="dv">${esc(item)}</td></tr>
+    <tr><td class="dk">照片位置</td></tr>
+    <tr><td class="dv">${esc(where)}</td></tr>
+    <tr><td class="dk">照片說明</td></tr>
+    <tr><td class="dv">${esc(photoTarget(r,p)||'')}</td></tr>
+    <tr><td class="dk">備註</td></tr>
+    <tr><td class="dv">${esc(p.cap||'')}</td></tr></table>`).join('')}</div>`).join('');
+}
 function photoPages(r){
+  if(r.projectId==='p-nycuh-dorm')return dormPhotoPages(r);
   const list=sortedPhotos(r);if(!list.length)return '';
   const pr=proj(r.projectId)||{},per=6,pages=[];
   for(let i=0;i<list.length;i+=per)pages.push(list.slice(i,i+per));

@@ -113,6 +113,7 @@ textarea{min-height:72px;resize:vertical}
 .axis input{width:0;flex:1;min-width:0;text-align:center;font-family:var(--mono)}
 .axis i,.axis b{font-style:normal;color:var(--ink-2);font-weight:700;padding:0 2px}
 .toptabs{max-width:880px;margin:8px auto 0}
+.zonetabs{flex-wrap:wrap;margin-bottom:4px}
 .stabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .toptabs .stabs button{background:rgba(255,255,255,.12);border-color:transparent;color:var(--brand-ink)}
 .toptabs .stabs button .num{color:var(--brand-ink);opacity:.75}
@@ -410,7 +411,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-69';
+const APP_VERSION='2026.11.06-70';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -450,7 +451,7 @@ const modeOf = r => r.mode || 'work';
 const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name+(r.sub&&typeof SUB_NAME!=='undefined'?' '+SUB_NAME[r.sub]:'') : typN(r.cat,r.type).name;
 /* 樓板接線盒可含多系統：在各系統頁也列出含該系統接線盒的紀錄 */
 const inCat=(r,ck)=>r.cat===ck||(r.kind==='slab'&&typeof SYS_OF!=='undefined'&&!!SYS_OF[ck]&&(r.form?.items||[]).some(x=>x.sys===SYS_OF[ck]));
-const backOf = r => modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
+const backOf = r => (typeof zoneBack!=='undefined'&&zoneBack&&zoneBackId===r.id) ? zoneBack : modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
 /* 材料查驗：依材料種類分（不分大項） */
 const MAT_CAT = {key:'mat', name:'材料', code:'M'};
@@ -751,6 +752,7 @@ function render(){
   window.scrollTo(0,0);
   if(v==='cat') return viewCat(a,b||'box',m||LS.get('mode')||'work');
   if(v==='mat') return viewMat(a||'pipe');
+  if(v==='zone') return viewZone(a,b);
   if(v==='rec') return viewRec(a);
   if(v==='print') return viewPrint(a);
   if(v==='view') return viewPreview(a);
@@ -790,7 +792,7 @@ function viewHome(){
       return `<button class="tile" style="--c:var(--${t.color==='ink-2'?'ink-2':'c-'+t.color})" data-mat="${t.key}">
         <span class="ic">${MAT_ICON[t.key]}</span><span class="nm">${t.name}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`).join('');
-    else html+=`<section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
+    else html+=`<section><p class="label">施工查驗・依部位</p><div class="pswitch">${Object.entries(ZONES).map(([k,Z])=>{const n=recs.filter(r=>Z.systems.some(([sk])=>zoneMatch(k,sk,r))).length;return `<button type="button" class="pbtn bigpick" data-zone="${k}"><b>${Z.name}</b><span>${Z.hint}</span><span class="num">${n} 筆</span></button>`}).join('')}</div></section><section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
       const rs=recs.filter(r=>inCat(r,c.key)&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
@@ -802,6 +804,7 @@ function viewHome(){
   $('#view').innerHTML=html;
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
+  document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>go('zone-'+b.dataset.zone+'-'+ZONES[b.dataset.zone].systems[0][0]));
   document.querySelectorAll('[data-mat]').forEach(b=>b.onclick=()=>go('mat-'+b.dataset.mat));
   document.querySelectorAll('.mseg [data-m]').forEach(b=>b.onclick=()=>{LS.set('mode',b.dataset.m);const y=scrollY;viewHome();scrollTo(0,y)});
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
@@ -925,6 +928,7 @@ async function newRec(ck,tk,md,variant){
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   r.isNew=true;
+  if(zoneBackPending){zoneBack=zoneBackPending;zoneBackId=r.id;zoneBackPending='';}
   records.push(r);await DB.put('records',r);
   go('rec-'+r.id);
 }
@@ -2136,6 +2140,45 @@ function dfSheet(r){
     </table>
     <div class="dsign"><div>監造主任：</div><div>監造工程師：</div></div>
   </div>`;
+}
+
+/* ---------- 依部位：樓板／柱牆 → 再分系統 ---------- */
+const ZONES={
+  slab:{name:'樓板',hint:'樓板接線盒＋配管、排水樓板接頭',systems:[['elec','電氣'],['low','弱電'],['fire','消防'],['hvac','空調'],['plumb','給排水']]},
+  wall:{name:'柱牆',hint:'柱牆預埋接線盒、預埋管、穿牆套管',systems:[['elec','電氣'],['low','弱電'],['fire','消防'],['hvac','空調'],['plumb','給排水'],['wallsl','穿牆']]}
+};
+function zoneMatch(z,s,r){
+  if(modeOf(r)!=='work')return false;
+  if(z==='slab'){if(s==='plumb')return r.kind==='dfit';return r.kind==='slab'&&inCat(r,s)}
+  if(s==='wallsl')return r.cat==='beam'&&r.type==='wall';
+  if(s==='plumb')return r.cat==='plumb'&&r.type==='box'&&r.kind!=='dfit';
+  return r.cat===s&&r.type==='box'&&!r.kind;
+}
+function zoneNew(z,s){
+  zoneBackPending=`zone-${z}-${s}`;
+  if(z==='slab')return s==='plumb'?newRec('plumb','box','work','dfit'):newRec(s,'slab','work');
+  if(s==='wallsl')return newRec('beam','wall','work');
+  return newRec(s,'box','work');
+}
+const zoneFormName=(z,s)=>z==='slab'?(s==='plumb'?'排水樓板接頭':'樓板接線盒'):(s==='wallsl'?'穿牆套管':s==='plumb'?'預埋管':'預埋接線盒');
+let zoneBack='',zoneBackId='',zoneBackPending='';
+function viewZone(z,s){
+  const Z=ZONES[z],p=proj(curProj);if(!Z||!p)return go('home');
+  if(!Z.systems.some(([k])=>k===s))s=Z.systems[0][0];
+  LS.set('mode','work');
+  setTop(`${Z.name}<span class="sub">${esc(p.name)}</span>`,'home');
+  const mine=records.filter(r=>r.projectId===curProj);
+  const list=mine.filter(r=>zoneMatch(z,s,r)).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
+  const sname=Z.systems.find(([k])=>k===s)[1],fname=zoneFormName(z,s);
+  $('#view').innerHTML=`
+    <div class="stabs zonetabs" role="tablist" aria-label="系統">${Z.systems.map(([k,n])=>`<button type="button" class="${k===s?'on':''}" data-zs="${k}">${n}<span class="num">${mine.filter(r=>zoneMatch(z,k,r)).length}</span></button>`).join('')}</div>
+    <div class="row"><button class="btn primary grow" id="zNew">＋ 新增${sname==='穿牆'?'':sname+'・'}${fname}</button>
+      ${list.length?`<button class="btn" id="zPrint">列印全部（${list.length}）</button>`:''}</div>
+    ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`:`<div class="empty">還沒有${Z.name}・${sname}的查驗紀錄。按「新增」開始。</div>`}`;
+  document.querySelectorAll('[data-zs]').forEach(b=>b.onclick=()=>go(`zone-${z}-${b.dataset.zs}`));
+  $('#zNew').onclick=()=>zoneNew(z,s);
+  document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>{zoneBack=`zone-${z}-${s}`;zoneBackId=b.dataset.rec;if(z==='slab'&&SYS_OF[s])nextSlabTab=SYS_OF[s];go('rec-'+b.dataset.rec)});
+  if($('#zPrint'))$('#zPrint').onclick=async()=>{printSys=(z==='slab'&&SYS_OF[s])?SYS_OF[s]:'';await Promise.all(list.map(ensurePhotos));showPrint(list,`zone-${z}-${s}`,`列印預覽<span class="sub">${Z.name}・${sname}</span>`)};
 }
 
 /* ---------- 列印 ---------- */

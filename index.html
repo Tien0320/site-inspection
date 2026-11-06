@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-62';
+const APP_VERSION='2026.11.06-63';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1862,7 +1862,7 @@ function sleeveSheet(r){
 /* ---------- 樓板接線盒＋配管（依「施工抽查紀錄表-樓板接線盒+配管」） ---------- */
 const SYS_OF={elec:'電氣',low:'弱電',fire:'消防',hvac:'空調'};
 const ELEC_EQUIP=['照明','110V埋入式插座','陽台防雨插座']; // 樓板接線盒：電氣設備選項
-const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['人體紅外線偵測器','槍型攝影機','沉水液位計','水箱磁簧','水管壓力','雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['人體紅外線偵測器','槍型攝影機','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});

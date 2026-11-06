@@ -173,6 +173,19 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .cloudbox{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
 .cloudbox textarea{font-family:var(--mono);font-size:12px;min-height:120px}
 .ph .wait{aspect-ratio:4/3;display:grid;place-items:center;color:var(--ink-2);font-size:13px}
+.phstrip{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pht{position:relative;width:76px;height:76px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}
+.pht img{width:100%;height:100%;object-fit:cover;display:block}
+.pht .w{display:grid;place-items:center;height:100%;font-size:11px;color:var(--ink-2)}
+.pht b{position:absolute;left:3px;top:3px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1.4;padding:0 5px;border-radius:4px;font-family:var(--mono)}
+.pht button{position:absolute;right:3px;top:3px;border:0;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1.5;padding:0 5px;cursor:pointer}
+.phadd{width:76px;height:76px;border:1.5px dashed var(--ink-2);border-radius:6px;display:grid;place-items:center;font-size:13px;color:var(--ink-2);cursor:pointer;background:var(--surface)}
+.phadd:hover{border-color:var(--accent);color:var(--accent)}
+.ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
+.phsheet .pgrid{margin-top:6px}
+.phsheet .pgrid img,.phsheet .noimg{height:72mm}
+.phsheet .noimg{display:grid;place-items:center;font-size:10pt}
+.phsheet figcaption{font-size:9.5pt}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
@@ -337,7 +350,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-10';
+const APP_VERSION='2026.11.06-11';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -657,7 +670,7 @@ async function newRec(ck,tk){
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&r.date===d).length+1;
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,date:d,location:'',stage:'施工中',inspector:'',
     formNo:`${cat(ck).code}${typ(tk).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
-    items:TPL[ck][tk].map(([t,s])=>({t,s,result:'',note:''})),
+    items:TPL[ck][tk].map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
   if(ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   records.push(r);await DB.put('records',r);
@@ -670,7 +683,8 @@ function viewRec(id){
   const r=records.find(x=>x.id===id); if(!r)return go('home');
   cur=r; const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId);
   curProj=r.projectId;
-  if(r.kind==='drain') return viewDrain(r);
+  r.items.forEach(i=>{if(!i.id)i.id=uid()});
+  if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}
   setTop(`${c.name}・${t.name}<span class="sub">${esc(p?.name)}</span>`,`cat-${r.cat}-${r.type}`);
   const v=$('#view');
   v.innerHTML=`
@@ -697,9 +711,10 @@ function viewRec(id){
       <label class="field" style="grid-column:1/-1"><span>備註</span><input type="text" id="f_remark" value="${esc(r.remark)}"></label>
     </div></section>
 
-  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">現場照片 <span class="num">（${r.photos.length}）</span></p>
-    <label class="btn small">拍照／選照片<input type="file" id="phIn" accept="image/*" capture="environment" multiple hidden></label></div>
-    <div class="photos" id="photos"></div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">其他照片 <span class="muted" style="font-weight:400">（未指定項目）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
+    <div class="photos" id="photos"></div>
+    <p class="muted" style="margin:6px 0 0">列印時所有照片依上傳順序貼在「施工照片黏貼表」，說明自動帶入樓層、位置與項目。</p></section>
 
 `;
   renderItems(); renderPhotos();
@@ -707,8 +722,7 @@ function viewRec(id){
   bind('#f_date','date');bind('#f_stage','stage');bind('#f_loc','location');bind('#f_insp','inspector');
   bind('#f_defect','defect');bind('#f_fix','fix');bind('#f_rdate','recheckDate');bind('#f_recheck','recheck');bind('#f_remark','remark');
   $('#allOk').onclick=()=>{r.items.forEach(i=>{if(!i.result)i.result='ok'});renderItems();dirty()};
-  $('#addItem').onclick=()=>{const t=$('#newItem').value.trim();if(!t)return;r.items.push({t,s:'',result:'',note:'',custom:true});$('#newItem').value='';renderItems();dirty()};
-  $('#phIn').onchange=async e=>{for(const f of e.target.files){try{r.photos.push({src:await shrink(f),cap:''})}catch(err){toast('照片讀取失敗')}}e.target.value='';renderPhotos();dirty()};
+  $('#addItem').onclick=()=>{const t=$('#newItem').value.trim();if(!t)return;r.items.push({id:uid(),t,s:'',result:'',note:'',custom:true});$('#newItem').value='';renderItems();dirty()};
 
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
@@ -726,23 +740,79 @@ function renderItems(){
     <div class="ctl">
       <div class="res">${['ok','ng','na'].map(v=>`<button type="button" data-v="${v}" class="${i.result===v?'on':''}" aria-pressed="${i.result===v}"><span class="sym">${SYM[v]}</span>${{ok:'合格',ng:'不合格',na:'無此項'}[v]}</button>`).join('')}</div>
       <input type="text" value="${esc(i.note)}" placeholder="實測值／說明" aria-label="第 ${n+1} 項說明">
+      ${phStrip(i.id)}
     </div>
     ${i.custom?`<button class="btn small danger rm" type="button">移除此項</button>`:''}
   </div>`).join('');
   document.querySelectorAll('#items .item').forEach(el=>{
     const i=r.items[+el.dataset.i];
     el.querySelectorAll('.res button').forEach(b=>b.onclick=()=>{i.result=i.result===b.dataset.v?'':b.dataset.v;renderItems();dirty()});
-    el.querySelector('input').oninput=e=>{i.note=e.target.value;dirty()};
-    const rm=el.querySelector('.rm'); if(rm) rm.onclick=()=>{r.items.splice(+el.dataset.i,1);renderItems();dirty()};
+    el.querySelector('input[type=text]').oninput=e=>{i.note=e.target.value;dirty()};
+    const rm=el.querySelector('.rm'); if(rm) rm.onclick=()=>{const [gi]=r.items.splice(+el.dataset.i,1);orphan([gi.id]);renderItems();renderPhotos();dirty()};
   });
 }
 function renderPhotos(){
-  const r=cur;
-  $('#photos').innerHTML=r.photos.length?r.photos.map((p,n)=>`<div class="ph">${p.src?`<img src="${p.src}" alt="照片 ${n+1}">`:`<div class="wait">${p.tried?'照片無法載入':'雲端照片載入中…'}</div>`}<div class="pc"><input type="text" value="${esc(p.cap)}" placeholder="說明" data-n="${n}"><button type="button" data-del="${n}">刪除</button></div></div>`).join('')
-    :`<div class="empty" style="grid-column:1/-1">尚未加入照片。手機會直接開相機拍攝。</div>`;
-  document.querySelectorAll('#photos input').forEach(x=>x.oninput=e=>{r.photos[+x.dataset.n].cap=e.target.value;dirty()});
-  document.querySelectorAll('#photos [data-del]').forEach(x=>x.onclick=()=>{const [gone]=r.photos.splice(+x.dataset.del,1);if(gone&&gone.id)Cloud.delPhoto(gone.id);renderPhotos();dirty()});
-  if(r.photos.some(p=>!p.src&&!p.tried))ensurePhotos(r).then(n=>{if(n&&cur===r&&$('#photos'))renderPhotos()});
+  const r=cur;if(!$('#photos'))return;
+  const list=sortedPhotos(r).filter(p=>!p.ref);
+  $('#photos').innerHTML=list.length?list.map(p=>`<div class="ph">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<div class="wait">${p.tried?'照片無法載入':'雲端照片載入中…'}</div>`}<div class="pc"><span class="num phn">${phNo(r,p)}</span><input type="text" value="${esc(p.cap)}" placeholder="說明" data-capid="${p.id}"><button type="button" data-phdel="${p.id}">刪除</button></div></div>`).join('')
+    :`<div class="empty" style="grid-column:1/-1">沒有未指定項目的照片。各項目的照片請在項目下方按「＋照片」。</div>`;
+  document.querySelectorAll('#photos [data-capid]').forEach(x=>x.oninput=e=>{const ph=r.photos.find(q=>q.id===x.dataset.capid);if(ph){ph.cap=e.target.value;dirty()}});
+  if(r.photos.some(p=>!p.src&&!p.tried))ensurePhotos(r).then(n=>{if(n&&cur===r)refreshPhotos()});
+}
+/* ---- 照片：依附項目、依上傳順序 ---- */
+const sortedPhotos=r=>[...(r.photos||[])].sort((a,b)=>(a.seq||0)-(b.seq||0));
+const phNo=(r,p)=>sortedPhotos(r).indexOf(p)+1;
+function phStrip(ref){
+  const r=cur,list=sortedPhotos(r).filter(p=>p.ref===ref);
+  return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片 ${phNo(r,p)}">✕</button></div>`).join('')}
+    <label class="phadd">＋照片<input type="file" accept="image/*" multiple hidden data-phref="${ref}"></label></div>`;
+}
+function refreshPhotos(){
+  if(!cur)return;
+  if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
+  renderPhotos();
+}
+function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
+document.addEventListener('change',async e=>{
+  const inp=e.target;if(!inp.matches||!inp.matches('input[type=file][data-phref]')||!cur)return;
+  const r=cur,ref=inp.dataset.phref,files=[...inp.files];inp.value='';
+  let seq=Math.max(0,...(r.photos||[]).map(p=>p.seq||0));
+  toast(`處理 ${files.length} 張照片…`);
+  for(const f of files){try{r.photos.push({id:uid(),src:await shrink(f),cap:'',ref,seq:++seq})}catch(err){toast('照片讀取失敗')}}
+  refreshPhotos();dirty();
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;
+  e.preventDefault();
+  if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}
+  const i=cur.photos.findIndex(p=>p.id===b.dataset.phdel);if(i<0)return;
+  const [gone]=cur.photos.splice(i,1);Cloud.delPhoto(gone.id);refreshPhotos();dirty();
+});
+/* 照片說明：樓層＋位置＋項目（隨表單內容自動更新） */
+function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):(r.location||'')}
+function photoTarget(r,p){
+  if(!p.ref)return '';
+  if(r.kind==='drain'){
+    for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
+      if(pi>=0){const pp=sp.pipes[pi],n=pipeNo(sp,pi),t=pp.kind==='vent'?`透氣管${n}`:`排水管${n}${pp.type?'（'+(pp.type==='其他'?pp.typeOther:pp.type)+'）':''}`;
+        return `${sp.name||'空間'+(si+1)}${sp.pos?'・'+sp.pos:''} ${t}`}}
+    return '';
+  }
+  const n=r.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.items[n].t}`:'';
+}
+function photoCaption(r,p){return [photoWhere(r),photoTarget(r,p),p.cap].filter(Boolean).join('　')}
+function photoPages(r){
+  const list=sortedPhotos(r);if(!list.length)return '';
+  const pr=proj(r.projectId)||{},per=6,pages=[];
+  for(let i=0;i<list.length;i+=per)pages.push(list.slice(i,i+per));
+  return pages.map((pg,pi)=>`<div class="sheet phsheet">
+    <h3>施工照片黏貼表</h3>
+    <div class="fno">表單編號：${esc(r.formNo)}　第 ${pi+1}／${pages.length} 頁</div>
+    <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
+      <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${cat(r.cat).name}・${typ(r.type).name}</td></tr></table>
+    <div class="pgrid">${pg.map(p=>`<figure>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
+  </div>`).join('');
 }
 const SIGNERS=[['worker','施工人員'],['qc','品管人員'],['sup','監造人員']];
 const DRAIN_SIGNERS=[['chief','監造主任'],['eng','監造工程師']];
@@ -805,12 +875,12 @@ const SPACE_NAMES=['廁所','浴室','陽台','洗衣間','茶水間','走廊','
 const BRANDS=['南亞CNS1298','橘紅色','灰管'];
 const D_BR=['1"','1-1/2"','2"','4"'], D_MN=['1-1/2"','3"','4"','5"'];
 const V_BR=['1"','2"','3"','4"'], V_MN=['3"','4"','5"','6"'];
-const newDrain=()=>({kind:'drain',type:'',typeOther:'',brDesign:'',brBrand:[],brSize:'',mnDesign:'',mnBrand:[],mnSize:'',
+const newDrain=()=>({id:uid(),kind:'drain',type:'',typeOther:'',brDesign:'',brBrand:[],brSize:'',mnDesign:'',mnBrand:[],mnSize:'',
   flex:false,flexRod:'',rigid:false,spacingRule:[],spacing:'',spacing2:'',oneStep:false,sweep:false,elbow45:false,cap:false,label:false,flow:'',
   slopeStd:'',len:'',hiD:'',hiA:'',loD:'',loA:''});
-const newVent=()=>({kind:'vent',ventOf:'',flow:'',brDesign:'',brBrand:['灰管'],brSize:'',mnDesign:'',mnBrand:['灰管'],mnSize:'',
+const newVent=()=>({id:uid(),kind:'vent',ventOf:'',flow:'',brDesign:'',brBrand:['灰管'],brSize:'',mnDesign:'',mnBrand:['灰管'],mnSize:'',
   rigid:false,oneStep:false,hD:'',hA:'',toStack:false,stackH:''});
-const newSpace=()=>({name:'',pos:'',pipes:[newDrain(),newDrain(),newDrain(),newVent(),newVent()]});
+const newSpace=()=>({id:uid(),name:'',pos:'',pipes:[newDrain(),newDrain(),newDrain(),newVent(),newVent()]});
 const DORM_PARTS=['浴廁','陽台','臥房'];
 const isDorm=pid=>/宿舍/.test(proj(pid)?.name||'');
 const newDrainForm=pid=>({floor:'',roomType:'四人房',roomOther:'',part:isDorm(pid)?'浴廁':'',spaces:[newSpace()],
@@ -884,7 +954,7 @@ function pipeHTML(si,pi,p,n){
     </div>`;
   }
   return `<details class="pipe ${p.kind}" ${pi===0?'open':''}><summary><span class="ps" data-sum="${si}-${pi}">${esc(pipeSummary(p,n))}</span>
-    <button type="button" class="btn small danger" data-delpipe="${si}-${pi}">刪除</button></summary><div class="pbody">${body}</div></details>`;
+    <button type="button" class="btn small danger" data-delpipe="${si}-${pi}">刪除</button></summary><div class="pbody">${body}<div class="fld wide"><span>此管段照片</span>${phStrip(p.id)}</div></div></details>`;
 }
 function calcText(p){
   if(p.kind==='vent'){const h=parseFloat(p.stackH);if(isNaN(h))return '通氣立管接點須位於地板面 90cm 以上';
@@ -923,9 +993,10 @@ function viewDrain(r){
       ${fl('複驗結果',opts('recheck',[['ok','合格'],['ng','不合格']],'one',f.recheck),1)}
       <label class="field" style="grid-column:1/-1"><span>備註</span><textarea data-path="remark">${esc(f.remark)}</textarea></label>
     </div></section>
-  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">現場照片 <span class="num">（${r.photos.length}）</span></p>
-    <label class="btn small">拍照／選照片<input type="file" id="phIn" accept="image/*" capture="environment" multiple hidden></label></div>
-    <div class="photos" id="photos"></div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">其他照片 <span class="muted" style="font-weight:400">（未指定項目）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
+    <div class="photos" id="photos"></div>
+    <p class="muted" style="margin:6px 0 0">列印時所有照片依上傳順序貼在「施工照片黏貼表」，說明自動帶入樓層、位置與項目。</p></section>
   <datalist id="spaceNames">${SPACE_NAMES.map(x=>`<option value="${x}">`).join('')}</datalist>`;
   renderSpaces();renderPhotos();
   const v=$('#view');
@@ -950,19 +1021,18 @@ function viewDrain(r){
     const dp=e.target.closest('[data-delpipe]');
     if(dp){e.preventDefault();const[si,pi]=dp.dataset.delpipe.split('-').map(Number);
       if(!dp.dataset.arm){dp.dataset.arm='1';dp.textContent='確定？';setTimeout(()=>{if(dp.isConnected){dp.dataset.arm='';dp.textContent='刪除'}},2500);return}
-      f.spaces[si].pipes.splice(pi,1);renderSpaces();dirty();return}
+      const [gp]=f.spaces[si].pipes.splice(pi,1);orphan([gp.id]);renderSpaces();renderPhotos();dirty();return}
     const sa=e.target.closest('[data-sp]');
     if(sa){const si=+sa.dataset.sp,act=sa.dataset.act;
       if(act==='drain')f.spaces[si].pipes.push(newDrain());
       if(act==='vent')f.spaces[si].pipes.push(newVent());
-      if(act==='copy'){const cp=JSON.parse(JSON.stringify(f.spaces[si]));cp.pos='';f.spaces.splice(si+1,0,cp)}
-      if(act==='del'){if(!sa.dataset.arm){sa.dataset.arm='1';sa.textContent='再按一次刪除';setTimeout(()=>{if(sa.isConnected){sa.dataset.arm='';sa.textContent='刪除空間'}},2500);return}f.spaces.splice(si,1)}
+      if(act==='copy'){const cp=JSON.parse(JSON.stringify(f.spaces[si]));cp.pos='';cp.id=uid();cp.pipes.forEach(p=>p.id=uid());f.spaces.splice(si+1,0,cp)}
+      if(act==='del'){if(!sa.dataset.arm){sa.dataset.arm='1';sa.textContent='再按一次刪除';setTimeout(()=>{if(sa.isConnected){sa.dataset.arm='';sa.textContent='刪除空間'}},2500);return}const [gs]=f.spaces.splice(si,1);orphan(gs.pipes.map(p=>p.id));renderPhotos()}
       renderSpaces();dirty();
     }
   };
   $('#addSpace').onclick=()=>{f.spaces.push(newSpace());renderSpaces();dirty();
     const all=document.querySelectorAll('.space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
-  $('#phIn').onchange=async e=>{for(const fl_ of e.target.files){try{r.photos.push({src:await shrink(fl_),cap:''})}catch(err){toast('照片讀取失敗')}}e.target.value='';renderPhotos();dirty()};
   function updLoc(){r.location=drainLoc(f);$('#locView').textContent=r.location||'—'}
   function afterChange(path){
     if(['floor','roomOther','part'].includes(path))updLoc();
@@ -1048,7 +1118,6 @@ function drainSheet(r){
       <tr><td colspan="4">備註：${esc(f.remark).replace(/\n/g,'<br>')}</td></tr>
     </table>
     <div class="dsign">${DRAIN_SIGNERS.map(([k,l])=>`<div>${l}：${sg(k).img?`<img src="${sg(k).img}" alt="">`:''}<span>${esc(sg(k).name)}</span></div>`).join('')}</div>
-    ${r.photos.length?`<div class="sec"><div class="pgrid">${r.photos.map((x,n)=>`<figure><img src="${x.src}" alt=""><figcaption>照片 ${n+1}${x.cap?'：'+esc(x.cap):''}</figcaption></figure>`).join('')}</div></div>`:''}
   </div>`;
 }
 
@@ -1082,7 +1151,6 @@ function sheetHTML(r){
       <tr><td class="k">複查日期</td><td>${rocDate(r.recheckDate)}</td><td class="k">複查結果</td><td>${r.recheck==='ok'?'■已改善合格　□未改善':r.recheck==='ng'?'□已改善合格　■未改善':'□已改善合格　□未改善'}</td></tr>
       ${r.remark?`<tr><td class="k">備註</td><td colspan="3">${esc(r.remark)}</td></tr>`:''}
     </table>
-    ${ph.length?`<div class="sec"><div class="pgrid">${ph.map((x,n)=>`<figure><img src="${x.src}" alt=""><figcaption>照片 ${n+1}${x.cap?'：'+esc(x.cap):''}</figcaption></figure>`).join('')}</div></div>`:''}
     <table class="sec">
       <tr>${SIGNERS.map(([,l])=>`<th>${l}</th>`).join('')}</tr>
       <tr class="signrow">${SIGNERS.map(([k])=>`<td>${sg(k).img?`<img src="${sg(k).img}" alt="">`:''}<div class="small">${esc(sg(k).name)}</div></td>`).join('')}</tr>
@@ -1096,9 +1164,9 @@ function showPrint(list,back,title){
   pa.className='preview';
   pa.style.display='block';
   pa.innerHTML=`<div class="print-toolbar" style="padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <span class="muted grow">A4 直式預覽，共 ${list.length} 張。電腦請按「列印」，或選「另存為 PDF」。</span>
+      <span class="muted grow">A4 直式預覽，共 ${list.length} 份表單（照片黏貼表接在各表單後）。電腦請按「列印」，或選「另存為 PDF」。</span>
       <button class="btn primary" id="doPrint">列印</button></div>
-    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>r.kind==='drain'?drainSheet(r):sheetHTML(r)).join('')}</div>`;
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
 }
 async function viewPrint(id){
@@ -1200,7 +1268,7 @@ const Cloud={
     if(isR)records=[...map.values()];else projects=[...map.values()];
     this.pending();softRender();
   },
-  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||''}))}:v)},
+  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0}))}:v)},
   push(kind,v){
     if(!this.on)return;
     try{

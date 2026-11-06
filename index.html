@@ -269,8 +269,9 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
       <label class="field" style="grid-column:1/-1"><span>工程名稱（標案名稱）＊</span><input type="text" id="pf_name" required></label>
       <label class="field"><span>標案編號</span><input type="text" id="pf_no"></label>
       <label class="field"><span>主辦機關</span><input type="text" id="pf_owner"></label>
+      <label class="field"><span>專管單位</span><input type="text" id="pf_pm"></label>
       <label class="field"><span>監造單位</span><input type="text" id="pf_sup"></label>
-      <label class="field"><span>承攬廠商</span><input type="text" id="pf_con"></label>
+      <label class="field"><span>承攬廠商（營造單位）</span><input type="text" id="pf_con"></label>
     </div>
     <div class="acts">
       <button type="button" class="btn danger" id="projDel" hidden>刪除標案</button>
@@ -312,7 +313,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-1';
+const APP_VERSION='2026.11.06-2';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -541,6 +542,7 @@ function viewHome(){
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>
           <div><b>主辦機關</b>${esc(p.owner)||'—'}</div>
+          <div><b>專管單位</b>${esc(p.pm)||'—'}</div>
           <div><b>監造單位</b>${esc(p.sup)||'—'}</div>
           <div><b>承攬廠商</b>${esc(p.con)||'—'}</div>
         </div>`
@@ -578,7 +580,7 @@ function openProj(p){
   editingProj=p||null;
   $('#projDlgTitle').textContent=p?'編輯標案':'新增標案';
   $('#pf_name').value=p?.name||''; $('#pf_no').value=p?.no||''; $('#pf_owner').value=p?.owner||'';
-  $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||'';
+  $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||''; $('#pf_pm').value=p?.pm||'';
   $('#projDel').hidden=!p; $('#projDel').textContent='刪除標案'; $('#projDel').dataset.arm='';
   $('#projDlg').showModal();
 }
@@ -586,7 +588,7 @@ $('#projCancel').onclick=()=>$('#projDlg').close();
 $('#projForm').onsubmit=async e=>{
   e.preventDefault();
   const p=editingProj||{id:uid(),created:Date.now()};
-  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),updated:Date.now()});
+  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),pm:$('#pf_pm').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),updated:Date.now()});
   if(!p.name)return;
   await DB.put('projects',p);
   if(!editingProj)projects.push(p);
@@ -1033,8 +1035,9 @@ function sheetHTML(r){
     <div class="fno">表單編號：${esc(r.formNo)}</div>
     <table>
       <tr><td class="k">標案編號</td><td>${esc(p.no)}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
-      <tr><td class="k">監造單位</td><td>${esc(p.sup)}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
-      <tr><td class="k">查驗日期</td><td>${rocDate(r.date)}</td><td class="k">檢查時機</td><td>${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
+      <tr><td class="k">專管單位</td><td>${esc(p.pm)}</td><td class="k">監造單位</td><td>${esc(p.sup)}</td></tr>
+      <tr><td class="k">承攬廠商</td><td>${esc(p.con)}</td><td class="k">查驗日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>
     </table>
     <table class="sec">
@@ -1108,7 +1111,16 @@ $('#impFile').onchange=async e=>{
 
 /* ---------- 啟動 ---------- */
 (async()=>{
-  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');}
+  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');
+    // 首次開啟時預設建立標案（固定 id，手機與電腦匯入備份時會合併成同一個；刪除後不會再自動出現）
+    if(!LS.get('seeded2')){
+      const PRESET=[
+        {id:'p-nycuh-med2',name:'第二期醫療大樓興建工程',owner:'國立陽明交通大學附設醫院',pm:'誠蓄工程顧問股份有限公司',sup:'劉培森建築師事務所',con:'崇偉營造工程(股)有限公司'},
+        {id:'p-nycuh-dorm',name:'職務宿舍興建工程',owner:'國立陽明交通大學附設醫院',pm:'誠蓄工程顧問(股)公司',sup:'劉培森建築師事務所',con:'崇偉營造工程(股)有限公司'}];
+      for(const x of PRESET){if(!proj(x.id)){const p={...x,no:'',created:Date.now(),updated:1};await DB.put('projects',p);projects.push(p)}}
+      if(!curProj)curProj=PRESET[0].id;
+    }
+    LS.set('seeded2','1');}
   catch(e){$('#view').innerHTML='<div class="empty">此瀏覽器無法儲存資料（可能是無痕模式）。請改用一般模式開啟。</div>';return}
   render();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});

@@ -387,7 +387,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-27';
+const APP_VERSION='2026.11.06-28';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1316,7 +1316,7 @@ function drainSheet(r){
       <div>支管規格：設計值：Ø${u(inch(pp.brDesign))} 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(V_BR,pp.brSize)}</div>
       <div>幹管規格：設計值：Ø${u(inch(pp.mnDesign))} 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(V_MN,pp.mnSize)}</div>
       <div>${cb(pp.rigid,'剛性吊架配管以50mm*50mm*5mm熱浸鍍鋅角鋼+U型螺栓固定')}　${cb(pp.oneStep,'吊架間距：僅一步(無間距)')}</div>
-      <div>□管路高度(設計)：${u(pp.hD)}cm 實際：${u(pp.hA)}cm；${cb(pp.toStack,'通氣管之上端接通氣立管')}，實測${u(pp.stackH)}cm(1米線上)(須位於地板面90公分以上)</div></div>`;
+      <div>管路高度(設計)：${u(pp.hD)}cm 實際：${u(pp.hA)}cm；${cb(pp.toStack,'通氣管之上端接通氣立管')}，實測${u(pp.stackH)}cm(1米線上)(須位於地板面90公分以上)</div></div>`;
     const s=slopeOf(pp),t=pp.type;
     return `<div class="pp">
       <div>管別：${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} ${cb(t==='其他',u(pp.typeOther))}</div>

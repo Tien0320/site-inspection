@@ -416,7 +416,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-72';
+const APP_VERSION='2026.11.06-73';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -766,16 +766,19 @@ function render(){
 }
 
 /* ---------- 首頁 ---------- */
+// 標案排序：第二期醫療大樓排第一
+const PROJ_ORDER=['p-nycuh-med2','p-nycuh-dorm'];
+const projOrdered=()=>[...projects].sort((a,b)=>{const ia=PROJ_ORDER.indexOf(a.id),ib=PROJ_ORDER.indexOf(b.id);return (ia<0?99:ia)-(ib<0?99:ib)||(a.created||0)-(b.created||0)});
 function viewHome(){
   setTop('現場施工查驗<span class="sub">標案 ／ 查驗大項</span>',null);
   if(curProj && !proj(curProj)) curProj=null;
-  if(!curProj && projects.length) curProj=projects[0].id;
+  if(!curProj && projects.length) curProj=projOrdered()[0].id;
   const p=proj(curProj);
   const recs=records.filter(r=>r.projectId===curProj);
   let html=`<section>
     <p class="label">標案</p>
     <div class="panel proj">
-      ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projects.map(x=>{
+      ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
           return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}"><b>${esc(x.name)}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>

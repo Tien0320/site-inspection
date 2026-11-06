@@ -109,6 +109,8 @@ textarea{min-height:72px;resize:vertical}
 .mseg button{border:0;background:transparent;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:58px}
 .mseg button+button{border-left:1px solid var(--line)}
 .mseg button b{font-size:16px}
+.mseg.big button{min-height:76px}
+.mseg.big button b{font-size:19px}
 .mseg button span{font-size:12px;color:var(--ink-2)}
 .mseg button.on{background:var(--brand);color:var(--brand-ink)}
 .mseg button.on span{color:var(--brand-ink);opacity:.8}
@@ -358,7 +360,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-13';
+const APP_VERSION='2026.11.06-15';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -381,12 +383,51 @@ const TYPES = [
 const STAGES = ['施工前','施工中','施工完成'];
 const MODES = [
   {key:'work', name:'施工查驗', code:'',  hint:'現場施工品質'},
-  {key:'mat',  name:'材料查驗', code:'M', hint:'材料進場檢驗'}
+  {key:'mat',  name:'材料查驗', code:'',  hint:'材料進場檢驗'}
 ];
 const modeOf = r => r.mode || 'work';
+const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name : typ(r.type).name;
+const backOf = r => modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
-/* 材料進場查驗範本（各大項共用，給排水另有套管用語） */
+/* 材料查驗：依材料種類分（不分大項） */
+const MAT_CAT = {key:'mat', name:'材料', code:'M'};
+const MAT_TYPES = [
+  {key:'pipe',   name:'管線',     code:'P', color:'plumb', hint:'配管、管材'},
+  {key:'wire',   name:'電線',     code:'W', color:'elec',  hint:'電線、電纜'},
+  {key:'box',    name:'接線盒',   code:'B', color:'low',   hint:'接線盒、出線盒'},
+  {key:'hanger', name:'吊架',     code:'H', color:'hvac',  hint:'吊桿、角鋼、管束'},
+  {key:'panel',  name:'配電箱盤', code:'D', color:'fire',  hint:'箱體、盤體'},
+  {key:'other',  name:'其他材料', code:'O', color:'ink-2', hint:'其他進場材料'}
+];
+const MAT_ICON = {
+  pipe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h11a4 4 0 014 4v8M3 15h9a2 2 0 012 2v4"/></svg>',
+  wire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 18c4 0 4-12 8-12s4 12 8 12"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/><circle cx="21" cy="18" r="1.5" fill="currentColor"/></svg>',
+  box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
+  hanger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3h18M8 3v12M16 3v12M5 15h14v4H5z"/></svg>',
+  panel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  other:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>'
+};
 const MAT_TPL = {
+  pipe:[
+   ['廠牌型號','管材廠牌、型號與核准送審資料相符'],
+   ['規格','管材種類、管徑、管厚、CNS 編號符合設計圖說'],
+   ['外觀','無破損、彎曲、壓扁、鏽蝕'],
+   ['產品標示','管身印有廠牌、CNS、規格、製造日期'],
+   ['證明文件','出廠證明、檢驗報告齊全'],
+   ['數量','進場數量與送貨單相符'],
+   ['現場存放','架高堆置、防曬，管口封蓋'],
+   ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
+  ],
+  wire:[
+   ['廠牌型號','電線電纜廠牌、型號與核准送審資料相符'],
+   ['規格','線徑、芯數、絕緣種類（PVC／XLPE／耐燃）符合圖說'],
+   ['外被印字','廠牌、規格、CNS、製造年月印字清楚'],
+   ['外觀','外被無破損、壓傷，線軸完整'],
+   ['證明文件','出廠證明、試驗報告齊全'],
+   ['數量','捲數、長度與送貨單相符'],
+   ['現場存放','防潮、防曬，線頭封口'],
+   ['取樣送驗','依規定取樣送驗（導體電阻等）已辦理（另附紀錄）']
+  ],
   box:[
    ['廠牌型號','材料名稱、廠牌、型號與核准送審資料相符'],
    ['規格尺寸','材質、尺寸、厚度符合設計圖說'],
@@ -397,21 +438,38 @@ const MAT_TPL = {
    ['現場存放','分類堆置，防潮、防曬'],
    ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
   ],
-  hang:[
-   ['管材廠牌型號','管材廠牌、型號與核准送審資料相符'],
-   ['管材規格','管徑、管厚、CNS 編號符合設計圖說'],
-   ['吊架材料','吊桿、角鋼、管束為熱浸鍍鋅，規格符合圖說'],
-   ['外觀','無破損、彎曲、鏽蝕'],
-   ['產品標示','廠牌、CNS、規格、製造日期標示清楚'],
+  hanger:[
+   ['廠牌型號','吊架材料廠牌、型號與核准送審資料相符'],
+   ['規格','吊桿、角鋼、C 型鋼、管束、膨脹螺栓規格符合圖說'],
+   ['鍍鋅處理','熱浸鍍鋅，附鍍鋅厚度證明'],
+   ['外觀','無鏽蝕、變形、鍍層剝落'],
    ['證明文件','出廠證明、檢驗報告齊全'],
    ['數量','進場數量與送貨單相符'],
-   ['現場存放','架高堆置、防曬，避免變形'],
+   ['現場存放','分類堆置、防潮'],
+   ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
+  ],
+  panel:[
+   ['廠牌型號','箱盤廠牌、型號與核准製造圖相符'],
+   ['箱體','尺寸、板厚、材質、烤漆顏色符合圖說'],
+   ['內部器具','斷路器等器具廠牌、規格、容量與單線圖相符'],
+   ['銘牌標示','銘牌、迴路標示清楚'],
+   ['外觀','無碰撞、刮傷、變形'],
+   ['證明文件','出廠試驗報告齊全'],
+   ['數量','進場數量與送貨單相符'],
+   ['現場存放','防潮、防塵，覆蓋保護']
+  ],
+  other:[
+   ['廠牌型號','材料廠牌、型號與核准送審資料相符'],
+   ['規格','規格符合設計圖說'],
+   ['外觀','無破損、鏽蝕、變形'],
+   ['產品標示','廠牌、規格、認證標示清楚'],
+   ['證明文件','出廠證明、檢驗報告齊全'],
+   ['數量','進場數量與送貨單相符'],
+   ['現場存放','分類堆置，防潮、防曬'],
    ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
   ]
 };
-const tplOf = (ck,tk,md) => md==='mat'
-  ? (ck==='plumb'&&tk==='box' ? MAT_TPL.box.map(([t,x])=>[t.replace('廠牌型號','套管廠牌型號'),x.replace('材料名稱','套管／預埋件名稱')]) : MAT_TPL[tk])
-  : TPL[ck][tk];
+const tplOf = (ck,tk,md) => md==='mat' ? (MAT_TPL[tk]||MAT_TPL.other) : TPL[ck][tk];
 
 /* 查驗項目範本：[檢查項目, 檢查標準] —— 標準為一般參考值，請依契約圖說及規範調整 */
 const TPL = {
@@ -565,8 +623,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const rocDate=s=>{if(!s)return '';const [y,m,d]=s.split('-');return `${+y-1911} 年 ${+m} 月 ${+d} 日`};
-const cat=k=>CATS.find(c=>c.key===k);
-const typ=k=>TYPES.find(t=>t.key===k);
+const cat=k=>k==='mat'?MAT_CAT:CATS.find(c=>c.key===k);
+const typ=k=>TYPES.find(t=>t.key===k)||MAT_TYPES.find(t=>t.key===k)||{key:k,name:k,code:''};
 const proj=id=>projects.find(p=>p.id===id);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1800)}
 function status(r){
@@ -597,6 +655,7 @@ function render(){
   const [v,a,b,m]=h.split('-');
   window.scrollTo(0,0);
   if(v==='cat') return viewCat(a,b||'box',m||LS.get('mode')||'work');
+  if(v==='mat') return viewMat(a||'pipe');
   if(v==='rec') return viewRec(a);
   if(v==='print') return viewPrint(a);
   if(v==='printall') return viewPrintAll(a,b,m||'work');
@@ -627,8 +686,16 @@ function viewHome(){
       :`<div class="empty">還沒有標案。先新增一個標案，再開始查驗。<div style="margin-top:12px"><button class="btn primary" id="projAdd">＋ 新增標案</button></div></div>`}
     </div></section>`;
   if(p){
-    html+=`<section><p class="label">查驗大項</p><div class="tiles">${CATS.map(c=>{
-      const rs=recs.filter(r=>r.cat===c.key);
+    const md=mode(LS.get('mode')||'work').key;
+    html+=`<section><p class="label">查驗類別</p><div class="mseg big" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=recs.filter(r=>modeOf(r)===m.key).length;
+      return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}"><b>${m.name}</b><span class="num">${n} 筆</span></button>`}).join('')}</div></section>`;
+    if(md==='mat')html+=`<section><p class="label">材料查驗・材料種類</p><div class="tiles">${MAT_TYPES.map(t=>{
+      const rs=recs.filter(r=>modeOf(r)==='mat'&&r.type===t.key),ng=rs.filter(r=>status(r).k==='ng').length;
+      return `<button class="tile" style="--c:var(--${t.color==='ink-2'?'ink-2':'c-'+t.color})" data-mat="${t.key}">
+        <span class="ic">${MAT_ICON[t.key]}</span><span class="nm">${t.name}</span>
+        <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
+    else html+=`<section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
+      const rs=recs.filter(r=>r.cat===c.key&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}</span>
@@ -639,15 +706,17 @@ function viewHome(){
   $('#view').innerHTML=html;
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
+  document.querySelectorAll('[data-mat]').forEach(b=>b.onclick=()=>go('mat-'+b.dataset.mat));
+  document.querySelectorAll('.mseg [data-m]').forEach(b=>b.onclick=()=>{LS.set('mode',b.dataset.m);const y=scrollY;viewHome();scrollTo(0,y)});
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
-  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-box-'+(LS.get('mode')||'work')));
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-box-work'));
   bindRecRows();
 }
 function recRow(r){
   const s=status(r), c=cat(r.cat), t=typ(r.type);
   return `<button class="rec" data-rec="${r.id}">
     <span class="d">${esc(r.date)}</span>
-    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${c.name} · ${t.name} · ${mode(modeOf(r)).name}</span></span>
+    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+t.name+' · 施工'}</span></span>
     <span class="chip ${s.k}">${s.t}</span></button>`;
 }
 function bindRecRows(){document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>go('rec-'+b.dataset.rec))}
@@ -690,14 +759,12 @@ function viewCat(ck,tk,md){
   const c=cat(ck),p=proj(curProj);
   if(!c||!p)return go('home');
   md=mode(md).key;LS.set('mode',md);
-  setTop(`${c.name}工程<span class="sub">${esc(p.name)}</span>`,'home');
+  setTop(`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,'home');
   const all=records.filter(r=>r.projectId===curProj&&r.cat===ck);
   const recs=all.filter(r=>modeOf(r)===md);
   const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
   const T=`${typ(tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
-    <div class="mseg" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=all.filter(r=>modeOf(r)===m.key).length;
-      return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}"><b>${m.name}</b><span class="num">${n} 筆</span></button>`}).join('')}</div>
     <div class="seg" style="--c:var(--c-${ck})">${TYPES.map(t=>{const n=recs.filter(r=>r.type===t.key).length;
       return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
@@ -706,10 +773,26 @@ function viewCat(ck,tk,md){
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
       :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
-  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${tk}-${b.dataset.m}`));
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-${ck}-${tk}-${md}`));
+  bindRecRows();
+}
+function viewMat(tk){
+  const t=MAT_TYPES.find(x=>x.key===tk),p=proj(curProj);
+  if(!t||!p)return go('home');
+  LS.set('mode','mat');
+  setTop(`材料查驗・${t.name}<span class="sub">${esc(p.name)}</span>`,'home');
+  const list=records.filter(r=>r.projectId===curProj&&modeOf(r)==='mat'&&r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
+  $('#view').innerHTML=`
+    <div class="row">
+      <button class="btn primary grow" id="newRec">＋ 新增${t.name}材料查驗</button>
+      ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
+    </div>
+    ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
+      :`<div class="empty">還沒有${t.name}的材料查驗紀錄（${t.hint}）。<br>按「新增」會帶入 ${MAT_TPL[tk].length} 項材料檢查項目。</div>`}`;
+  $('#newRec').onclick=()=>newRec('mat',tk,'mat');
+  $('#printAll')&&($('#printAll').onclick=()=>go(`printall-mat-${tk}-mat`));
   bindRecRows();
 }
 async function newRec(ck,tk,md){
@@ -734,7 +817,7 @@ function viewRec(id){
   curProj=r.projectId;
   r.items.forEach(i=>{if(!i.id)i.id=uid()});
   if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}
-  setTop(`${c.name}・${t.name}・${mode(modeOf(r)).name.slice(0,2)}<span class="sub">${esc(p?.name)}</span>`,`cat-${r.cat}-${r.type}-${modeOf(r)}`);
+  setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   const v=$('#view');
   v.innerHTML=`
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">表單編號 ${esc(r.formNo)}</span></p>
@@ -787,7 +870,7 @@ function viewRec(id){
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
-    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(`cat-${r.cat}-${r.type}-${modeOf(r)}`)};
+    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
 }
 function renderItems(){
   const r=cur;
@@ -867,7 +950,7 @@ function photoPages(r){
     <div class="fno">表單編號：${esc(r.formNo)}　第 ${pi+1}／${pages.length} 頁</div>
     <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
-      <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${cat(r.cat).name}・${typ(r.type).name}・${mode(modeOf(r)).name}</td></tr></table>
+      <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typ(r.type).name}</td></tr></table>
     <div class="pgrid">${pg.map(p=>`<figure>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
   </div>`).join('');
 }
@@ -1024,7 +1107,7 @@ function calcText(p){
 }
 function viewDrain(r){
   const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId),f=r.form;
-  setTop(`${c.name}・${t.name}・${mode(modeOf(r)).name.slice(0,2)}<span class="sub">${esc(p?.name)}</span>`,`cat-${r.cat}-${r.type}-${modeOf(r)}`);
+  setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
@@ -1105,7 +1188,7 @@ function viewDrain(r){
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
-    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(`cat-${r.cat}-${r.type}-${modeOf(r)}`)};
+    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
 }
 function pipeNo(sp,pi){const k=sp.pipes[pi].kind;return sp.pipes.slice(0,pi+1).filter(p=>p.kind===k).length}
 function renderSpaces(){
@@ -1187,7 +1270,7 @@ function sheetHTML(r){
   const ph=r.photos;
   return `<div class="sheet">
     <h3>${esc(p.name)}</h3>
-    <h4>${c.name}工程　${t.name}　${modeOf(r)==='mat'?'材料進場查驗紀錄表':'施工查驗紀錄表'}</h4>
+    <h4>${modeOf(r)==='mat'?typeName(r)+'　材料進場查驗紀錄表':c.name+'工程　'+t.name+'　施工查驗紀錄表'}</h4>
     <div class="fno">表單編號：${esc(r.formNo)}</div>
     <table>
       <tr><td class="k">標案編號</td><td>${esc(p.no)}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
@@ -1237,9 +1320,9 @@ async function viewPrint(id){
 }
 async function viewPrintAll(ck,tk,md){
   const list=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!list.length)return go(`cat-${ck}-${tk}-${md}`);
+  if(!list.length)return go(md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`);
   await Promise.all(list.map(ensurePhotos));
-  showPrint(list,`cat-${ck}-${tk}-${md}`,`列印預覽<span class="sub">${cat(ck).name}・${typ(tk).name}・${mode(md).name}</span>`);
+  showPrint(list,md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`,`列印預覽<span class="sub">${md==='mat'?'材料・'+MAT_TYPES.find(x=>x.key===tk).name:cat(ck).name+'・'+typ(tk).name}</span>`);
 }
 const _setTop=setTop;
 setTop=function(t,b){_setTop(t,b);$('#printArea').style.display=''};
@@ -1435,6 +1518,7 @@ $('#cloudBtn').onclick=()=>$('#setBtn').click();
     }
     LS.set('seeded2','1');}
   catch(e){$('#view').innerHTML='<div class="empty">此瀏覽器無法儲存資料（可能是無痕模式）。請改用一般模式開啟。</div>';return}
+  for(const r of records)if(r.mode==='mat'&&r.cat!=='mat'){r.cat='mat';r.type=r.type==='hang'?'pipe':'box';await DB.put('records',r)}
   render();
   Cloud.init();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});

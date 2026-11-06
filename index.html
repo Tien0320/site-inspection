@@ -288,9 +288,11 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .dsheet hr{border:0;border-top:1px dashed #000;margin:3px 0 3px 1.2em}
 .dsheet .ul{display:inline-block;min-width:2.4em;border-bottom:1px solid #000;text-align:center;padding:0 2px}
 .dsheet .dres{margin-top:6px;border-top:1px solid #000;padding-top:4px}
-.dsheet .dsign{display:flex;justify-content:space-around;margin-top:10px;font-size:11pt}
-.dsheet .dsign div{display:flex;align-items:center;gap:6px;min-height:16mm}
-.dsheet .dsign img{max-height:15mm;max-width:40mm}
+.dsign{display:grid;grid-template-columns:56% 44%;margin-top:10px;font-size:11pt}
+.dsign>div{padding-left:5px}
+.tsheet .dsign{grid-template-columns:60% 40%}
+.dsign div{display:flex;align-items:center;gap:6px;min-height:16mm}
+.dsign img{max-height:15mm;max-width:40mm}
 
 @page{size:A4 portrait;margin:10mm}
 @media print{
@@ -387,7 +389,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-28';
+const APP_VERSION='2026.11.06-29';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',

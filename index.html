@@ -396,7 +396,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-43';
+const APP_VERSION='2026.11.06-44';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1717,7 +1717,6 @@ function sleeveItemHTML(i,x){
   const b=`items.${i}`;
   return `<div class="space" data-si="${i}">
     <div class="sphead"><span class="spno num">${i+1}</span>
-      <label class="field grow"><span>編號（自動編列）</span>${inp(b+'.no',x.no||String(i+1),'')}</label>
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('構件',opts(b+'.member',['梁','外牆','內牆'],'one',x.member))}

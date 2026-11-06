@@ -396,7 +396,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-40';
+const APP_VERSION='2026.11.06-41';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1727,7 +1727,7 @@ function sleeveItemHTML(i,x){
       <div class="fld"><span>${x.shape==='方孔'?'方孔尺寸':'套管尺寸'}</span><div class="meas"><label>設計${inp(b+'.sizeD',x.sizeD,x.shape==='方孔'?'例：30×20':'例：Ø4"')}</label><label>實測${inp(b+'.sizeA',x.sizeA,'')}</label></div></div>
       <div class="fld wide"><span>樓板～管頂（cm）</span><div class="meas"><label>設計值${inp(b+'.topD',x.topD,'cm',1)}</label><label>實測值${inp(b+'.topA',x.topA,'cm',1)}</label></div>
         <div class="row">${opts(b+'.topRef',['1米基準線下','1米基準線上'],'one',x.topRef)}<span class="muted" data-sd="top${i}">${sleeveDiff(x.topD,x.topA)}</span></div></div>
-      ${x.member==='外牆'?fl('外牆過牆管加設止水環',opts(b+'.ring',['是','否'],'one',x.ring)):''}
+      ${fl('外牆過牆管是否加設止水環',opts(b+'.ring',['是','否'],'one',x.ring))}
       <div class="fld wide"><span>套管位置（距離）</span>${opts(b+'.dir',['東側','西側','南側','北側'],'one',x.dir)}${opts(b+'.ref',['柱','樑','牆'],'one',x.ref)}
         <div class="meas"><label>設計值 cm${inp(b+'.distD',x.distD,'cm',1)}</label><label>實測值 cm${inp(b+'.distA',x.distA,'cm',1)}</label></div><span class="muted" data-sd="dist${i}">${sleeveDiff(x.distD,x.distA)}</span></div>
       <div class="fld wide"><span>此處照片</span>${phStrip(x.id)}</div>
@@ -1802,7 +1802,7 @@ function sleeveSheet(r){
     <div>${cb(!!x.sys,'系統')}：${['電氣','弱電','排水','空調'].map(m=>cb(x.sys===m,m)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}</div>
     <div>${cb(x.shape==='套管','套管')}${cb(x.shape==='方孔','方孔')}尺寸：設計：${u(x.sizeD)}　實測：${u(x.sizeA)}</div>
     <div>${cb(x.topD!==''||x.topA!=='','樓板~管頂')}：設計值：${u(x.topD)}cm　實測值：${u(x.topA)}cm　${cb(x.topRef==='1米基準線下','1米基準線下')} ${cb(x.topRef==='1米基準線上','1米基準線上')}</div>
-    <div>${cb(x.member==='外牆','外牆過牆管是否加設止水環')} ${cb(x.ring==='是','是')} ${cb(x.ring==='否','否')}</div>
+    <div>${cb(!!x.ring,'外牆過牆管是否加設止水環')} ${cb(x.ring==='是','是')} ${cb(x.ring==='否','否')}</div>
     <div>${cb(x.distD!==''||x.distA!=='','套管位置')}：距${['東側','西側','南側','北側'].map(m=>cb(x.dir===m,m)).join(' ')} ${['柱','樑','牆'].map(m=>cb(x.ref===m,m)).join(' ')}　設計值：${u(x.distD)}cm　實測值：${u(x.distA)}cm</div>
   </div></div>`;
   return `<div class="sheet dsheet">

@@ -275,6 +275,8 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .spaces{display:flex;flex-direction:column;gap:14px}
 .space{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px;display:flex;flex-direction:column;gap:10px}
 .sphead{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.sphead>.field.grow{flex:1 1 170px}
+.sphead>.field.axisf{flex:1 1 240px}
 .spno{width:34px;height:34px;border-radius:8px;background:var(--c-plumb);color:#fff;display:grid;place-items:center;font-weight:700;align-self:center}
 .pipes{display:flex;flex-direction:column;gap:8px}
 .pipe{border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -1713,7 +1715,7 @@ function axisPos(x){const a=[x.px1,x.px2].filter(Boolean).join('~'),b=[x.py1,x.p
 function axisHTML(b,x){
   if(x.pos&&x.px1==null){const m=x.pos.match(/^\s*([^~／/\s]+)\s*~\s*([^／/\s]+)\s*[／/]\s*([^~\s]+)\s*~\s*(\S+)\s*$/);if(m){x.px1=m[1];x.px2=m[2];x.py1=m[3];x.py2=m[4]}}
   const f=(k,ph)=>`<input type="text" data-path="${b}.${k}" value="${esc(x[k]||'')}" placeholder="${ph}" maxlength="4">`;
-  return `<div class="field grow"><span>位置（軸線）</span><div class="axis">${f('px1','5')}<i>~</i>${f('px2','6')}<b>/</b>${f('py1','C')}<i>~</i>${f('py2','D')}</div></div>`;
+  return `<div class="field grow axisf"><span>位置（軸線）</span><div class="axis">${f('px1','5')}<i>~</i>${f('px2','6')}<b>/</b>${f('py1','C')}<i>~</i>${f('py2','D')}</div></div>`;
 }
 /* ---------- 穿樑套管（依「施工抽查紀錄表-(穿梁套管)」） ---------- */
 const FLOORS_ALL=['B3F','B2F','B1F',...Array.from({length:10},(_,i)=>`${i+1}F`),'R1F','R2F','RLF','停機坪']; // 第二期醫療大樓
@@ -1983,7 +1985,7 @@ function dfItemHTML(i,x){
       <label class="field grow"><span>空間名稱編號</span>${inp(b+'.space',x.space,'例：5F-男廁')}</label>
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
-      ${fl('部位',opts(b+'.face',['頂版','底版','壁面'],'one',x.face))}
+      ${fl('部位',opts(b+'.face',['頂版','底版'],'one',x.face))}
       ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
       ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec),1)}
       <div class="fld"><span>管徑尺寸 ø</span><div class="meas"><label>設計值<div class="pm"><i>ø</i>${inp(b+'.sizeD',x.sizeD,'例：4"')}</div></label><label>實測值<div class="pm"><i>ø</i>${inp(b+'.sizeA',x.sizeA,'')}</div></label></div></div>
@@ -2058,7 +2060,7 @@ function dfSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
-    <div>${['頂版','底版','壁面'].map(s=>cb(x.face===s,s)).join(' ')}</div>
+    <div>${['頂版','底版'].map(s=>cb(x.face===s,s)).join(' ')}</div>
     <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>
     <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管徑尺寸：設計值：ø${u(String(x.sizeD||'').replace(/^[øØ]\s*/,''))}　實測值：ø${u(String(x.sizeA||'').replace(/^[øØ]\s*/,''))}</div>
     <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')}</div>

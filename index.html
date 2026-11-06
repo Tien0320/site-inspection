@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-22';
+const APP_VERSION='2026.11.06-23';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1213,7 +1213,7 @@ function viewDrain(r){
       else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);
         b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
         if(/\.(brDesign|brSize)$/.test(path)){const m=path.match(/^spaces\.(\d+)\.pipes\.(\d+)\./),pp=m&&f.spaces[+m[1]].pipes[+m[2]];
-          if(pp&&pp.kind==='drain'){const sz=pp.brDesign||pp.brSize;const ns=autoSlope(sz);if(ns){pp.slopeStd=ns;toast(`支管 ${sz} → 洩水坡度標準自動選 ${ns==='3'?'1/50':'1/100'}`)}renderSpaces();}}
+          if(pp&&pp.kind==='drain'){const sz=getP(f,path)||pp.brSize||pp.brDesign;const ns=autoSlope(sz);if(ns){pp.slopeStd=ns;toast(`支管 ${sz} → 洩水坡度標準自動選 ${ns==='3'?'1/50':'1/100'}`)}renderSpaces();}}
         if(/\.type$/.test(path))renderSpaces();}
       afterChange(path);dirty();return;
     }

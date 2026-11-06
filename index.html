@@ -417,7 +417,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-77';
+const APP_VERSION='2026.11.06-78';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -2384,7 +2384,7 @@ const Cloud={
     const err=e=>this.set('error',e.code==='permission-denied'?`此帳號（${u.email}）沒有權限，請聯絡管理者加入`:(e.message||e.code));
     this.unsub.push(this.fs.collection('projects').onSnapshot(s=>this.apply('projects',s),err));
     this.unsub.push(this.fs.collection('records').onSnapshot(s=>this.apply('records',s),err));
-    this.unsub.push(this.fs.collection('meta').doc('rooms').onSnapshot(d=>{if(!d.exists)return;try{const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();roomsChanged()}catch(e){}},()=>{}));
+    this.unsub.push(this.fs.collection('meta').doc('rooms').onSnapshot(d=>{if(!d.exists){roomsErr='雲端尚無空間資料，請管理者上傳';if($('#setDlg').open)renderCloudBox();return}try{const o=JSON.parse(d.data().json);roomsErr='';setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();roomsChanged()}catch(e){roomsErr='空間資料格式錯誤：'+e.message}},e=>{roomsErr=(e.code==='permission-denied'?'沒有讀取權限（帳號未加入名單）':'讀取失敗：'+(e.code||e.message));if($('#setDlg').open)renderCloudBox()}));
     this.migrate();
   },
   apply(kind,s){
@@ -2442,13 +2442,15 @@ const Cloud={
 /* 空間資料（房名＋軸線）：存在雲端 meta/rooms，只有名單內帳號可讀；本機快取供離線使用 */
 function setRooms(o){if(o&&o.dorm)DORM_ROOMS=o.dorm;if(o&&o.med2)MED2_ROOMS=o.med2}
 try{setRooms(JSON.parse(LS.get('roomsCache')||'null'))}catch(e){}
+let roomsErr='';
 async function loadRoomsCloud(){
-  if(!Cloud.on)return;
-  try{const d=await Cloud.fs.collection('meta').doc('rooms').get();
-    if(d.exists){const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();softRender()}}catch(e){}
+  if(!Cloud.on){roomsErr='尚未登入';return}
+  try{const d=await Cloud.fs.collection('meta').doc('rooms').get({source:'server'});if(!d.exists){roomsErr='雲端尚無空間資料，請管理者上傳';return}roomsErr='';
+    {const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));roomsChanged()}}catch(e){roomsErr=(e.code==='permission-denied'?'沒有讀取權限（帳號未加入名單）':e.code==='unavailable'?'目前離線，恢復網路後再試':'讀取失敗：'+(e.code||e.message))}
+  if($('#setDlg').open)renderCloudBox()
 }
 function roomsChanged(){if(!cur)return softRender();if($('#sleeves')||$('#slabs')||$('#dfits'))refreshPhotos();else if($('#l_space_w'))$('#l_space_w').outerHTML=spaceLocField(cur)}
-function roomsSummary(){const a=Object.keys(MED2_ROOMS).length,b=Object.keys(DORM_ROOMS).length;return a||b?`空間資料：二期 ${a} 層、宿舍 ${b} 層`:'空間資料：尚未載入'}
+function roomsSummary(){const a=Object.keys(MED2_ROOMS).length,b=Object.keys(DORM_ROOMS).length;return a||b?`空間資料：二期 ${a} 層、宿舍 ${b} 層`:`空間資料：尚未載入${roomsErr?'（'+roomsErr+'）':(Cloud.user?'':'（尚未登入）')}`}
 async function uploadRooms(file){
   try{const txt=await file.text(),o=JSON.parse(txt);if(o.app!=='site-inspection-rooms')throw new Error('這不是空間資料檔');
     if(!Cloud.on)throw new Error('請先登入');
@@ -2490,13 +2492,14 @@ function renderCloudBox(){
     ${C.msg?`<p class="muted" style="margin:0">${esc(C.msg)}</p>`:''}
     ${C.user?`<p class="muted" style="margin:0">登入帳號：${esc(C.user.email)}</p>
       <div class="row"><button class="btn primary" id="syncNow">立即同步（一鍵上傳）</button><button class="btn" id="signOut">登出</button></div>
-      <div class="row"><span class="muted grow">${roomsSummary()}</span><label class="btn small">上傳空間資料<input type="file" id="roomsIn" accept=".json,application/json" hidden></label></div>`
+      <div class="row"><span class="muted grow">${roomsSummary()}</span><button class="btn small" id="roomsReload" type="button">重新載入</button><label class="btn small">上傳空間資料<input type="file" id="roomsIn" accept=".json,application/json" hidden></label></div>`
      :C.fs?`<p class="muted" style="margin:0">用 Google 帳號登入後才會上傳。手機和電腦要登入已授權的帳號。</p>
       <div class="row"><button class="btn primary" id="signIn">用 Google 帳號登入</button></div>`:''}
     ${CLOUD_CONFIG?'':`<button class="btn small" id="cfgClear" style="align-self:flex-start">移除雲端設定</button>`}`;
   if($('#signIn'))$('#signIn').onclick=()=>C.signIn();
   if($('#signOut'))$('#signOut').onclick=()=>C.signOut();
   if($('#cfgClear'))$('#cfgClear').onclick=()=>{LS.set('fbcfg','');location.reload()};
+  if($('#roomsReload'))$('#roomsReload').onclick=async()=>{toast('重新載入空間資料…');await loadRoomsCloud();toast(roomsSummary())};
   if($('#roomsIn'))$('#roomsIn').onchange=e=>{const f=e.target.files[0];if(f)uploadRooms(f);e.target.value=''};
   if($('#syncNow'))$('#syncNow').onclick=async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='上傳中…';
     await flush();const n=await C.migrate();

@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-61';
+const APP_VERSION='2026.11.06-62';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -706,7 +706,26 @@ const SYM={ok:'○',ng:'×',na:'／'};
 
 /* ---------- 路由 ---------- */
 function go(h){location.hash=h}
-window.addEventListener('hashchange',render);
+/* 新增的檢查表：離開前確認是否儲存 */
+let lastHash=location.hash;
+function draftOf(h){if(!/^#rec-/.test(h))return null;const r=records.find(x=>x.id===h.slice(5));return r&&r.isNew?r:null}
+window.addEventListener('hashchange',()=>{
+  const from=lastHash,to=location.hash,r=draftOf(from);
+  if(r&&to!=='#print-'+r.id&&to!==from){history.pushState(null,'',from);askLeave(r,to);return}
+  lastHash=to;render();
+});
+function askLeave(r,to){
+  let d=$('#leaveDlg');
+  if(!d){d=document.createElement('dialog');d.id='leaveDlg';d.innerHTML=`<div class="dlg"><h2>要儲存這份新的檢查表嗎？</h2>
+    <p class="muted" style="margin:0">選「不儲存」會刪除這份剛新增的檢查表。</p>
+    <div class="acts"><button class="btn danger" id="lvDiscard" type="button">不儲存</button><span class="grow"></span>
+    <button class="btn" id="lvCancel" type="button">繼續編輯</button><button class="btn primary" id="lvSave" type="button">儲存</button></div></div>`;document.body.appendChild(d)}
+  const go2=()=>{d.close();lastHash=location.hash;location.hash=to};
+  $('#lvCancel').onclick=()=>d.close();
+  $('#lvSave').onclick=async()=>{delete r.isNew;r.updated=Date.now();if(cur===r)await flush();else await DB.put('records',r);toast('已儲存');go2()};
+  $('#lvDiscard').onclick=async()=>{clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);if(cur===r)cur=null;toast('已捨棄');go2()};
+  d.showModal();
+}
 function setTop(title,back){
   $('#title').innerHTML=title; $('#backBtn').hidden=!back;
   $('#backBtn').onclick=()=>go(back||'home');
@@ -891,6 +910,7 @@ async function newRec(ck,tk,md,variant){
   if(variant==='dfit'){r.kind='dfit';r.items=[];r.form=newDfForm()}
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
+  r.isNew=true;
   records.push(r);await DB.put('records',r);
   go('rec-'+r.id);
 }
@@ -1027,6 +1047,7 @@ document.addEventListener('click',e=>{
 /* 儲存按鈕：立即存到本機，已登入時同步上傳雲端 */
 document.addEventListener('click',async e=>{
   const b=e.target.closest&&e.target.closest('#saveNow');if(!b||!cur)return;
+  delete cur.isNew;
   b.disabled=true;b.textContent='儲存中…';
   cur.updated=Date.now();await flush();
   let msg='已儲存';

@@ -122,6 +122,11 @@ textarea{min-height:72px;resize:vertical}
 .stabs button .num{font-size:12px;color:var(--ink-2)}
 .stabs button.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:700}
 .stabs button.on .num{color:var(--brand-ink)}
+.stabs button[style*="--c"]{border-color:var(--c);color:var(--c);border-width:1.5px}
+.stabs button[style*="--c"].on{background:var(--c);border-color:var(--c);color:#fff}
+.stabs button[style*="--c"].on .num{color:#fff}
+.toptabs .stabs button[style*="--c"]{background:rgba(255,255,255,.08);border-color:var(--c);color:var(--brand-ink)}
+.toptabs .stabs button[style*="--c"].on{background:var(--c);color:#fff}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
@@ -411,7 +416,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-70';
+const APP_VERSION='2026.11.06-71';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1923,12 +1928,13 @@ const layArr=x=>Array.isArray(x.layIn)?x.layIn:(x.layIn?[x.layIn]:[]);
 function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x);if(typeof x.over30==='boolean')x.over30=x.over30?'是':'';if(typeof x.bends3==='boolean')x.bends3=x.bends3?'是':''});
   const tabs=$('#topTabs .stabs');if(tabs)$('#topTabs').hidden=false;
   if(tabs){tabs.innerHTML=['全部','電氣','弱電','消防','空調','其他'].map(t=>{const n=t==='全部'?f.items.length:f.items.filter(x=>x.sys===t).length;
-      return `<button type="button" class="${slabTab===t?'on':''}" data-stab="${t}">${t}<span class="num">${n}</span></button>`}).join('');
+      return `<button type="button" class="${slabTab===t?'on':''}" data-stab="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}<span class="num">${n}</span></button>`}).join('');
     tabs.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{slabTab=b.dataset.stab;renderSlab();const a=$('#addSlab');if(a)a.textContent=slabTab==='全部'?'＋ 新增一處':`＋ 新增一處（${slabTab}）`})}
   const shown=f.items.map((x,i)=>[x,i]).filter(([x])=>slabTab==='全部'||x.sys===slabTab);
   box.innerHTML=shown.length?shown.map(([x,i])=>slabItemHTML(i,x)).join(''):`<div class="empty">${slabTab==='全部'?'尚無資料':'尚無'+slabTab+'的接線盒'}，按下方「新增一處」。</div>`;
   const c=$('#sbCount');if(c)c.textContent=f.items.length}
 let slabTab='全部';
+const SYS_KEY={'電氣':'elec','弱電':'low','消防':'fire','空調':'hvac','其他':'beam','給排水':'plumb'};
 let nextSlabTab='',printSys='';
 function viewSlab(r){
   slabTab=nextSlabTab||'全部';nextSlabTab='';
@@ -2171,7 +2177,7 @@ function viewZone(z,s){
   const list=mine.filter(r=>zoneMatch(z,s,r)).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
   const sname=Z.systems.find(([k])=>k===s)[1],fname=zoneFormName(z,s);
   $('#view').innerHTML=`
-    <div class="stabs zonetabs" role="tablist" aria-label="系統">${Z.systems.map(([k,n])=>`<button type="button" class="${k===s?'on':''}" data-zs="${k}">${n}<span class="num">${mine.filter(r=>zoneMatch(z,k,r)).length}</span></button>`).join('')}</div>
+    <div class="stabs zonetabs" role="tablist" aria-label="系統">${Z.systems.map(([k,n])=>`<button type="button" class="${k===s?'on':''}" data-zs="${k}" style="--c:var(--c-${k==='wallsl'?'beam':k})">${n}<span class="num">${mine.filter(r=>zoneMatch(z,k,r)).length}</span></button>`).join('')}</div>
     <div class="row"><button class="btn primary grow" id="zNew">＋ 新增${sname==='穿牆'?'':sname+'・'}${fname}</button>
       ${list.length?`<button class="btn" id="zPrint">列印全部（${list.length}）</button>`:''}</div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`:`<div class="empty">還沒有${Z.name}・${sname}的查驗紀錄。按「新增」開始。</div>`}`;

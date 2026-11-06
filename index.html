@@ -105,6 +105,12 @@ textarea{min-height:72px;resize:vertical}
 .chip.na{background:var(--na-bg);color:var(--na)}
 
 /* 子項分頁 */
+.seg.seg3{grid-template-columns:repeat(3,1fr)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
+.tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
+.tdur{min-height:40px;display:flex;align-items:center;font-weight:700;color:var(--ink);font-family:var(--mono)}
+.tsheet td,.tsheet th{font-size:10pt}
 .mseg{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
 .mseg button{border:0;background:transparent;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:58px}
 .mseg button+button{border-left:1px solid var(--line)}
@@ -196,6 +202,26 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .phsheet .pgrid img,.phsheet .noimg{height:72mm}
 .phsheet .noimg{display:grid;place-items:center;font-size:10pt}
 .phsheet figcaption{font-size:9.5pt}
+.prows{display:flex;flex-direction:column;gap:10px}
+.prow{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:10px}
+.prow.ng{border-color:var(--ng)}
+.prow-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.prow-h select{width:auto;min-height:38px;padding:6px 8px}
+.prow-h>b{width:26px;height:26px;border-radius:6px;background:var(--c-plumb);color:#fff;display:grid;place-items:center;font-size:13px}
+.pgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pcol{display:flex;flex-direction:column;gap:6px;min-width:0;background:var(--surface-2);border-radius:8px;padding:8px}
+.pcol label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
+.pcol input{min-height:38px;padding:6px 8px;font-family:var(--mono)}
+.pm{display:flex;align-items:center;gap:4px}
+.pm i{font-style:normal;color:var(--ink-2)}
+.pcol input.bad{border-color:var(--ng);background:var(--ng-bg);color:var(--ng);font-weight:700}
+.pwarn{background:var(--ng-bg);color:var(--ng);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;line-height:1.5}
+.pcol .good{color:var(--ok)}.pcol .bad{color:var(--ng)}
+.pextra{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3fr);gap:8px}
+.pextra label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
+.pextra textarea{min-height:56px;font-size:13px}
+@media (max-width:520px){.pextra{grid-template-columns:1fr}}
+.ptable td,.ptable th{font-size:9.5pt;padding:3px}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
@@ -360,7 +386,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-15';
+const APP_VERSION='2026.11.06-19';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -381,25 +407,37 @@ const TYPES = [
   {key:'hang', name:'吊管',       code:'H', hint:'吊架及管路'}
 ];
 const STAGES = ['施工前','施工中','施工完成'];
+const PLUMB_TYPES = [
+  {key:'hang', name:'吊管',   code:'H', hint:'吊架及管路'},
+  {key:'box',  name:'預埋管', code:'B', hint:'澆置混凝土前'},
+  {key:'test', name:'試水',   code:'T', hint:'壓力／滿水試驗'}
+];
+const typesOf = ck => ck==='plumb' ? PLUMB_TYPES : TYPES;
+const typN = (ck,tk) => typesOf(ck).find(t=>t.key===tk) || typ(tk);
 const MODES = [
   {key:'work', name:'施工查驗', code:'',  hint:'現場施工品質'},
   {key:'mat',  name:'材料查驗', code:'',  hint:'材料進場檢驗'}
 ];
 const modeOf = r => r.mode || 'work';
-const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name : typ(r.type).name;
+const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name : typN(r.cat,r.type).name;
 const backOf = r => modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
 /* 材料查驗：依材料種類分（不分大項） */
 const MAT_CAT = {key:'mat', name:'材料', code:'M'};
 const MAT_TYPES = [
-  {key:'pipe',   name:'管線',     code:'P', color:'plumb', hint:'配管、管材'},
-  {key:'wire',   name:'電線',     code:'W', color:'elec',  hint:'電線、電纜'},
-  {key:'box',    name:'接線盒',   code:'B', color:'low',   hint:'接線盒、出線盒'},
-  {key:'hanger', name:'吊架',     code:'H', color:'hvac',  hint:'吊桿、角鋼、管束'},
-  {key:'panel',  name:'配電箱盤', code:'D', color:'fire',  hint:'箱體、盤體'},
-  {key:'other',  name:'其他材料', code:'O', color:'ink-2', hint:'其他進場材料'}
+  {key:'pvcA',   name:'PVC A管',  code:'PA', color:'plumb', hint:'CNS1298 薄管', group:'管材'},
+  {key:'pvcB',   name:'PVC B管',  code:'PB', color:'plumb', hint:'CNS1298 厚管', group:'管材'},
+  {key:'pvcE',   name:'PVC E管',  code:'PE', color:'low',   hint:'CNS1302 電線導管', group:'管材'},
+  {key:'gi6445', name:'鍍鋅鋼管 CNS6445', code:'G1', color:'hvac', hint:'配管用碳鋼鋼管 SGP', group:'管材'},
+  {key:'gi4626', name:'鍍鋅鋼管 CNS4626', code:'G2', color:'fire', hint:'壓力配管用 STPG Sch40', group:'管材'},
+  {group:'其他材料',key:'wire',   name:'電線',     code:'W', color:'elec',  hint:'電線、電纜'},
+  {group:'其他材料',key:'box',    name:'接線盒',   code:'B', color:'low',   hint:'接線盒、出線盒'},
+  {group:'其他材料',key:'hanger', name:'吊架',     code:'H', color:'hvac',  hint:'吊桿、角鋼、管束'},
+  {group:'其他材料',key:'panel',  name:'配電箱盤', code:'D', color:'fire',  hint:'箱體、盤體'},
+  {group:'其他材料',key:'other',  name:'其他材料', code:'O', color:'ink-2', hint:'其他進場材料'}
 ];
 const MAT_ICON = {
+  pvcA:null,pvcB:null,pvcE:null,gi6445:null,gi4626:null,
   pipe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h11a4 4 0 014 4v8M3 15h9a2 2 0 012 2v4"/></svg>',
   wire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 18c4 0 4-12 8-12s4 12 8 12"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/><circle cx="21" cy="18" r="1.5" fill="currentColor"/></svg>',
   box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -409,14 +447,13 @@ const MAT_ICON = {
 };
 const MAT_TPL = {
   pipe:[
-   ['廠牌型號','管材廠牌、型號與核准送審資料相符'],
-   ['規格','管材種類、管徑、管厚、CNS 編號符合設計圖說'],
-   ['外觀','無破損、彎曲、壓扁、鏽蝕'],
-   ['產品標示','管身印有廠牌、CNS、規格、製造日期'],
-   ['證明文件','出廠證明、檢驗報告齊全'],
-   ['數量','進場數量與送貨單相符'],
-   ['現場存放','架高堆置、防曬，管口封蓋'],
-   ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
+   ['廠牌','廠牌與核准送審資料相符（例：南亞）'],
+   ['管徑','管徑符合設計圖說（例：Ø4"）'],
+   ['標準','CNS 編號及管種符合設計圖說（例：CNS1298 B管）'],
+   ['外徑','實測外徑在標準值公差內（mm，見管材量測表）'],
+   ['厚度','實測厚度在標準值公差內（mm，見管材量測表）'],
+   ['長度','實測長度不小於標準長度（cm，見管材量測表）'],
+   ['外觀打印','管身印字清楚：廠牌、CNS、用途、管種、使用壓力、批號、管徑×長度']
   ],
   wire:[
    ['廠牌型號','電線電纜廠牌、型號與核准送審資料相符'],
@@ -469,7 +506,16 @@ const MAT_TPL = {
    ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
   ]
 };
-const tplOf = (ck,tk,md) => md==='mat' ? (MAT_TPL[tk]||MAT_TPL.other) : TPL[ck][tk];
+['pvcA','pvcB','pvcE','gi6445','gi4626'].forEach(k=>{MAT_ICON[k]=MAT_ICON.pipe});
+const pipeTpl=label=>[
+   ['廠牌','廠牌與核准送審資料相符（例：南亞）'],
+   ['管徑','管徑符合設計圖說'],
+   ['標準',`CNS 編號及管種符合設計圖說：${label}`],
+   ['外徑','實測外徑在標準值公差內（mm，見管材量測表）'],
+   ['厚度','實測厚度在標準值公差內（mm，見管材量測表）'],
+   ['長度','實測長度不小於標準長度（cm，見管材量測表）'],
+   ['外觀打印','管身印字清楚：廠牌、CNS、用途、管種、使用壓力、批號、管徑×長度']];
+const tplOf = (ck,tk,md) => md==='mat' ? (isPipeType(tk)?pipeTpl(PIPE_STD[tk].label):(MAT_TPL[tk]||MAT_TPL.other)) : TPL[ck][tk];
 
 /* 查驗項目範本：[檢查項目, 檢查標準] —— 標準為一般參考值，請依契約圖說及規範調整 */
 const TPL = {
@@ -628,6 +674,7 @@ const typ=k=>TYPES.find(t=>t.key===k)||MAT_TYPES.find(t=>t.key===k)||{key:k,name
 const proj=id=>projects.find(p=>p.id===id);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1800)}
 function status(r){
+  if(r.kind==='wtest') return testStatus(r);
   if(r.kind==='drain'){
     const f=r.form;
     if(f.result==='ng') return f.recheck==='ok'?{k:'ok',t:'已改善'}:{k:'ng',t:'待改善'};
@@ -689,11 +736,11 @@ function viewHome(){
     const md=mode(LS.get('mode')||'work').key;
     html+=`<section><p class="label">查驗類別</p><div class="mseg big" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=recs.filter(r=>modeOf(r)===m.key).length;
       return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}"><b>${m.name}</b><span class="num">${n} 筆</span></button>`}).join('')}</div></section>`;
-    if(md==='mat')html+=`<section><p class="label">材料查驗・材料種類</p><div class="tiles">${MAT_TYPES.map(t=>{
+    if(md==='mat')html+=['管材','其他材料'].map(g=>`<section><p class="label">材料查驗・${g}</p><div class="tiles">${MAT_TYPES.filter(t=>t.group===g).map(t=>{
       const rs=recs.filter(r=>modeOf(r)==='mat'&&r.type===t.key),ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--${t.color==='ink-2'?'ink-2':'c-'+t.color})" data-mat="${t.key}">
         <span class="ic">${MAT_ICON[t.key]}</span><span class="nm">${t.name}</span>
-        <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
+        <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`).join('');
     else html+=`<section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
       const rs=recs.filter(r=>r.cat===c.key&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
@@ -709,11 +756,11 @@ function viewHome(){
   document.querySelectorAll('[data-mat]').forEach(b=>b.onclick=()=>go('mat-'+b.dataset.mat));
   document.querySelectorAll('.mseg [data-m]').forEach(b=>b.onclick=()=>{LS.set('mode',b.dataset.m);const y=scrollY;viewHome();scrollTo(0,y)});
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
-  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-box-work'));
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+typesOf(b.dataset.cat)[0].key+'-work'));
   bindRecRows();
 }
 function recRow(r){
-  const s=status(r), c=cat(r.cat), t=typ(r.type);
+  const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
   return `<button class="rec" data-rec="${r.id}">
     <span class="d">${esc(r.date)}</span>
     <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+t.name+' · 施工'}</span></span>
@@ -763,16 +810,16 @@ function viewCat(ck,tk,md){
   const all=records.filter(r=>r.projectId===curProj&&r.cat===ck);
   const recs=all.filter(r=>modeOf(r)===md);
   const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
-  const T=`${typ(tk).name}${mode(md).name}`;
+  const T=`${typN(ck,tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
-    <div class="seg" style="--c:var(--c-${ck})">${TYPES.map(t=>{const n=recs.filter(r=>r.type===t.key).length;
+    <div class="seg ${typesOf(ck).length>2?'seg3':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
       return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
       <button class="btn primary grow" id="newRec">＋ 新增${T}</button>
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
-      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
+      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-${ck}-${tk}-${md}`));
@@ -790,7 +837,7 @@ function viewMat(tk){
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
-      :`<div class="empty">還沒有${t.name}的材料查驗紀錄（${t.hint}）。<br>按「新增」會帶入 ${MAT_TPL[tk].length} 項材料檢查項目。</div>`}`;
+      :`<div class="empty">還沒有${t.name}的材料查驗紀錄（${t.hint}）。<br>按「新增」會帶入 ${tplOf('mat',tk,'mat').length} 項材料檢查項目。</div>`}`;
   $('#newRec').onclick=()=>newRec('mat',tk,'mat');
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-mat-${tk}-mat`));
   bindRecRows();
@@ -801,9 +848,11 @@ async function newRec(ck,tk,md){
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工中',inspector:'',
     mat:{name:'',brand:'',spec:'',qty:'',ref:''},
-    formNo:`${cat(ck).code}${typ(tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
-    items:tplOf(ck,tk,md).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
+    formNo:`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
+    items:(tk==='test'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
+  if(md==='mat'&&isPipeType(tk))r.pipes=[newPipeRow(tk)];
+  if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   records.push(r);await DB.put('records',r);
   go('rec-'+r.id);
@@ -813,9 +862,10 @@ async function newRec(ck,tk,md){
 let saveTimer=null, cur=null;
 function viewRec(id){
   const r=records.find(x=>x.id===id); if(!r)return go('home');
-  cur=r; const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId);
+  cur=r; const c=cat(r.cat),t=typN(r.cat,r.type),p=proj(r.projectId);
   curProj=r.projectId;
   r.items.forEach(i=>{if(!i.id)i.id=uid()});
+  if(r.kind==='wtest'){r.form.rows.forEach(x=>{if(!x.id)x.id=uid()});return viewTest(r)}
   if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   const v=$('#view');
@@ -831,10 +881,13 @@ function viewRec(id){
       <label class="field"><span>送審核准文號</span><input type="text" id="m_ref" value="${esc(r.mat?.ref)}"></label>
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
       :`<label class="field"><span>檢查時機</span><select id="f_stage">${STAGES.map(s=>`<option ${s===r.stage?'selected':''}>${s}</option>`).join('')}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>查驗位置（樓層／區域／軸線）</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：3F 版 C~D／2~3 軸"></label>`}
-      <label class="field"><span>查驗人員</span><input type="text" id="f_insp" value="${esc(r.inspector)}"></label>
+      ${locFields(r)}`}
     </div></section>
 
+  ${isPipeMat(r)?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">管材量測　標準值／實際值</p>
+    <button class="btn small" id="addPipe" type="button">＋ 新增一種管徑</button></div>
+    <div id="pipeRows" class="prows"></div>
+    <p class="muted" style="margin:6px 0 0">選好管徑會自動帶入 CNS 標準外徑、厚度與公差（可修改）；廠牌與外觀打印依管徑各自記住。實測值超出公差會標紅並提醒。</p></section>`:''}
   <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">檢查項目　○ 合格　× 不合格　／ 無此項目</p>
     <button class="btn small" id="allOk">未填的全部合格</button></div>
     <div class="items" id="items"></div>
@@ -856,9 +909,10 @@ function viewRec(id){
     <p class="muted" style="margin:6px 0 0">列印時所有照片依上傳順序貼在「施工照片黏貼表」，說明自動帶入樓層、位置與項目。</p></section>
 
 `;
-  renderItems(); renderPhotos();
-  const bind=(sel,key)=>{$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
+  renderItems(); renderPhotos(); if(isPipeMat(r))renderPipeRows();
+  const bind=(sel,key)=>{if($(sel))$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
   bind('#f_date','date');if($('#f_stage'))bind('#f_stage','stage');
+  if(modeOf(r)!=='mat')bindLoc(r);
   r.mat=r.mat||{};['name','brand','spec','qty','ref'].forEach(k=>{const el=$('#m_'+k);if(el)el.addEventListener('input',e=>{r.mat[k]=e.target.value;dirty()})});bind('#f_loc','location');bind('#f_insp','inspector');
   bind('#f_defect','defect');bind('#f_fix','fix');bind('#f_rdate','recheckDate');bind('#f_recheck','recheck');bind('#f_remark','remark');
   $('#allOk').onclick=()=>{r.items.forEach(i=>{if(!i.result)i.result='ok'});renderItems();dirty()};
@@ -909,7 +963,7 @@ function phStrip(ref){
 }
 function refreshPhotos(){
   if(!cur)return;
-  if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
+  if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
   renderPhotos();
 }
 function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
@@ -932,6 +986,7 @@ document.addEventListener('click',e=>{
 function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):(r.location||'')}
 function photoTarget(r,p){
   if(!p.ref)return '';
+  if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''}`.trim():''}
   if(r.kind==='drain'){
     for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
       if(pi>=0){const pp=sp.pipes[pi],n=pipeNo(sp,pi),t=pp.kind==='vent'?`透氣管${n}`:`排水管${n}${pp.type?'（'+(pp.type==='其他'?pp.typeOther:pp.type)+'）':''}`;
@@ -950,7 +1005,7 @@ function photoPages(r){
     <div class="fno">表單編號：${esc(r.formNo)}　第 ${pi+1}／${pages.length} 頁</div>
     <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
-      <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typ(r.type).name}</td></tr></table>
+      <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typN(r.cat,r.type).name}</td></tr></table>
     <div class="pgrid">${pg.map(p=>`<figure>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
   </div>`).join('');
 }
@@ -1106,7 +1161,7 @@ function calcText(p){
   return t+(s.ok?`　<b class="good">≥ ${s.need}%，符合</b>`:`　<b class="bad">未達 ${s.need}%</b>`);
 }
 function viewDrain(r){
-  const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId),f=r.form;
+  const c=cat(r.cat),t=typN(r.cat,r.type),p=proj(r.projectId),f=r.form;
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
@@ -1261,9 +1316,323 @@ function drainSheet(r){
   </div>`;
 }
 
+
+/* ---------- 管材量測（標準值／實際值） ----------
+   標準值來源：
+   - CNS 1298 A管／B管：CNS 1298 K3004（96 年 1 月修訂版）表 1 直管尺度
+   - CNS 1302 E管：外徑、最小厚度取自南亞塑膠 CNS1302 電線導管型錄；
+     公差未取得 CNS 1302 原文，外徑公差參照 CNS 1298 同外徑、厚度公差參照 CNS 1298 同厚度
+   - CNS 6445（SGP）：光南鋼鐵型錄「CNS 6445 尺度及許可差」，外徑採螺紋鋼管許可差，厚度 -12.5%
+   - CNS 4626（STPG Sch40）：光南鋼鐵型錄，外徑 25A 以下 ±0.3mm、32A～300A ±0.8%；厚度 未滿 3mm ±0.3mm、3mm 以上 ±10%
+*/
+const PIPE_STD={
+  pvcA:{label:'CNS1298 A管（薄管）',pvc:true,sizes:{
+    '3/8':[18,0.2,1.8,0.4],'1/2':[22,0.2,1.8,0.4],'3/4':[26,0.2,1.8,0.4],'1':[34,0.3,1.8,0.4],'1-1/4':[42,0.3,1.8,0.4],'1-1/2':[48,0.4,1.8,0.4],
+    '2':[60,0.5,1.8,0.4],'2-1/2':[76,0.5,2.7,0.6],'3':[89,0.5,2.7,0.6],'3-1/2':[100,0.6,2.7,0.6],'4':[114,0.6,3.1,0.8],'5':[140,0.8,4.1,0.8],
+    '6':[165,1.0,5.1,0.8],'8':[216,1.3,6.5,1.0],'10':[267,1.6,7.8,1.2],'12':[318,1.9,9.2,1.4]}},
+  pvcB:{label:'CNS1298 B管（厚管）',pvc:true,sizes:{
+    '3/8':[18,0.2,2.3,0.6],'1/2':[22,0.2,2.7,0.6],'3/4':[26,0.2,2.7,0.6],'1':[34,0.3,3.1,0.8],'1-1/4':[42,0.3,3.1,0.8],'1-1/2':[48,0.4,3.7,0.8],
+    '2':[60,0.5,4.1,0.8],'2-1/2':[76,0.5,4.1,0.8],'3':[89,0.5,5.1,0.8],'3-1/2':[100,0.6,5.6,0.8],'4':[114,0.6,6.6,1.0],'5':[140,0.8,7.0,1.0],
+    '6':[165,1.0,9.0,1.2],'8':[216,1.3,10.5,1.4],'10':[267,1.6,13.0,1.8],'12':[318,1.9,15.5,2.2]}},
+  pvcE:{label:'CNS1302 E管（電線導管）',pvc:true,sizes:{
+    '3/8':[18,0.2,1.8,0.4,4],'1/2':[22,0.2,1.8,0.4,4],'3/4':[26,0.2,1.8,0.4,4],'1':[34,0.3,2.7,0.6,4],'1-1/4':[42,0.3,3.1,0.8,4],'1-1/2':[48,0.4,3.1,0.8,4],
+    '2':[60,0.5,3.6,0.8,4],'2-1/2':[76,0.5,4.1,0.8,4],'3':[89,0.5,5.1,0.8,4],'4':[114,0.6,6.6,1.0,5],'5':[140,0.8,7.0,1.0,5],'6':[165,1.0,8.5,'',5],'8':[216,1.3,10.5,1.4,6]}},
+  gi6445:{label:'CNS6445 配管用碳鋼鋼管（SGP 鍍鋅）',steel:'6445',sizes:{
+    '1/2':[21.7,0.5,2.8],'3/4':[27.2,0.5,2.8],'1':[34.0,0.5,3.2],'1-1/4':[42.7,0.5,3.5],'1-1/2':[48.6,0.5,3.5],'2':[60.5,0.5,3.8],
+    '2-1/2':[76.3,0.7,4.2],'3':[89.1,0.8,4.2],'3-1/2':[101.6,0.8,4.2],'4':[114.3,0.8,4.5],'5':[139.8,0.8,4.5],'6':[165.2,0.8,5.0],
+    '8':[216.3,1.0,5.8],'10':[267.4,1.3,6.6],'12':[318.5,1.5,6.9]}},
+  gi4626:{label:'CNS4626 壓力配管用碳鋼鋼管（STPG Sch40 鍍鋅）',steel:'4626',sizes:{
+    '1/2':[21.7,2.8],'3/4':[27.2,2.9],'1':[34.0,3.4],'1-1/4':[42.7,3.6],'1-1/2':[48.6,3.7],'2':[60.5,3.9],'2-1/2':[76.3,5.2],
+    '3':[89.1,5.5],'3-1/2':[101.6,5.7],'4':[114.3,6.0],'5':[139.8,6.6],'6':[165.2,7.1],'8':[216.3,8.2],'10':[267.4,9.3],'12':[318.5,10.3]}}
+};
+const PIPE_TYPES=Object.keys(PIPE_STD);
+const r2=x=>Math.round(x*100)/100;
+/* 依標準算出：外徑、外徑±、厚度、厚度+、厚度-、長度(M) */
+function stdFor(type,size){
+  const S=PIPE_STD[type],v=S&&S.sizes[size];if(!v)return null;
+  if(S.pvc){const big=['4','5','6','8','10','12'].includes(size);
+    return {stdOD:v[0],odTol:v[1],stdT:v[2],tPlus:v[3],tMinus:0,stdL:v[4]||(big?5:4)}}
+  if(S.steel==='6445')return {stdOD:v[0],odTol:v[1],stdT:v[2],tPlus:'',tMinus:r2(v[2]*0.125),stdL:6};
+  const od=v[0],t=v[1],small=['1/2','3/4','1'].includes(size);
+  return {stdOD:od,odTol:small?0.3:r2(od*0.008),stdT:t,tPlus:t<3?0.3:r2(t*0.1),tMinus:t<3?0.3:r2(t*0.1),stdL:6};
+}
+const isPipeType=k=>PIPE_TYPES.includes(k);
+const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
+const newPipeRow=type=>({id:uid(),brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
+function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}
+function pipeMemSave(type,row){if(!row.size)return;const m=pipeMem();m[`${type}|${row.size}`]={brand:row.brand,print:row.print,color:row.color};LS.set('pipeMem',JSON.stringify(m))}
+const PIPE_PRINT_SEED={'pvcB|4':{brand:'南亞',print:'南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M'}};
+function pipeApplyStd(type,row){
+  const s=stdFor(type,row.size);if(s)for(const k in s)row[k]=s[k]===''?'':String(s[k]);
+  const m={...PIPE_PRINT_SEED,...pipeMem()}[`${type}|${row.size}`];
+  if(m){if(m.brand)row.brand=m.brand;if(m.print)row.print=m.print;if(m.color)row.color=m.color}
+}
+const num=v=>{const n=parseFloat(String(v).replace(/[^\d.\-]/g,''));return isNaN(n)?null:n};
+function pipeJudge(row){
+  const od=num(row.od),t=num(row.t),len=num(row.len),sod=num(row.stdOD),otl=num(row.odTol)||0,st=num(row.stdT),
+    tp=num(row.tPlus!=null?row.tPlus:row.tTol),tm=num(row.tMinus)||0,sl=num(row.stdL);
+  const j={od:null,t:null,len:null,msg:[]};
+  if(od!=null&&sod!=null){j.od=Math.abs(od-sod)<=otl+1e-9;if(!j.od)j.msg.push(`外徑 ${od} mm 超出標準 ${sod}±${otl}（應在 ${r2(sod-otl)}～${r2(sod+otl)} mm）`)}
+  if(t!=null&&st!=null){const lo=r2(st-tm),hi=tp==null?null:r2(st+tp);j.t=t>=lo-1e-9&&(hi==null||t<=hi+1e-9);
+    if(!j.t)j.msg.push(`厚度 ${t} mm ${t<lo?'低於下限 '+lo:'高於上限 '+hi} mm（應在 ${lo}～${hi==null?'無上限':hi+' mm'}）`)}
+  if(len!=null&&sl!=null){j.len=len>=sl*100-1e-9;if(!j.len)j.msg.push(`長度 ${len} cm 小於標準 ${sl}M（${sl*100} cm）`)}
+  const vals=[j.od,j.t,j.len].filter(x=>x!=null);j.all=vals.length?vals.every(Boolean):null;
+  return j;
+}
+const mark=v=>v==null?'':v?'<b class="good">✓</b>':'<b class="bad">✗</b>';
+const tolTxt=row=>{const p=row.tPlus,m=row.tMinus;return `${row.stdT||''}${p!==''&&p!=null?' +'+p:''}${m&&+m?' −'+m:''}${(p===''||p==null)&&row.stdT?'（上限不規定）':''}`};
+function renderPipeRows(){
+  const r=cur,box=$('#pipeRows');if(!box)return;
+  const S=PIPE_STD[r.type];r.pipes=r.pipes||[];
+  box.innerHTML=r.pipes.length?r.pipes.map((x,n)=>{const j=pipeJudge(x);
+    const f=(k,ph)=>`<input type="text" inputmode="decimal" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
+    const fa=(k,ph,q)=>`<input type="text" inputmode="decimal" class="${j[q]===false?'bad':''}" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
+    return `<div class="prow ${j.all===false?'ng':''}">
+      <div class="prow-h"><b class="num">${n+1}</b>
+        <select data-pk="size" data-pn="${n}"><option value="">選管徑</option>${Object.keys(S.sizes).map(v=>`<option value="${v}" ${x.size===v?'selected':''}>${v} 吋</option>`).join('')}</select>
+        ${S.pvc?`<select data-pk="color" data-pn="${n}"><option value="">管色</option>${['橘','灰'].map(v=>`<option ${x.color===v?'selected':''}>${v}</option>`).join('')}</select>`:''}
+        <span class="grow"></span>
+        <span data-pres="${n}">${j.all==null?'':j.all?'<span class="chip ok">合格</span>':'<span class="chip ng">不合格</span>'}</span>
+        <button type="button" class="btn small danger" data-pdel="${n}">刪除</button>
+      </div>
+      <div class="pgrid2">
+        <div class="pcol"><span class="muted">標準值（${esc(S.label)}）</span>
+          <label>外徑 mm<div class="pm">${f('stdOD','')}<i>±</i>${f('odTol','')}</div></label>
+          <label>厚度 mm<div class="pm">${f('stdT','')}<i>+</i>${f('tPlus','不規定')}<i>−</i>${f('tMinus','0')}</div></label>
+          <label>長度 M${f('stdL','4')}</label>
+        </div>
+        <div class="pcol"><span class="muted">實際值</span>
+          <label>外徑 mm <span data-pj="od${n}">${mark(j.od)}</span>${fa('od','實測外徑','od')}</label>
+          <label>厚度 mm <span data-pj="t${n}">${mark(j.t)}</span>${fa('t','實測厚度','t')}</label>
+          <label>長度 cm <span data-pj="len${n}">${mark(j.len)}</span>${fa('len','實測長度','len')}</label>
+          <label>進場數量<input type="text" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="40M"></label>
+        </div>
+      </div>
+      <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
+      <div class="pextra">
+        <label>廠牌<input type="text" data-pk="brand" data-pn="${n}" value="${esc(x.brand)}" placeholder="南亞"></label>
+        <label>外觀打印（管身印字，各管徑不同）<textarea data-pk="print" data-pn="${n}" rows="2" placeholder="例：南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M">${esc(x.print)}</textarea></label>
+      </div></div>`}).join('')
+    :'<div class="empty">尚無管材，按「新增一種管徑」。</div>';
+  box.oninput=e=>{
+    const el=e.target,k=el.dataset.pk;if(!k)return;const n=+el.dataset.pn,row=r.pipes[n];if(!row)return;
+    row[k]=el.value;
+    if(k==='size'){pipeApplyStd(r.type,row);renderPipeRows();dirty();return}
+    if(['brand','print','color'].includes(k))pipeMemSave(r.type,row);
+    const j=pipeJudge(row);
+    ['od','t','len'].forEach(q=>{const s_=box.querySelector(`[data-pj="${q}${n}"]`);if(s_)s_.innerHTML=mark(j[q]);
+      const inp=box.querySelector(`[data-pk="${q}"][data-pn="${n}"]`);if(inp)inp.classList.toggle('bad',j[q]===false)});
+    const pr=box.querySelector(`[data-pres="${n}"]`);if(pr)pr.innerHTML=j.all==null?'':j.all?'<span class="chip ok">合格</span>':'<span class="chip ng">不合格</span>';
+    const pw=box.querySelector(`[data-pw="${n}"]`);if(pw){pw.hidden=!j.msg.length;pw.innerHTML=j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}
+    el.closest('.prow').classList.toggle('ng',j.all===false);
+    dirty();
+  };
+  box.onchange=e=>{const el=e.target,k=el.dataset.pk;if(!['od','t','len'].includes(k))return;
+    const row=r.pipes[+el.dataset.pn],j=pipeJudge(row);if(j[k]===false)toast(`⚠ 第 ${+el.dataset.pn+1} 種管材${{od:'外徑',t:'厚度',len:'長度'}[k]}不符公差，請確認`)};
+  box.onclick=e=>{const b=e.target.closest('[data-pdel]');if(!b)return;
+    if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}
+    r.pipes.splice(+b.dataset.pdel,1);renderPipeRows();dirty()};
+  const add=$('#addPipe');if(add)add.onclick=()=>{r.pipes.push(newPipeRow(r.type));renderPipeRows();dirty()};
+}
+function pipeTable(r){
+  const rows=r.pipes||[];if(!rows.length)return '';
+  const S=PIPE_STD[r.type]||{},v=x=>esc(x==null?'':x);
+  return `<table class="sec ptable">
+    <colgroup><col style="width:13%"><col style="width:6%"><col style="width:11%"><col style="width:13%"><col style="width:6%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:9%"></colgroup>
+    <tr><th colspan="10" style="text-align:left">標準：${v(S.label)}</th></tr>
+    <tr><th rowspan="2">標稱</th><th rowspan="2">管色</th><th colspan="3">標準值</th><th colspan="4">實際值</th><th rowspan="2">判定</th></tr>
+    <tr><th>外徑(mm)</th><th>厚度(mm)</th><th>長度</th><th>外徑(mm)</th><th>厚度(mm)</th><th>長度(cm)</th><th>進場數量</th></tr>
+    ${rows.map(x=>{const j=pipeJudge(x);return `<tr>
+      <td class="c">${x.size?v(x.size)+' 吋':''}</td>
+      <td class="c small">${S.pvc?['橘','灰'].map(c=>`${x.color===c?'■':'□'}${c}`).join('<br>'):'—'}</td>
+      <td class="c">${x.stdOD?`${v(x.stdOD)}±${v(x.odTol)}`:''}</td>
+      <td class="c small">${v(tolTxt(x))}</td>
+      <td class="c">${x.stdL?v(x.stdL)+'M':''}</td>
+      <td class="c">${v(x.od)}${j.od===false?' ×':''}</td>
+      <td class="c">${v(x.t)}${j.t===false?' ×':''}</td>
+      <td class="c">${v(x.len)}${j.len===false?' ×':''}</td>
+      <td class="c">${v(x.qty)}</td>
+      <td class="c res-sym">${j.all==null?'':j.all?'○':'×'}</td></tr>
+      ${x.brand||x.print?`<tr><td colspan="10" class="small">廠牌：${v(x.brand)}${x.print?'　外觀打印：'+v(x.print):''}</td></tr>`:''}
+      ${j.msg.length?`<tr><td colspan="10" class="small">不符：${j.msg.map(esc).join('；')}</td></tr>`:''}`}).join('')}
+  </table>`;
+}
+
+/* ---------- 給排水・試水（試壓抽查紀錄表） ---------- */
+const TEST_CONTENTS=[
+  {key:'press',name:'給水-持壓試驗',medium:'清水',std:'壓力管：≧10 kg/cm² 持壓≧1 hr'},
+  {key:'drain',name:'排水-滿水試驗',medium:'清水',std:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧15 分鐘'},
+  {key:'fire', name:'消防-水壓試驗',medium:'清水',std:'消防管：加壓至全閉揚程 1.5 倍以上，持續 2 小時無漏水'},
+  {key:'dry',  name:'乾式管系-空氣壓試驗',medium:'空氣',std:'密閉乾式管系：空氣壓 2.8 kg/cm²（0.28 MPa）持續 24 小時，減壓量 ≦0.1 kg/cm²（0.01 MPa）'}
+];
+const LOC_PARTS=['柱','牆','樓板'];
+const testC=k=>TEST_CONTENTS.find(c=>c.key===k)||TEST_CONTENTS[0];
+const newTestRow=()=>({id:uid(),sys:'',t0:'',t1:'',lv0:'',lv1:'',p0:'',p1:'',res:''});
+const newTestForm=()=>({std:'press',timing:'檢驗停留點',medium:'清水',head:'',sub:'',rows:[newTestRow()],fix:'',recheckDate:'',recheckBy:'',remark:''});
+function testMinutes(row){
+  const m=/^(\d{1,2}):(\d{2})$/,a=m.exec(row.t0||''),b=m.exec(row.t1||'');if(!a||!b)return null;
+  let d=(+b[1]*60+ +b[2])-(+a[1]*60+ +a[2]);if(d<0)d+=1440;return d;
+}
+const durTxt=m=>m==null?'':m>=60?`${Math.floor(m/60)} 小時 ${m%60} 分`:`${m} 分`;
+function testJudge(f,row){
+  const dur=testMinutes(row),p0=num(row.p0),p1=num(row.p1),l0=num(row.lv0),l1=num(row.lv1),msg=[];
+  let need=0,chk=[];
+  if(f.std==='press'){need=60;
+    if(p0!=null)chk.push(p0>=10||(msg.push(`持壓壓力 ${p0} kg/cm² 未達 10 kg/cm²`),false));
+    if(p0!=null&&p1!=null)chk.push(p1>=p0||(msg.push(`壓力由 ${p0} 降至 ${p1} kg/cm²，有壓降`),false));
+  }else if(f.std==='drain'){need=15;
+    if(l0!=null||p0!=null)chk.push((l0!=null&&l0>=3.3)||(p0!=null&&p0>=0.33)||(msg.push(`滿水高度未達 3.3M，且壓力未達 0.33 kg/cm²`),false));
+    if(l0!=null&&l1!=null)chk.push(l1>=l0||(msg.push(`水位由 ${l0} 降至 ${l1} M，有漏水`),false));
+    if(p0!=null&&p1!=null)chk.push(p1>=p0||(msg.push(`壓力由 ${p0} 降至 ${p1} kg/cm²`),false));
+  }else if(f.std==='fire'){need=120;const h=num(f.head);
+    if(p0!=null&&h!=null)chk.push(p0>=h*1.5-1e-9||(msg.push(`持壓壓力 ${p0} kg/cm² 未達全閉揚程 1.5 倍（${r2(h*1.5)} kg/cm²）`),false));
+    if(p0!=null&&h==null)msg.push('請填全閉揚程，才能判定是否達 1.5 倍');
+    if(p0!=null&&p1!=null)chk.push(p1>=p0||(msg.push(`壓力由 ${p0} 降至 ${p1} kg/cm²，有漏水`),false));
+  }else if(f.std==='dry'){need=1440;
+    if(p0!=null)chk.push(p0>=2.8||(msg.push(`空氣壓 ${p0} kg/cm² 未達 2.8 kg/cm²`),false));
+    if(p0!=null&&p1!=null)chk.push(p0-p1<=0.1+1e-9||(msg.push(`減壓量 ${r2(p0-p1)} kg/cm² 超過 0.1 kg/cm²`),false));
+  }
+  if(dur!=null)chk.push(dur>=need||(msg.push(`持壓時間 ${durTxt(dur)}，未達 ${durTxt(need)}`),false));
+  const auto=chk.length?(chk.every(Boolean)?'ok':'ng'):'';
+  return {dur,auto,res:row.res||auto,msg};
+}
+function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.note].filter(Boolean).join(' ')}
+function testSub(r){return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${r.form.std==='drain'?'排水':r.form.std==='fire'?'消防':'給水'}配管施工查驗`}
+function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
+  return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${FLOORS.map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+    <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${LOC_PARTS.map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!LOC_PARTS.includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
+    <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>
+    <div class="field" style="grid-column:1/-1"><span>查驗位置（自動組合）</span><div class="locv" id="locView">${esc(testLoc(r))||'—'}</div></div>`}
+function bindLoc(r,after){
+  ['floor','part','note'].forEach(k=>{const el=$('#l_'+k);if(el)el.addEventListener('input',e=>{r.loc[k]=e.target.value;r.location=testLoc(r);
+    const v=$('#locView');if(v)v.textContent=r.location||'—';if(after)after();dirty()})});
+}
+function viewTest(r){
+  const p=proj(r.projectId),f=r.form;
+  setTop(`給排水・試水<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  $('#view').innerHTML=`
+  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+    <div class="panel fields">
+      <label class="field"><span>檢查日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
+      ${locFields(r)}
+      <label class="field" style="grid-column:1/-1"><span>分項工程名稱</span><input type="text" id="t_sub" value="${esc(f.sub)}" placeholder="${esc(testSub({...r,form:{...f,sub:''}}))}"></label>
+      <label class="field"><span>檢查內容</span><select id="t_std">${TEST_CONTENTS.map(c=>`<option value="${c.key}" ${c.key===f.std?'selected':''}>${c.name}</option>`).join('')}</select></label>
+      ${fl('抽查時機',opts('timing',['檢驗停留點','不定期抽驗'],'one',f.timing))}
+      ${fl('試壓媒介',opts('medium',['清水','氮氣','空氣'],'one',f.medium))}
+      <div class="fld wide"><span>檢查標準</span><div class="calc" id="t_stdtxt">${esc(testC(f.std).std)}</div></div>
+      <label class="field" id="t_headw" ${f.std==='fire'?'':'hidden'}><span>全閉揚程（kg/cm²）</span><input type="text" inputmode="decimal" data-path="head" value="${esc(f.head)}" placeholder="例：8"></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">試驗紀錄</p>
+    <button class="btn small" id="addTRow" type="button">＋ 新增系統</button></div>
+    <div id="testRows" class="prows"></div></section>
+  <section><p class="label">缺失辦理情形</p>
+    <div class="panel fields">
+      ${fl('改善情形',opts('fix',[['done','已完成改善（檢附改善前中後照片）'],['track','未完成改善，填具「缺失改善追蹤表」追蹤']],'one',f.fix),1)}
+      <label class="field"><span>複查日期</span><input type="date" data-path="recheckDate" value="${esc(f.recheckDate)}"></label>
+      <label class="field"><span>複查人員</span><input type="text" data-path="recheckBy" value="${esc(f.recheckBy)}"></label>
+      <label class="field" style="grid-column:1/-1"><span>備註</span><textarea data-path="remark">${esc(f.remark)}</textarea></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">其他照片 <span class="muted" style="font-weight:400">（未指定系統）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
+    <div class="photos" id="photos"></div></section>`;
+  renderTestRows();renderPhotos();
+  bindLoc(r,()=>{const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}})});
+  $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
+  $('#t_sub').oninput=e=>{f.sub=e.target.value;dirty()};
+  $('#t_std').onchange=e=>{f.std=e.target.value;f.medium=testC(f.std).medium;$('#t_stdtxt').textContent=testC(f.std).std;$('#t_headw').hidden=f.std!=='fire';
+    document.querySelectorAll('.opt[data-path="medium"]').forEach(x=>{const on=x.dataset.val===f.medium;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
+    const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}});renderTestRows();dirty()};
+  const v=$('#view');
+  v.oninput=e=>{const el=e.target;if(!el.dataset.path)return;setP(f,el.dataset.path,el.value);if(el.dataset.path==='head')renderTestRows();dirty()};
+  v.onclick=e=>{const b=e.target.closest('.opt');if(!b||!b.dataset.path)return;const nv=getP(f,b.dataset.path)===b.dataset.val?'':b.dataset.val;setP(f,b.dataset.path,nv);
+    b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});dirty()};
+  $('#addTRow').onclick=()=>{const last=f.rows[f.rows.length-1],nr=newTestRow();if(last){nr.p0=last.p0}f.rows.push(nr);renderTestRows();dirty()};
+  saveBar(r);
+}
+function renderTestRows(){
+  const r=cur,f=r.form,box=$('#testRows');if(!box)return;
+  const showLv=f.std==='drain';
+  box.innerHTML=f.rows.length?f.rows.map((x,n)=>{const j=testJudge(f,x);
+    const inp=(k,ph,type)=>`<input type="${type||'text'}" ${type?'':'inputmode="decimal"'} data-tk="${k}" data-tn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
+    return `<div class="prow ${j.res==='ng'?'ng':''}">
+      <div class="prow-h"><b class="num">${n+1}</b>
+        <input type="text" data-tk="sys" data-tn="${n}" value="${esc(x.sys)}" placeholder="系統別，例：冷水 1F~9F 立管" style="flex:1;min-width:160px">
+        <span data-tres="${n}">${j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:''}</span>
+        <button type="button" class="btn small danger" data-tdel="${n}">刪除</button></div>
+      <div class="tgrid">
+        <label>開始時間${inp('t0','','time')}</label><label>結束時間${inp('t1','','time')}</label>
+        <label>持壓時間<div class="tdur" data-tdur="${n}">${durTxt(j.dur)||'—'}</div></label>
+        ${showLv?`<label>開始滿水水位 M${inp('lv0','3.3')}</label><label>最終滿水水位 M${inp('lv1','3.3')}</label>`:''}
+        <label>持壓壓力 kg/cm²${inp('p0',f.std==='press'?'10':'')}</label><label>最終壓力 kg/cm²${inp('p1','')}</label>
+        <label>檢查結果<select data-tk="res" data-tn="${n}"><option value="">自動判定${j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':''}</option><option value="ok" ${x.res==='ok'?'selected':''}>○ 合格</option><option value="ng" ${x.res==='ng'?'selected':''}>× 不合格</option><option value="na" ${x.res==='na'?'selected':''}>／ 無此項目</option></select></label>
+      </div>
+      <div class="pwarn" data-tw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
+      <div class="fld"><span>此系統照片</span>${phStrip(x.id)}</div></div>`}).join('')
+    :'<div class="empty">尚無試驗系統，按「新增系統」。</div>';
+  box.oninput=e=>{const el=e.target,k=el.dataset.tk;if(!k)return;const n=+el.dataset.tn,row=f.rows[n];row[k]=el.value;
+    if(k==='res'){renderTestRows();dirty();return}
+    const j=testJudge(f,row);
+    const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=durTxt(j.dur)||'—';
+    const rs=box.querySelector(`[data-tres="${n}"]`);if(rs)rs.innerHTML=j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:'';
+    const w=box.querySelector(`[data-tw="${n}"]`);if(w){w.hidden=!j.msg.length;w.innerHTML=j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}
+    const sel=box.querySelector(`select[data-tk="res"][data-tn="${n}"]`);if(sel)sel.options[0].text='自動判定'+(j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':'');
+    el.closest('.prow').classList.toggle('ng',j.res==='ng');dirty()};
+  box.onchange=e=>{const el=e.target;if(!['p0','p1','t1','lv1'].includes(el.dataset.tk))return;const n=+el.dataset.tn,j=testJudge(f,f.rows[n]);
+    if(j.auto==='ng')toast(`⚠ 第 ${n+1} 個系統不符檢查標準，請確認`)};
+  box.onclick=e=>{const b=e.target.closest('[data-tdel]');if(!b)return;
+    if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}
+    const [g]=f.rows.splice(+b.dataset.tdel,1);orphan([g.id]);renderTestRows();renderPhotos();dirty()};
+}
+function saveBar(r){
+  $('#savebar').hidden=false;
+  $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
+    <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn" id="toPrint">列印表單</button>`;
+  $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
+  $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
+    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
+}
+function testStatus(r){
+  const f=r.form,res=f.rows.map(x=>testJudge(f,x).res);
+  if(res.includes('ng'))return f.fix==='done'?{k:'ok',t:'已改善'}:{k:'ng',t:'待改善'};
+  if(res.length&&res.every(Boolean))return {k:'ok',t:'合格'};
+  return {k:'warn',t:'填寫中'};
+}
+function testSheet(r){
+  const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,v=x=>esc(x==null?'':x);
+  const rows=f.rows.slice();while(rows.length<6)rows.push(null);
+  return `<div class="sheet tsheet">
+    <h3>試壓抽查紀錄表</h3>
+    <div class="fno">編號：${v(r.formNo)}</div>
+    <table><colgroup><col style="width:15%"><col style="width:45%"><col style="width:13%"><col style="width:27%"></colgroup>
+      <tr><td class="k">工程名稱</td><td colspan="3">${v(p.name)}</td></tr>
+      <tr><td class="k">分項工程名稱</td><td colspan="3">${v(testSub(r))}</td></tr>
+      <tr><td class="k">檢查位置</td><td>${v(testLoc(r))}</td><td class="k">檢查日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">檢查內容</td><td colspan="3">${v(testC(f.std).name)}</td></tr>
+      <tr><td class="k">抽查時機</td><td colspan="3">${cb(f.timing==='檢驗停留點','檢驗停留點')}　　${cb(f.timing==='不定期抽驗','不定期抽驗')}</td></tr>
+      <tr><td class="k">抽查結果</td><td colspan="3">○ 檢查合格　　× 有缺失需改正　　／ 無此項目</td></tr>
+      <tr><td class="k">試壓媒介</td><td class="small">${['清水','氮氣','空氣'].map(m=>cb(f.medium===m,m)).join('　')}</td><td class="k">檢查標準</td>
+        <td class="small">${TEST_CONTENTS.map(c=>cb(f.std===c.key,c.std+(c.key==='fire'&&f.head?`（全閉揚程 ${v(f.head)} kg/cm²，需 ${r2(num(f.head)*1.5)} kg/cm²）`:''))).join('<br>')}</td></tr>
+    </table>
+    <table class="sec"><colgroup><col style="width:6%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:9%"><col style="width:9%"></colgroup>
+      <tr><th rowspan="2">項次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th>開始</th><th>最終</th><th>持壓</th><th>最終</th><th rowspan="2">檢查<br>結果</th></tr>
+      <tr><th>開始</th><th>結束</th><th>持壓</th><th>滿水水位<br>高度</th><th>滿水水位<br>高度</th><th>壓力<br>kg/cm²</th><th>壓力<br>kg/cm²</th></tr>
+      ${rows.map((x,n)=>{if(!x)return `<tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td>${v(x.sys)}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
+        <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym">${SYM[j.res]||''}</td></tr>`}).join('')}
+    </table>
+    <table class="sec">
+      <tr><td>缺失辦理情形：<br>${cb(f.fix==='done','已完成改善（檢附改善前中後照片）')}<br>${cb(f.fix==='track','未完成改善，填具「缺失改善追蹤表」進行追蹤改善')}<br>
+        　　複查日期：${f.recheckDate?rocDate(f.recheckDate):'　　年　月　日'}　　　複查人員：${v(f.recheckBy)}　　　簽名：</td></tr>
+      <tr><td class="small">備註：${f.remark?v(f.remark)+'<br>':''}1.檢查標準及實際檢查情形應具體明確或量化尺寸。<br>2.抽查結果合格者註明「○」，不合格者註明「×」，如無需檢查之項目則打「/」。<br>3.嚴重缺失、缺失複查未完成改善，應填具「缺失改善追蹤表」進行追蹤改善。<br>4.本表由現場監造工程師實地檢查後覈實記載簽認。</td></tr>
+    </table>
+    <div class="dsign"><div>監造工地負責（授權）人：</div><div>監造現場人員簽名：</div></div>
+  </div>`;
+}
+
 /* ---------- 列印 ---------- */
 function sheetHTML(r){
-  const p=proj(r.projectId)||{},c=cat(r.cat),t=typ(r.type);
+  const p=proj(r.projectId)||{},c=cat(r.cat),t=typN(r.cat,r.type);
   const ngItems=r.items.map((i,n)=>({...i,n:n+1})).filter(i=>i.result==='ng');
   const defect=[...ngItems.map(i=>`第 ${i.n} 項 ${i.t}${i.note?'：'+i.note:''}`),r.defect].filter(Boolean);
   const sg=k=>r.signs[k]||{};
@@ -1283,6 +1652,7 @@ function sheetHTML(r){
       :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>`}
     </table>
+    ${isPipeMat(r)?pipeTable(r):''}
     <table class="sec">
       <colgroup><col style="width:7%"><col style="width:22%"><col style="width:38%"><col style="width:9%"><col style="width:24%"></colgroup>
       <tr><th>項次</th><th>檢查項目</th><th>檢查標準</th><th>結果</th><th>實測紀錄／說明</th></tr>
@@ -1310,7 +1680,7 @@ function showPrint(list,back,title){
   pa.innerHTML=`<div class="print-toolbar" style="padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="muted grow">A4 直式預覽，共 ${list.length} 份表單（照片黏貼表接在各表單後）。電腦請按「列印」，或選「另存為 PDF」。</span>
       <button class="btn primary" id="doPrint">列印</button></div>
-    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
 }
 async function viewPrint(id){
@@ -1322,7 +1692,7 @@ async function viewPrintAll(ck,tk,md){
   const list=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));
   if(!list.length)return go(md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`);
   await Promise.all(list.map(ensurePhotos));
-  showPrint(list,md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`,`列印預覽<span class="sub">${md==='mat'?'材料・'+MAT_TYPES.find(x=>x.key===tk).name:cat(ck).name+'・'+typ(tk).name}</span>`);
+  showPrint(list,md==='mat'?`mat-${tk}`:`cat-${ck}-${tk}-${md}`,`列印預覽<span class="sub">${md==='mat'?'材料・'+MAT_TYPES.find(x=>x.key===tk).name:cat(ck).name+'・'+typN(ck,tk).name}</span>`);
 }
 const _setTop=setTop;
 setTop=function(t,b){_setTop(t,b);$('#printArea').style.display=''};
@@ -1518,7 +1888,8 @@ $('#cloudBtn').onclick=()=>$('#setBtn').click();
     }
     LS.set('seeded2','1');}
   catch(e){$('#view').innerHTML='<div class="empty">此瀏覽器無法儲存資料（可能是無痕模式）。請改用一般模式開啟。</div>';return}
-  for(const r of records)if(r.mode==='mat'&&r.cat!=='mat'){r.cat='mat';r.type=r.type==='hang'?'pipe':'box';await DB.put('records',r)}
+  for(const r of records)if(r.mode==='mat'&&r.cat!=='mat'){r.cat='mat';r.type=r.type==='hang'?'pvcB':'box';await DB.put('records',r)}
+  for(const r of records)if(r.mode==='mat'&&r.type==='pipe'){r.type='pvcB';await DB.put('records',r)}
   render();
   Cloud.init();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});

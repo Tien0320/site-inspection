@@ -222,6 +222,15 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
 .phsheet .pgrid{margin-top:6px}
 .dphoto{display:flex;flex-direction:column;gap:8mm}
+.mphoto h3{margin-bottom:4px}
+.mhdr td{font-size:10pt;padding:3px 5px}
+.mhdr .k small{font-size:7.5pt;font-weight:400}
+.mph{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:5mm;break-inside:avoid}
+.mph td{border:1px solid #000;padding:3px 6px;font-size:10.5pt;vertical-align:middle}
+.mph .mimg{padding:2px;height:66mm;text-align:center}
+.mph .mimg img{width:100%;height:65mm;object-fit:cover;display:block}
+.mph .mk{text-align:center;font-weight:700;background:#f3f3f3;height:8mm}
+.mph .mdesc{vertical-align:top;line-height:1.5}
 .dph{width:100%;border-collapse:collapse;table-layout:fixed;break-inside:avoid}
 .dph td{border:1px solid #000;padding:2px 6px;font-size:11pt;vertical-align:middle}
 .dph .dimg{padding:2px;text-align:center;height:72mm}
@@ -424,7 +433,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-80';
+const APP_VERSION='2026.11.06-82';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1072,7 +1081,7 @@ document.addEventListener('change',async e=>{
   refreshPhotos();dirty();
 });
 document.addEventListener('click',e=>{
-  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt('照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
+  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(cur.projectId==='p-nycuh-med2'&&['slab','sleeve','dfit'].includes(cur.kind)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
   const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;
   e.preventDefault();
   if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}
@@ -1122,8 +1131,82 @@ function dormPhotoPages(r){
     <tr><td class="dk">備註</td></tr>
     <tr><td class="dv">${esc(p.cap||'')}</td></tr></table>`).join('')}</div>`).join('');
 }
+/* 二期・樓板接線盒：施工查驗照片（比照 1150428-29-9F底版-消防出線盒放樣.docx） */
+const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程',no:'森10812',con:'崇偉營造工程(股)有限公司',con2:'崇偉科技工程有限公司',permit:'(113)(5)(21)建管建字第00174號'};
+const rocSlash=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return `${+y-1911}/${m}/${dd}`};
+function slabPhotoText(r,p){
+  const f=r.form,x=f.items.find(i=>i.id===p.ref);
+  const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):'';
+  const item=`${sys||''}系統配管施工查驗`;
+  const where=`${f.floor||''}${f.part||''}${x&&x.pos?'Line '+x.pos:''}`;
+  let desc=[];
+  if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
+  else if(x){
+    desc.push(`${sys}${x.equip||''} PVC配管`);
+    if(x.e1302)desc.push('南亞CNS 1302 PVC管 E管');
+    if(x.size)desc.push(`管徑:ψ${x.size.replace('"','')}"`);
+    if(x.joint)desc.push('PVC配管以盒接頭銜接出線盒');
+    if(x.ewD||x.ewA)desc.push(`出線盒距離${x.ewDir||''}${x.ewRef||''} 設計${x.ewD||''}cm 實測${x.ewA||''}cm`);
+    if(x.nsD||x.nsA)desc.push(`出線盒距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
+    if(x.galv&&x.boxType)desc.push(`樓版配置熱浸鍍鋅${x.boxType} 厚度2.0mm`);
+    if(x.fitOn)desc.push('出線盒有與鋼承鈑或緊貼密合');
+    if(x.screwOn)desc.push('出線盒有使用螺絲鎖固在模板或鋼承鈑上');
+    if(x.tie1||x.tie2)desc.push(`配管固定間距 實測:${x.tie1||''}cm　${x.tie2||''}cm`);
+  }
+  return {item,where,desc};
+}
+function sleevePhotoText(r,p){
+  const f=r.form,i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i],L=(f.label||'穿樑')+'套管';
+  const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):'';
+  const strip=v=>String(v||'').replace(/^[øØ∅]\s*/,'');
+  const item=`${sys}系統${L}安裝查驗`,where=`${f.floor||''}${f.part||''}${x&&x.pos?'Line '+x.pos:''}`;
+  let desc=[];
+  if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
+  else if(x){
+    desc.push(`${sys}系統預留${x.shape==='方孔'?'方孔':'套管'}(編號${i+1})`);
+    if(x.sizeD||x.sizeA)desc.push(x.shape==='方孔'?`方孔尺寸 設計:${x.sizeD||''} 實測:${x.sizeA||''}`:`套管尺寸 設計:Ø ${strip(x.sizeD)} 實測:Ø ${strip(x.sizeA)}`);
+    if(x.topD||x.topA)desc.push(`樓板到管頂 設計:${x.topD||''}cm 實測:${x.topA||''}cm${x.topRef?'('+x.topRef.replace('1米','一米')+')':''}`);
+    if(x.distD||x.distA)desc.push(`套管安裝位置 距${x.dir||''}${x.ref||''} 設計:${x.distD||''}cm 實測:${x.distA||''}cm`);
+    if(x.ring)desc.push(`外牆過牆管加設止水環：${x.ring}`);
+  }
+  return {item,where,desc};
+}
+function dfPhotoText(r,p){
+  const f=r.form,i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i];
+  const strip=v=>String(v||'').replace(/^[øØ∅]\s*/,'');
+  const item='污廢水管樓板接頭定位安裝查驗',where=`${f.floor||''}${x?x.face:''}${x&&x.pos?'Line '+x.pos:''}`;
+  let desc=[];
+  if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
+  else if(x){
+    desc.push(`排水系統 ${x.name||''}樓板接頭安裝(編號${i+1})`);
+    if(x.sizeD||x.sizeA)desc.push(`設計管徑:∅${strip(x.sizeD)} 實際管徑:∅${strip(x.sizeA)}`);
+    if((x.spec||[]).length)desc.push(`採用${x.spec.join(' ')}`);
+    if(x.space)desc.push(x.space);
+    if(x.ewD||x.ewA)desc.push(`距離${x.ewDir||''}${x.ewRef||''} 設計${x.ewD||''}cm 實測${x.ewA||''}cm`);
+    if(x.nsD||x.nsA)desc.push(`距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
+    if(x.screw)desc.push('以樓板接頭以螺絲鎖固定於鋼承鈑上');
+    if(x.tied)desc.push('以鐵線綁紮固定');
+  }
+  return {item,where,desc};
+}
+function slabPhotoPages(r){
+  const list=sortedPhotos(r);if(!list.length)return '';
+  const textOf=r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:slabPhotoText;
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
+  const hdr=`<h3>施工查驗照片</h3><table class="mhdr"><colgroup><col style="width:17%"><col style="width:36%"><col style="width:19%"><col style="width:28%"></colgroup>
+    <tr><td class="k">專案名稱<br><small>Project Name</small></td><td colspan="3">${esc(H.name)}</td></tr>
+    <tr><td class="k">專案編號<br><small>Project No.</small></td><td>${esc(H.no)}</td><td class="k">日期<br><small>Date</small></td><td>${rocSlash(r.date)}</td></tr>
+    <tr><td class="k">施工廠商<br><small>Contractor</small></td><td>${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<br><small>Building Permit No.</small></td><td class="small">${esc(H.permit)}</td></tr></table>`;
+  return pages.map(pg=>`<div class="sheet mphoto">${hdr}${pg.map(p=>{const t=textOf(r,p);return `<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>
+    <tr><td rowspan="4" class="mimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
+    <tr><td>查驗項目:${esc(t.item)}</td></tr>
+    <tr><td>照片位置:${esc(t.where)}</td></tr>
+    <tr><td class="mdesc">${t.desc.map(esc).join('<br>')}</td></tr></table>`}).join('')}</div>`).join('');
+}
 function photoPages(r){
   if(r.projectId==='p-nycuh-dorm')return dormPhotoPages(r);
+  if(r.projectId==='p-nycuh-med2'&&['slab','sleeve','dfit'].includes(r.kind))return slabPhotoPages(r);
   const list=sortedPhotos(r);if(!list.length)return '';
   const pr=proj(r.projectId)||{},per=6,pages=[];
   for(let i=0;i<list.length;i+=per)pages.push(list.slice(i,i+per));

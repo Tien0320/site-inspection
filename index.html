@@ -322,7 +322,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-6';
+const APP_VERSION='2026.11.06-7';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -644,7 +644,7 @@ async function newRec(ck,tk){
     formNo:`${cat(ck).code}${typ(tk).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
     items:TPL[ck][tk].map(([t,s])=>({t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
-  if(ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm();r.formNo=r.formNo.replace(/^PH/,'PH')}
+  if(ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   records.push(r);await DB.put('records',r);
   go('rec-'+r.id);
 }
@@ -795,9 +795,11 @@ const newDrain=()=>({kind:'drain',type:'',typeOther:'',brDesign:'',brBrand:[],br
 const newVent=()=>({kind:'vent',ventOf:'',flow:'',brDesign:'',brBrand:['灰管'],brSize:'',mnDesign:'',mnBrand:['灰管'],mnSize:'',
   rigid:false,oneStep:false,hD:'',hA:'',toStack:false,stackH:''});
 const newSpace=()=>({name:'',pos:'',pipes:[newDrain(),newDrain(),newDrain(),newVent(),newVent()]});
-const newDrainForm=()=>({floor:'',roomType:'四人房',roomOther:'',part:'廁所吊管',spaces:[newSpace()],
+const DORM_PARTS=['浴廁','陽台','臥房'];
+const isDorm=pid=>/宿舍/.test(proj(pid)?.name||'');
+const newDrainForm=pid=>({floor:'',roomType:'四人房',roomOther:'',part:isDorm(pid)?'浴廁':'',spaces:[newSpace()],
   result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
-function drainLoc(f){const rt=f.roomType==='其他'?(f.roomOther||''):f.roomType;return [f.floor,[rt,f.part].filter(Boolean).join('-')].filter(Boolean).join(' ')}
+function drainLoc(f){const rt=f.roomType==='其他'?(f.roomOther||''):f.roomType;const pt=f.part?(/吊管$/.test(f.part)?f.part:f.part+'吊管'):'';return [f.floor,[rt,pt].filter(Boolean).join('-')].filter(Boolean).join(' ')}
 function slopeOf(p){
   const L=parseFloat(p.len),h=parseFloat(p.hiA),l=parseFloat(p.loA);
   if(!(L>0)||isNaN(h)||isNaN(l))return null;
@@ -887,7 +889,9 @@ function viewDrain(r){
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${FLOORS.map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!FLOORS.includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field"><span>房型</span><select id="f_room">${ROOM_TYPES.map(x=>`<option ${x===f.roomType?'selected':''}>${x}</option>`).join('')}</select></label>
       <label class="field" id="roomOtherWrap" ${f.roomType==='其他'?'':'hidden'}><span>房型名稱</span><input type="text" data-path="roomOther" value="${esc(f.roomOther)}" placeholder="例：雙人房"></label>
-      <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：廁所吊管"></label>
+      <label class="field"><span>部位</span>${isDorm(r.projectId)
+        ?`<select data-path="part"><option value="">請選擇部位</option>${DORM_PARTS.map(x=>`<option ${x===f.part?'selected':''}>${x}</option>`).join('')}${f.part&&!DORM_PARTS.includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select>`
+        :`<input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：廁所">`}</label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div id="locView" class="locv">${esc(drainLoc(f))||'—'}</div></div>
     </div></section>
   <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">抽驗情形　空間 <span class="num" id="spCount">${f.spaces.length}</span> 個</p></div>

@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-57';
+const APP_VERSION='2026.11.06-58';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1841,6 +1841,7 @@ function sleeveSheet(r){
 /* ---------- 樓板接線盒＋配管（依「施工抽查紀錄表-樓板接線盒+配管」） ---------- */
 const SYS_OF={elec:'電氣',low:'弱電',fire:'消防',hvac:'空調'};
 const ELEC_EQUIP=['照明','110V埋入式插座','陽台防雨插座']; // 樓板接線盒：電氣設備選項
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['人體紅外線偵測器','槍型攝影機','沉水液位計','水箱磁簧','水管壓力','雨水流量計']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});
@@ -1855,7 +1856,7 @@ function slabItemHTML(i,x){
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('系統',opts(b+'.sys',['弱電','電氣','消防','空調','其他'],'one',x.sys)+(x.sys==='其他'?inp(b+'.sysOther',x.sysOther,'系統名稱'):''),1)}
-      <label class="field"><span>設備</span>${x.sys==='電氣'?`<select data-path="${b}.equip"><option value="">請選擇</option>${ELEC_EQUIP.map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&!ELEC_EQUIP.includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
+      <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"><option value="">請選擇</option>${EQUIP_OF[x.sys].map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
       ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',['鋼承鈑','模板'],'one',x.screwOn))}
       ${fl('出線盒有貼合',opts(b+'.fitOn',['鋼承鈑','模板'],'one',x.fitOn))}
       ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']],'one',x.boxType),1)}

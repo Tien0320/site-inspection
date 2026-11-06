@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>現場施工查驗</title>
+<meta name="theme-color" content="#1f3a4d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+/* 版面：手機單欄、電腦置中最寬 880px；列印時只輸出 A4 表單 */
+:root{
+  --bg:#eef1f3; --surface:#ffffff; --surface-2:#f6f8f9; --line:#d5dde2;
+  --ink:#16232d; --ink-2:#51636f; --brand:#1f3a4d; --brand-ink:#ffffff;
+  --accent:#d9661f;
+  --ok:#1e7d4f; --ok-bg:#e3f3ea; --ng:#c4342b; --ng-bg:#fbe7e5; --na:#6b7780; --na-bg:#eceff1;
+  --warn:#a86a00; --warn-bg:#fdf1d8;
+  --c-elec:#c98a00; --c-hvac:#1786a3; --c-plumb:#2d5fb8; --c-low:#6f4bb5; --c-fire:#c4342b;
+  --font:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC",system-ui,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171d; --surface:#18232b; --surface-2:#1e2b34; --line:#2c3b46;
+  --ink:#e4ebef; --ink-2:#9db0bc; --brand:#24475e; --brand-ink:#ffffff; --accent:#f08a46;
+  --ok:#5cc28d; --ok-bg:#163527; --ng:#f07a72; --ng-bg:#3a1d1b; --na:#9aa6ae; --na-bg:#25313a;
+  --warn:#e8b14c; --warn-bg:#3a2e14;
+  --c-elec:#e0aa2c; --c-hvac:#3db3d1; --c-plumb:#6b97e6; --c-low:#a588e0; --c-fire:#f07a72;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171d; --surface:#18232b; --surface-2:#1e2b34; --line:#2c3b46;
+  --ink:#e4ebef; --ink-2:#9db0bc; --brand:#24475e; --brand-ink:#ffffff; --accent:#f08a46;
+  --ok:#5cc28d; --ok-bg:#163527; --ng:#f07a72; --ng-bg:#3a1d1b; --na:#9aa6ae; --na-bg:#25313a;
+  --warn:#e8b14c; --warn-bg:#3a2e14;
+  --c-elec:#e0aa2c; --c-hvac:#3db3d1; --c-plumb:#6b97e6; --c-low:#a588e0; --c-fire:#f07a72;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;
+  -webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-ink);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.topbar-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:10px;min-height:40px}
+.topbar h1{font-size:17px;margin:0;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+.topbar .sub{display:block;font-size:12px;font-weight:400;opacity:.75}
+.iconbtn{background:rgba(255,255,255,.12);border:0;color:inherit;border-radius:8px;min-width:40px;height:40px;padding:0 12px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.iconbtn:hover{background:rgba(255,255,255,.2)}
+.iconbtn svg{width:20px;height:20px}
+
+main{max-width:880px;margin:0 auto;padding-block:16px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+
+.label{font-size:12px;letter-spacing:.08em;color:var(--ink-2);font-weight:700;margin:0 0 8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.muted{color:var(--ink-2);font-size:13px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.btn.danger{color:var(--ng);border-color:color-mix(in srgb,var(--ng) 40%,var(--line))}
+.btn.small{min-height:34px;padding:5px 10px;font-size:13px}
+.btn:focus-visible,.iconbtn:focus-visible,.tile:focus-visible,.res button:focus-visible,.rec:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+select,input[type=text],input[type=date],textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 10px;min-height:42px}
+textarea{min-height:72px;resize:vertical}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field>span{font-size:12px;color:var(--ink-2);font-weight:700}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+
+/* 標案卡 */
+.proj{display:flex;flex-direction:column;gap:10px}
+.proj-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 16px;font-size:13px}
+.proj-meta b{color:var(--ink-2);font-weight:400;margin-right:6px}
+
+/* 查驗大項 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 14px 12px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:118px;overflow:hidden}
+.tile::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:var(--c)}
+.tile:hover{border-color:var(--c)}
+.tile .ic{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.tile .ic svg{width:20px;height:20px}
+.tile .nm{font-size:18px;font-weight:700}
+.tile .ct{font-size:12px;color:var(--ink-2);display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;white-space:nowrap}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.ng{background:var(--ng-bg);color:var(--ng)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.na{background:var(--na-bg);color:var(--na)}
+
+/* 子項分頁 */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
+.seg button b{font-size:16px}
+.seg button.on{border-color:var(--c);box-shadow:inset 0 0 0 2px var(--c)}
+
+/* 紀錄列表 */
+.list{display:flex;flex-direction:column;gap:8px}
+.rec{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;width:100%}
+.rec:hover{border-color:var(--ink-2)}
+.rec .d{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.rec .t{flex:1;min-width:0}
+.rec .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;color:var(--ink-2)}
+
+/* 查驗項目 */
+.items{display:flex;flex-direction:column;gap:8px}
+.item{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;display:grid;grid-template-columns:28px 1fr;gap:6px 10px}
+.item.ng{border-color:var(--ng);background:color-mix(in srgb,var(--ng-bg) 50%,var(--surface))}
+.item .no{font-family:var(--mono);font-weight:700;color:var(--ink-2);padding-top:2px}
+.item .tx{min-width:0}
+.item .tx b{display:block}
+.item .tx small{display:block;color:var(--ink-2);font-size:13px;line-height:1.45}
+.item .ctl{grid-column:2;display:flex;flex-direction:column;gap:8px}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.res button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;min-height:40px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;gap:4px}
+.res button .sym{font-size:17px;font-weight:700}
+.res button.on[data-v=ok]{background:var(--ok);border-color:var(--ok);color:#fff}
+.res button.on[data-v=ng]{background:var(--ng);border-color:var(--ng);color:#fff}
+.res button.on[data-v=na]{background:var(--na);border-color:var(--na);color:#fff}
+.item input[type=text]{min-height:38px;font-size:14px}
+.item .rm{justify-self:end;grid-column:2}
+
+/* 照片 */
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.ph{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
+.ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.ph .pc{display:flex;gap:4px;padding:6px}
+.ph .pc input{min-height:32px;padding:4px 6px;font-size:13px}
+.ph .pc button{border:0;background:none;color:var(--ng);cursor:pointer;font-size:13px;white-space:nowrap}
+
+/* 簽名 */
+.signs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.sign{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.sign .pad{height:80px;border:1px dashed var(--line);border-radius:6px;background:#fff;display:grid;place-items:center;cursor:pointer;color:#8896a0;font-size:13px;overflow:hidden}
+.sign .pad img{max-height:100%;max-width:100%}
+
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.savebar-in{max-width:880px;margin:0 auto;display:flex;gap:8px;align-items:center}
+.status{font-size:13px;color:var(--ink-2);flex:1;min-width:0}
+
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+dialog::backdrop{background:rgba(10,20,28,.5)}
+.dlg{padding:18px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{margin:0;font-size:18px}
+.dlg .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#sigCanvas{width:100%;height:200px;background:#fff;border:1px solid var(--line);border-radius:8px;touch-action:none}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ===== 列印表單 ===== */
+#printArea{display:none}
+.print-toolbar{max-width:880px;margin:0 auto}
+.preview .sheet{background:#fff;color:#000;margin:0 auto 18px;box-shadow:0 1px 6px rgba(0,0,0,.18);width:210mm;max-width:100%;padding:12mm;overflow-x:auto}
+.sheet{font-family:"DFKai-SB","BiauKai","標楷體","Microsoft JhengHei",serif;font-size:11pt;color:#000;line-height:1.35}
+.sheet h3{text-align:center;font-size:16pt;margin:0 0 2px;letter-spacing:.05em}
+.sheet h4{text-align:center;font-size:13pt;margin:0 0 8px;font-weight:700}
+.sheet .fno{text-align:right;font-size:9.5pt;margin-bottom:4px}
+.sheet table{width:100%;border-collapse:collapse;table-layout:fixed}
+.sheet td,.sheet th{border:1px solid #000;padding:4px 5px;vertical-align:middle;word-break:break-word}
+.sheet th{background:#ececec;font-weight:700;text-align:center}
+.sheet .k{background:#f3f3f3;font-weight:700;text-align:center;width:16%}
+.sheet .c{text-align:center}
+.sheet .res-sym{font-size:13pt;font-weight:700;text-align:center}
+.sheet .legend{font-size:9.5pt;margin:4px 0 8px}
+.sheet .sec{margin-top:8px}
+.sheet .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sheet .pgrid figure{margin:0;border:1px solid #000;break-inside:avoid}
+.sheet .pgrid img{width:100%;height:58mm;object-fit:cover;display:block}
+.sheet .pgrid figcaption{font-size:9.5pt;padding:2px 4px;border-top:1px solid #000;min-height:1.4em}
+.sheet .signrow td{height:20mm;text-align:center;vertical-align:middle}
+.sheet .signrow img{max-height:18mm;max-width:100%}
+.sheet .small{font-size:9.5pt}
+
+
+/* 排水吊管專用 */
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer;font-size:14px;text-align:left}
+.opt.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>span{font-size:12px;color:var(--ink-2);font-weight:700}
+.fld.wide{grid-column:1/-1}
+.meas{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.meas label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
+.calc{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.calc b{color:var(--ink)} .calc .good{color:var(--ok)} .calc .bad{color:var(--ng)}
+.locv{font-weight:700;font-size:16px;padding:6px 0}
+.spaces{display:flex;flex-direction:column;gap:14px}
+.space{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px;display:flex;flex-direction:column;gap:10px}
+.sphead{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.spno{width:34px;height:34px;border-radius:8px;background:var(--c-plumb);color:#fff;display:grid;place-items:center;font-weight:700;align-self:center}
+.pipes{display:flex;flex-direction:column;gap:8px}
+.pipe{border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.pipe.vent{border-style:dashed}
+.pipe summary{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;list-style:none;font-weight:700}
+.pipe summary::-webkit-details-marker{display:none}
+.pipe summary::before{content:"▸";color:var(--ink-2);transition:transform .15s}
+.pipe[open] summary::before{transform:rotate(90deg)}
+.pipe .ps{flex:1;min-width:0;font-size:14px}
+.pbody{padding:4px 12px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 8px 8px}
+.sptools{gap:6px}
+.dsheet{font-size:10pt}
+.dsheet .dtop{display:flex;justify-content:space-between;font-size:9.5pt;margin-bottom:2px}
+.dsheet .dbody{vertical-align:top;line-height:1.5}
+.dsheet .dsp{margin-top:4px;break-inside:auto}
+.dsheet .dsph{font-weight:700;margin:4px 0 2px}
+.dsheet .pp{padding-left:1.2em;font-size:9.5pt;break-inside:avoid}
+.dsheet hr{border:0;border-top:1px dashed #000;margin:3px 0 3px 1.2em}
+.dsheet .ul{display:inline-block;min-width:2.4em;border-bottom:1px solid #000;text-align:center;padding:0 2px}
+.dsheet .dres{margin-top:6px;border-top:1px solid #000;padding-top:4px}
+.dsheet .dsign{display:flex;justify-content:space-around;margin-top:10px;font-size:11pt}
+.dsheet .dsign div{display:flex;align-items:center;gap:6px;min-height:16mm}
+.dsheet .dsign img{max-height:15mm;max-width:40mm}
+
+@page{size:A4 portrait;margin:10mm}
+@media print{
+  body{background:#fff}
+  body::before,.topbar,main,.savebar,.toast,dialog,.print-toolbar{display:none!important}
+  #printArea{display:block!important}
+  .preview .sheet{box-shadow:none;margin:0;padding:0;width:auto}
+  .sheet{page-break-after:always;break-after:page}
+  .sheet:last-child{page-break-after:auto;break-after:auto}
+  .sheet tr{break-inside:avoid}
+  .dsheet tr{break-inside:auto}
+}
+@media (max-width:520px){
+  .preview .sheet{padding:5mm;font-size:9pt}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="iconbtn" id="backBtn" hidden aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <h1 id="title">現場施工查驗</h1>
+    <button class="iconbtn" id="setBtn" aria-label="資料備份">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>
+      <span>備份</span>
+    </button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<div class="savebar" id="savebar" hidden><div class="savebar-in" id="savebarIn"></div></div>
+
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+
+<!-- 標案編輯 -->
+<dialog id="projDlg">
+  <form class="dlg" id="projForm" method="dialog">
+    <h2 id="projDlgTitle">新增標案</h2>
+    <div class="fields">
+      <label class="field" style="grid-column:1/-1"><span>工程名稱（標案名稱）＊</span><input type="text" id="pf_name" required></label>
+      <label class="field"><span>標案編號</span><input type="text" id="pf_no"></label>
+      <label class="field"><span>主辦機關</span><input type="text" id="pf_owner"></label>
+      <label class="field"><span>監造單位</span><input type="text" id="pf_sup"></label>
+      <label class="field"><span>承攬廠商</span><input type="text" id="pf_con"></label>
+    </div>
+    <div class="acts">
+      <button type="button" class="btn danger" id="projDel" hidden>刪除標案</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="projCancel">取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 簽名 -->
+<dialog id="sigDlg">
+  <div class="dlg">
+    <h2 id="sigTitle">簽名</h2>
+    <canvas id="sigCanvas"></canvas>
+    <div class="acts">
+      <button type="button" class="btn" id="sigClear">清除</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="sigCancel">取消</button>
+      <button type="button" class="btn primary" id="sigOk">確定</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 備份 -->
+<dialog id="setDlg">
+  <div class="dlg">
+    <h2>資料備份與轉移</h2>
+    <p class="muted" style="margin:0">資料只存在這台裝置的瀏覽器裡。要從手機轉到電腦列印，請在手機「匯出備份檔」，再到電腦「匯入備份檔」。匯入會合併資料，相同紀錄以較新的為準。</p>
+    <div class="row">
+      <button class="btn primary" id="expBtn">匯出備份檔</button>
+      <label class="btn">匯入備份檔<input type="file" id="impFile" accept=".json,application/json" hidden></label>
+    </div>
+    <p class="muted num" id="usage" style="margin:0"></p>
+    <p class="muted num" style="margin:0">版本 <span id="ver"></span>（手機與電腦開同一個網址，會自動用最新版）</p>
+    <div class="acts"><button class="btn" id="setClose">關閉</button></div>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+const APP_VERSION='2026.11.06-1';
+/* ---------- 基本設定 ---------- */
+const ICON = {
+  elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+  hvac:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M4.9 6l14.2 12M4.9 18L19.1 6"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/></svg>',
+  plumb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0013 0C18.5 10 12 2.5 12 2.5z"/></svg>',
+  low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0120 0M5.5 12.5a10 10 0 0113 0M9 16a5 5 0 016 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg>',
+  fire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22c4 0 7-2.8 7-6.8 0-4.6-4-7-4.5-11.2C11 6 9 9 9.5 12 8 11.3 7 9.8 7 8.5 5.6 10.2 5 12.6 5 15.2 5 19.2 8 22 12 22z"/></svg>'
+};
+const CATS = [
+  {key:'elec', name:'電氣',  code:'E'},
+  {key:'hvac', name:'空調',  code:'A'},
+  {key:'plumb',name:'給排水',code:'P'},
+  {key:'low',  name:'弱電',  code:'L'},
+  {key:'fire', name:'消防',  code:'F'}
+];
+const TYPES = [
+  {key:'box',  name:'預埋接線盒', code:'B', hint:'澆置混凝土前'},
+  {key:'hang', name:'吊管',       code:'H', hint:'吊架及管路'}
+];
+const STAGES = ['施工前','施工中','施工完成'];
+
+/* 查驗項目範本：[檢查項目, 檢查標準] —— 標準為一般參考值，請依契約圖說及規範調整 */
+const TPL = {
+ elec:{
+  box:[
+   ['接線盒材質規格','依設計圖說（鍍鋅鐵盒／PVC 盒），尺寸、厚度正確，無鏽蝕變形'],
+   ['位置及數量','依施工圖放樣，位置偏差 ±2cm 以內，數量無遺漏'],
+   ['安裝高度','開關中心 FL+120cm、插座 FL+30cm，或依圖說'],
+   ['盒體固定','與模板或鋼筋綁紮牢固，澆置混凝土時不位移'],
+   ['盒口封填','盒內以保麗龍或膠帶填封，防止混凝土漿滲入'],
+   ['管盒連接','使用盒接頭／護圈，管口去毛邊，接續緊密'],
+   ['配管彎曲','彎曲半徑 ≥ 管內徑 6 倍且無壓扁；兩出線盒間彎曲合計 ≤ 360°'],
+   ['保護層','管路距混凝土表面 ≥ 2cm，避開結構主筋，不得集中成束'],
+   ['預穿拉線','管內預穿拉線，管端封口'],
+   ['接地連接','金屬管與盒體接地連接完整'],
+   ['澆置前紀錄','完成拍照、標示，並經監造確認']
+  ],
+  hang:[
+   ['吊架材料','全牙吊桿、C 型鋼、管夾為熱浸鍍鋅或依圖說，規格正確'],
+   ['錨栓固定','膨脹螺栓／預埋鐵件埋深足夠，無鬆動'],
+   ['支持間距','金屬管支持間距 ≤ 2m；彎曲處及出線盒兩側 30cm 內增設支撐'],
+   ['管路水平','管路平直、成排整齊，無下垂'],
+   ['管路接續','接頭鎖緊，接續處接地跨接確實'],
+   ['電纜架','接續板、蓋板齊全，接地線連續，負載不超過容許值'],
+   ['與其他管線間距','與給排水、空調管保持適當距離，不置於水管正下方'],
+   ['防火區劃貫穿','貫穿部以防火填塞材料封堵'],
+   ['防鏽處理','切口、焊接處補塗防鏽漆或冷鍍鋅'],
+   ['迴路標示','管路端點標示迴路編號']
+  ]
+ },
+ hvac:{
+  box:[
+   ['溫控器出線盒','位置、高度（FL+150cm 或依圖說）正確，盒體固定牢固'],
+   ['控制線配管','管徑、材質依圖說，預穿拉線'],
+   ['盒口封填','盒口封填，防止混凝土漿滲入'],
+   ['冷媒／排水套管','穿梁、穿牆套管位置、管徑、高程依圖說，並經結構確認'],
+   ['套管固定','套管兩端與模板齊平，固定牢固不位移'],
+   ['冷凝水排水預留','預留排水點位置及坡向正確'],
+   ['配管彎曲','彎曲半徑足夠、無壓扁，兩盒間彎曲合計 ≤ 360°'],
+   ['澆置前紀錄','完成拍照、標示，並經監造確認']
+  ],
+  hang:[
+   ['吊架材料','吊桿、角鐵／C 型鋼、管夾規格依圖說，鍍鋅處理'],
+   ['錨栓固定','錨栓植入深度足夠，無鬆動'],
+   ['吊架間距','依管徑及設計圖說，轉彎處兩側增設吊架'],
+   ['保溫施作','保溫材厚度依圖說，接縫密貼，無破損'],
+   ['吊架處防冷橋','吊架處使用硬質保溫墊塊，無結露冷橋'],
+   ['冷凝水管坡度','坡度 ≥ 1/100，坡向排水點，無逆坡或積水'],
+   ['風管吊架','吊架間距依圖說，法蘭接合處密封'],
+   ['防震措施','設備及主管路設防震吊架或避震器'],
+   ['管路標示','冷／熱、供／回水流向標示清楚'],
+   ['試壓','冷媒管氣密試驗或水管試壓合格（另附紀錄）']
+  ]
+ },
+ plumb:{
+  box:[
+   ['預埋套管規格','材質、管徑（較穿越管大 2 號以上）依圖說'],
+   ['套管位置','位置、高程依施工圖，偏差 ±2cm 以內'],
+   ['套管固定封口','與模板固定牢固，兩端封口防止混凝土進入'],
+   ['防水套管','外牆、水池、水箱穿越處使用止水環防水套管'],
+   ['落水頭／排水口','預留位置、高程及坡向正確'],
+   ['控制出線盒','抽水機、水位開關、電動閥控制出線盒位置正確'],
+   ['開口補強','樓板大開口依結構圖補強'],
+   ['澆置前紀錄','完成拍照、標示，並經監造確認']
+  ],
+  hang:[
+   ['吊架材料','依圖說，熱浸鍍鋅或不鏽鋼，規格正確'],
+   ['錨栓固定','錨栓植入深度足夠，無鬆動'],
+   ['吊架間距','依管材及管徑，轉彎及閥件處增設支撐'],
+   ['排水管坡度','橫管坡度：管徑 75mm 以下 ≥ 1/50，超過 75mm ≥ 1/100，或依圖說'],
+   ['管路接合','膠合／螺紋／溝槽接頭施作確實，無滲漏'],
+   ['清潔口','依圖說位置設置，便於維修'],
+   ['通氣管','配置及坡向正確，無逆坡'],
+   ['保溫／防結露','依圖說施作'],
+   ['試壓／滿水試驗','給水管試壓、排水管滿水試驗合格（另附紀錄）'],
+   ['管路標示','用途及流向標示清楚']
+  ]
+ },
+ low:{
+  box:[
+   ['出線盒規格','材質、尺寸依設計圖說'],
+   ['位置及高度','資訊／電話插座 FL+30cm、對講機 FL+150cm，或依圖說'],
+   ['盒體固定','與模板或鋼筋綁紮牢固，澆置時不位移'],
+   ['盒口封填','盒口封填，防止混凝土漿滲入'],
+   ['配管管徑','依圖說，管內預穿拉線'],
+   ['強弱電分離','弱電管路與強電管路分開配置，不得共盒'],
+   ['配管彎曲','彎曲半徑足夠、無壓扁，兩盒間彎曲合計 ≤ 360°'],
+   ['安全系統預留','監視攝影機、讀卡機、門磁出線盒位置正確'],
+   ['澆置前紀錄','完成拍照、標示，並經監造確認']
+  ],
+  hang:[
+   ['吊架材料','依圖說，熱浸鍍鋅處理'],
+   ['錨栓固定','錨栓植入深度足夠，無鬆動'],
+   ['支持間距','依圖說，轉彎及出線盒兩側增設支撐'],
+   ['電纜架／線槽','接續板、蓋板齊全，接地連續'],
+   ['強弱電間距','與強電線路平行間距 ≥ 30cm，或以金屬隔板分隔'],
+   ['彎曲半徑','光纖、網路線槽彎曲半徑符合規範'],
+   ['管路整齊','成排整齊，無下垂'],
+   ['防火區劃貫穿','貫穿部以防火填塞材料封堵'],
+   ['系統標示','管路及線槽標示系統名稱']
+  ]
+ },
+ fire:{
+  box:[
+   ['出線盒規格','材質、尺寸依設計圖說'],
+   ['探測器位置','距牆面或樑 ≥ 60cm，距出風口 ≥ 150cm'],
+   ['手動報警機／警鈴','手動報警機高度 0.8～1.5m，位置依圖說'],
+   ['廣播／標示燈出線盒','位置、數量依圖說'],
+   ['緊急電源迴路','採耐燃保護，埋設於混凝土內深度 ≥ 20mm'],
+   ['盒體固定及封填','固定牢固，盒口封填'],
+   ['配管彎曲','彎曲半徑足夠、無壓扁，兩盒間彎曲合計 ≤ 360°'],
+   ['澆置前紀錄','完成拍照、標示，並經監造確認']
+  ],
+  hang:[
+   ['吊架材料','依圖說，熱浸鍍鋅處理'],
+   ['錨栓固定','錨栓植入深度足夠，無鬆動'],
+   ['吊架間距','依管徑及消防設置標準、圖說'],
+   ['撒水頭位置','撒水頭間距、距天花板及樑之距離符合標準'],
+   ['管路接合','溝槽式／螺紋接合確實'],
+   ['管路顏色標示','消防管漆紅色或明顯標示'],
+   ['防震支撐','主管及立管設防震支撐'],
+   ['耐燃／耐熱保護','火警、緊急電源線路採耐燃或耐熱保護'],
+   ['水壓試驗','依消防設置標準實施水壓試驗合格（另附紀錄）'],
+   ['防火區劃貫穿','貫穿部以防火填塞材料封堵']
+  ]
+ }
+};
+
+/* ---------- 儲存（IndexedDB） ---------- */
+const DB = {
+  db:null,
+  open(){return new Promise((res,rej)=>{
+    const r=indexedDB.open('site-inspection',1);
+    r.onupgradeneeded=()=>{const d=r.result;
+      if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('records'))d.createObjectStore('records',{keyPath:'id'});};
+    r.onsuccess=()=>{this.db=r.result;res()}; r.onerror=()=>rej(r.error);
+  })},
+  all(s){return new Promise((res,rej)=>{const q=this.db.transaction(s).objectStore(s).getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
+  put(s,v){return new Promise((res,rej)=>{const t=this.db.transaction(s,'readwrite');t.objectStore(s).put(v);t.oncomplete=res;t.onerror=()=>rej(t.error)})},
+  del(s,id){return new Promise((res,rej)=>{const t=this.db.transaction(s,'readwrite');t.objectStore(s).delete(id);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
+};
+const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+let projects=[], records=[];
+let curProj = LS.get('curProj');
+
+/* ---------- 工具 ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const rocDate=s=>{if(!s)return '';const [y,m,d]=s.split('-');return `${+y-1911} 年 ${+m} 月 ${+d} 日`};
+const cat=k=>CATS.find(c=>c.key===k);
+const typ=k=>TYPES.find(t=>t.key===k);
+const proj=id=>projects.find(p=>p.id===id);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1800)}
+function status(r){
+  if(r.kind==='drain'){
+    const f=r.form;
+    if(f.result==='ng') return f.recheck==='ok'?{k:'ok',t:'已改善'}:{k:'ng',t:'待改善'};
+    if(f.result==='ok') return {k:'ok',t:'合格'};
+    return {k:'warn',t:'填寫中'};
+  }
+  const ng=r.items.some(i=>i.result==='ng');
+  if(ng) return r.recheck==='ok'?{k:'ok',t:'已改善'}:{k:'ng',t:'待改善'};
+  if(r.items.length && r.items.every(i=>i.result)) return {k:'ok',t:'合格'};
+  return {k:'warn',t:'填寫中'};
+}
+const SYM={ok:'○',ng:'×',na:'／'};
+
+/* ---------- 路由 ---------- */
+function go(h){location.hash=h}
+window.addEventListener('hashchange',render);
+function setTop(title,back){
+  $('#title').innerHTML=title; $('#backBtn').hidden=!back;
+  $('#backBtn').onclick=()=>go(back||'home');
+  $('#savebar').hidden=true; $('#printArea').innerHTML=''; $('#printArea').className='';
+  $('#view').hidden=false; $('#view').oninput=null; $('#view').onclick=null;
+}
+function render(){
+  const h=location.hash.slice(1)||'home';
+  const [v,a,b]=h.split('-');
+  window.scrollTo(0,0);
+  if(v==='cat') return viewCat(a,b||'box');
+  if(v==='rec') return viewRec(a);
+  if(v==='print') return viewPrint(a);
+  if(v==='printall') return viewPrintAll(a,b);
+  viewHome();
+}
+
+/* ---------- 首頁 ---------- */
+function viewHome(){
+  setTop('現場施工查驗<span class="sub">標案 ／ 查驗大項</span>',null);
+  if(curProj && !proj(curProj)) curProj=null;
+  if(!curProj && projects.length) curProj=projects[0].id;
+  const p=proj(curProj);
+  const recs=records.filter(r=>r.projectId===curProj);
+  let html=`<section>
+    <p class="label">標案</p>
+    <div class="panel proj">
+      ${projects.length?`<div class="row">
+        <select id="projSel" class="grow" aria-label="選擇標案">${projects.map(x=>`<option value="${x.id}" ${x.id===curProj?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+        <button class="btn" id="projEdit">編輯</button>
+        <button class="btn" id="projAdd">＋ 新增標案</button></div>
+        <div class="proj-meta">
+          <div><b>標案編號</b>${esc(p.no)||'—'}</div>
+          <div><b>主辦機關</b>${esc(p.owner)||'—'}</div>
+          <div><b>監造單位</b>${esc(p.sup)||'—'}</div>
+          <div><b>承攬廠商</b>${esc(p.con)||'—'}</div>
+        </div>`
+      :`<div class="empty">還沒有標案。先新增一個標案，再開始查驗。<div style="margin-top:12px"><button class="btn primary" id="projAdd">＋ 新增標案</button></div></div>`}
+    </div></section>`;
+  if(p){
+    html+=`<section><p class="label">查驗大項</p><div class="tiles">${CATS.map(c=>{
+      const rs=recs.filter(r=>r.cat===c.key);
+      const ng=rs.filter(r=>status(r).k==='ng').length;
+      return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
+        <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}</span>
+        <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
+    const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
+    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
+  }
+  $('#view').innerHTML=html;
+  $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
+  $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
+  $('#projSel')&&($('#projSel').onchange=e=>{curProj=e.target.value;LS.set('curProj',curProj);viewHome()});
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-box'));
+  bindRecRows();
+}
+function recRow(r){
+  const s=status(r), c=cat(r.cat), t=typ(r.type);
+  return `<button class="rec" data-rec="${r.id}">
+    <span class="d">${esc(r.date)}</span>
+    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${c.name} · ${t.name} · ${esc(r.stage)}</span></span>
+    <span class="chip ${s.k}">${s.t}</span></button>`;
+}
+function bindRecRows(){document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>go('rec-'+b.dataset.rec))}
+
+/* ---------- 標案編輯 ---------- */
+let editingProj=null;
+function openProj(p){
+  editingProj=p||null;
+  $('#projDlgTitle').textContent=p?'編輯標案':'新增標案';
+  $('#pf_name').value=p?.name||''; $('#pf_no').value=p?.no||''; $('#pf_owner').value=p?.owner||'';
+  $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||'';
+  $('#projDel').hidden=!p; $('#projDel').textContent='刪除標案'; $('#projDel').dataset.arm='';
+  $('#projDlg').showModal();
+}
+$('#projCancel').onclick=()=>$('#projDlg').close();
+$('#projForm').onsubmit=async e=>{
+  e.preventDefault();
+  const p=editingProj||{id:uid(),created:Date.now()};
+  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),updated:Date.now()});
+  if(!p.name)return;
+  await DB.put('projects',p);
+  if(!editingProj)projects.push(p);
+  curProj=p.id;LS.set('curProj',curProj);
+  $('#projDlg').close();toast('標案已儲存');render();
+};
+$('#projDel').onclick=async()=>{
+  const b=$('#projDel');
+  const n=records.filter(r=>r.projectId===editingProj.id).length;
+  if(!b.dataset.arm){b.dataset.arm='1';b.textContent=`再按一次刪除（含 ${n} 筆查驗）`;return}
+  for(const r of records.filter(r=>r.projectId===editingProj.id))await DB.del('records',r.id);
+  records=records.filter(r=>r.projectId!==editingProj.id);
+  await DB.del('projects',editingProj.id);
+  projects=projects.filter(p=>p.id!==editingProj.id);
+  curProj=projects[0]?.id||null;LS.set('curProj',curProj||'');
+  $('#projDlg').close();toast('標案已刪除');go('home');render();
+};
+
+/* ---------- 查驗大項頁 ---------- */
+function viewCat(ck,tk){
+  const c=cat(ck),p=proj(curProj);
+  if(!c||!p)return go('home');
+  setTop(`${c.name}工程<span class="sub">${esc(p.name)}</span>`,'home');
+  const recs=records.filter(r=>r.projectId===curProj&&r.cat===ck);
+  const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
+  $('#view').innerHTML=`
+    <div class="seg" style="--c:var(--c-${ck})">${TYPES.map(t=>{const n=recs.filter(r=>r.type===t.key).length;
+      return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
+    <div class="row">
+      <button class="btn primary grow" id="newRec">＋ 新增${typ(tk).name}查驗</button>
+      ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
+    </div>
+    ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
+      :`<div class="empty">還沒有${c.name}・${typ(tk).name}的查驗紀錄。<br>按「新增」會帶入 ${TPL[ck][tk].length} 項標準檢查項目。</div>`}`;
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}`));
+  $('#newRec').onclick=()=>newRec(ck,tk);
+  $('#printAll')&&($('#printAll').onclick=()=>go(`printall-${ck}-${tk}`));
+  bindRecRows();
+}
+async function newRec(ck,tk){
+  const d=today();
+  const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&r.date===d).length+1;
+  const r={id:uid(),projectId:curProj,cat:ck,type:tk,date:d,location:'',stage:'施工中',inspector:'',
+    formNo:`${cat(ck).code}${typ(tk).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
+    items:TPL[ck][tk].map(([t,s])=>({t,s,result:'',note:''})),
+    defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
+  if(ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm();r.formNo=r.formNo.replace(/^PH/,'PH')}
+  records.push(r);await DB.put('records',r);
+  go('rec-'+r.id);
+}
+
+/* ---------- 查驗表單 ---------- */
+let saveTimer=null, cur=null;
+function viewRec(id){
+  const r=records.find(x=>x.id===id); if(!r)return go('home');
+  cur=r; const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId);
+  curProj=r.projectId;
+  if(r.kind==='drain') return viewDrain(r);
+  setTop(`${c.name}・${t.name}<span class="sub">${esc(p?.name)}</span>`,`cat-${r.cat}-${r.type}`);
+  const v=$('#view');
+  v.innerHTML=`
+  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">表單編號 ${esc(r.formNo)}</span></p>
+    <div class="panel fields">
+      <label class="field"><span>查驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
+      <label class="field"><span>檢查時機</span><select id="f_stage">${STAGES.map(s=>`<option ${s===r.stage?'selected':''}>${s}</option>`).join('')}</select></label>
+      <label class="field" style="grid-column:1/-1"><span>查驗位置（樓層／區域／軸線）</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：3F 版 C~D／2~3 軸"></label>
+      <label class="field"><span>查驗人員</span><input type="text" id="f_insp" value="${esc(r.inspector)}"></label>
+    </div></section>
+
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">檢查項目　○ 合格　× 不合格　／ 無此項目</p>
+    <button class="btn small" id="allOk">未填的全部合格</button></div>
+    <div class="items" id="items"></div>
+    <div class="row" style="margin-top:8px"><input type="text" id="newItem" class="grow" placeholder="自訂檢查項目，例：與梁筋衝突處已調整"><button class="btn" id="addItem">新增項目</button></div>
+  </section>
+
+  <section><p class="label">缺失及改善</p>
+    <div class="panel fields">
+      <label class="field" style="grid-column:1/-1"><span>缺失內容（不合格項目會自動列入列印表單）</span><textarea id="f_defect" placeholder="補充說明">${esc(r.defect)}</textarea></label>
+      <label class="field" style="grid-column:1/-1"><span>改善情形</span><textarea id="f_fix">${esc(r.fix)}</textarea></label>
+      <label class="field"><span>複查日期</span><input type="date" id="f_rdate" value="${esc(r.recheckDate)}"></label>
+      <label class="field"><span>複查結果</span><select id="f_recheck"><option value="">—</option><option value="ok" ${r.recheck==='ok'?'selected':''}>已改善合格</option><option value="ng" ${r.recheck==='ng'?'selected':''}>未改善</option></select></label>
+      <label class="field" style="grid-column:1/-1"><span>備註</span><input type="text" id="f_remark" value="${esc(r.remark)}"></label>
+    </div></section>
+
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">現場照片 <span class="num">（${r.photos.length}）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" id="phIn" accept="image/*" capture="environment" multiple hidden></label></div>
+    <div class="photos" id="photos"></div></section>
+
+  <section><p class="label">簽名</p><div class="signs" id="signs"></div></section>`;
+  renderItems(); renderPhotos(); renderSigns();
+  const bind=(sel,key)=>{$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
+  bind('#f_date','date');bind('#f_stage','stage');bind('#f_loc','location');bind('#f_insp','inspector');
+  bind('#f_defect','defect');bind('#f_fix','fix');bind('#f_rdate','recheckDate');bind('#f_recheck','recheck');bind('#f_remark','remark');
+  $('#allOk').onclick=()=>{r.items.forEach(i=>{if(!i.result)i.result='ok'});renderItems();dirty()};
+  $('#addItem').onclick=()=>{const t=$('#newItem').value.trim();if(!t)return;r.items.push({t,s:'',result:'',note:'',custom:true});$('#newItem').value='';renderItems();dirty()};
+  $('#phIn').onchange=async e=>{for(const f of e.target.files){try{r.photos.push({src:await shrink(f),cap:''})}catch(err){toast('照片讀取失敗')}}e.target.value='';renderPhotos();dirty()};
+
+  $('#savebar').hidden=false;
+  $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
+    <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn" id="toPrint">列印表單</button>`;
+  $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
+  $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
+    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(`cat-${r.cat}-${r.type}`)};
+}
+function renderItems(){
+  const r=cur;
+  $('#items').innerHTML=r.items.map((i,n)=>`<div class="item ${i.result==='ng'?'ng':''}" data-i="${n}">
+    <span class="no">${n+1}</span>
+    <div class="tx"><b>${esc(i.t)}</b>${i.s?`<small>${esc(i.s)}</small>`:''}</div>
+    <div class="ctl">
+      <div class="res">${['ok','ng','na'].map(v=>`<button type="button" data-v="${v}" class="${i.result===v?'on':''}" aria-pressed="${i.result===v}"><span class="sym">${SYM[v]}</span>${{ok:'合格',ng:'不合格',na:'無此項'}[v]}</button>`).join('')}</div>
+      <input type="text" value="${esc(i.note)}" placeholder="實測值／說明" aria-label="第 ${n+1} 項說明">
+    </div>
+    ${i.custom?`<button class="btn small danger rm" type="button">移除此項</button>`:''}
+  </div>`).join('');
+  document.querySelectorAll('#items .item').forEach(el=>{
+    const i=r.items[+el.dataset.i];
+    el.querySelectorAll('.res button').forEach(b=>b.onclick=()=>{i.result=i.result===b.dataset.v?'':b.dataset.v;renderItems();dirty()});
+    el.querySelector('input').oninput=e=>{i.note=e.target.value;dirty()};
+    const rm=el.querySelector('.rm'); if(rm) rm.onclick=()=>{r.items.splice(+el.dataset.i,1);renderItems();dirty()};
+  });
+}
+function renderPhotos(){
+  const r=cur;
+  $('#photos').innerHTML=r.photos.length?r.photos.map((p,n)=>`<div class="ph"><img src="${p.src}" alt="照片 ${n+1}"><div class="pc"><input type="text" value="${esc(p.cap)}" placeholder="說明" data-n="${n}"><button type="button" data-del="${n}">刪除</button></div></div>`).join('')
+    :`<div class="empty" style="grid-column:1/-1">尚未加入照片。手機會直接開相機拍攝。</div>`;
+  document.querySelectorAll('#photos input').forEach(x=>x.oninput=e=>{r.photos[+x.dataset.n].cap=e.target.value;dirty()});
+  document.querySelectorAll('#photos [data-del]').forEach(x=>x.onclick=()=>{r.photos.splice(+x.dataset.del,1);renderPhotos();dirty()});
+}
+const SIGNERS=[['worker','施工人員'],['qc','品管人員'],['sup','監造人員']];
+const DRAIN_SIGNERS=[['chief','監造主任'],['eng','監造工程師']];
+const signersOf=r=>r.kind==='drain'?DRAIN_SIGNERS:SIGNERS;
+function renderSigns(){
+  const r=cur;
+  $('#signs').innerHTML=signersOf(r).map(([k,l])=>{const s=r.signs[k]||{};return `<div class="sign">
+    <span class="muted" style="font-weight:700">${l}</span>
+    <input type="text" value="${esc(s.name)}" placeholder="姓名" data-k="${k}">
+    <div class="pad" data-pad="${k}">${s.img?`<img src="${s.img}" alt="${l}簽名">`:'點此簽名'}</div>
+    ${s.img?`<button class="btn small" data-clr="${k}" type="button">清除簽名</button>`:''}</div>`}).join('');
+  document.querySelectorAll('#signs input').forEach(x=>x.oninput=e=>{(r.signs[x.dataset.k]??={}).name=e.target.value;dirty()});
+  document.querySelectorAll('[data-pad]').forEach(x=>x.onclick=()=>openSig(x.dataset.pad));
+  document.querySelectorAll('[data-clr]').forEach(x=>x.onclick=()=>{delete r.signs[x.dataset.clr].img;renderSigns();dirty()});
+}
+function dirty(){
+  cur.updated=Date.now(); const st=$('#saveSt'); if(st)st.textContent='儲存中…';
+  clearTimeout(saveTimer); saveTimer=setTimeout(flush,500);
+  document.querySelectorAll('#items .item').forEach(el=>el.classList.toggle('ng',cur.items[+el.dataset.i]?.result==='ng'));
+}
+async function flush(){
+  clearTimeout(saveTimer); if(!cur)return;
+  try{await DB.put('records',cur);const st=$('#saveSt');if(st)st.textContent='已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}
+  catch(e){const st=$('#saveSt');if(st)st.textContent='儲存失敗：裝置空間可能不足';}
+}
+
+/* 照片壓縮：長邊 1280px、JPEG */
+function shrink(file){return new Promise((res,rej)=>{
+  const fr=new FileReader();fr.onerror=rej;
+  fr.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+    const M=1280,k=Math.min(1,M/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};img.src=fr.result};
+  fr.readAsDataURL(file);
+})}
+
+/* ---------- 簽名板 ---------- */
+let sigKey=null,sigDrawn=false;
+const cv=$('#sigCanvas'),cx=cv.getContext('2d');
+function openSig(k){
+  sigKey=k;sigDrawn=false;$('#sigTitle').textContent=signersOf(cur).find(s=>s[0]===k)[1]+'簽名';
+  $('#sigDlg').showModal();
+  const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
+  cx.fillStyle='#fff';cx.fillRect(0,0,r.width,r.height);cx.lineWidth=2.6;cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#111';
+}
+let drawing=false;
+const pt=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
+cv.addEventListener('pointerdown',e=>{drawing=true;cv.setPointerCapture(e.pointerId);const[x,y]=pt(e);cx.beginPath();cx.moveTo(x,y)});
+cv.addEventListener('pointermove',e=>{if(!drawing)return;const[x,y]=pt(e);cx.lineTo(x,y);cx.stroke();sigDrawn=true});
+cv.addEventListener('pointerup',()=>drawing=false);cv.addEventListener('pointercancel',()=>drawing=false);
+$('#sigClear').onclick=()=>{const r=cv.getBoundingClientRect();cx.fillStyle='#fff';cx.fillRect(0,0,r.width,r.height);sigDrawn=false};
+$('#sigCancel').onclick=()=>$('#sigDlg').close();
+$('#sigOk').onclick=()=>{if(sigDrawn){(cur.signs[sigKey]??={}).img=cv.toDataURL('image/png');renderSigns();dirty()}$('#sigDlg').close()};
+
+/* ---------- 給排水・吊管 專用表單（依「施工抽查紀錄表-排水吊管」） ---------- */
+const ROOM_TYPES=['單人房','三人房','四人房','其他'];
+const SPACE_NAMES=['廁所','浴室','陽台','洗衣間','茶水間','走廊','公共浴廁'];
+const BRANDS=['南亞CNS1298','橘紅色','灰管'];
+const D_BR=['1"','1-1/2"','2"','4"'], D_MN=['1-1/2"','3"','4"','5"'];
+const V_BR=['1"','2"','3"','4"'], V_MN=['3"','4"','5"','6"'];
+const newDrain=()=>({kind:'drain',type:'',typeOther:'',brDesign:'',brBrand:[],brSize:'',mnDesign:'',mnBrand:[],mnSize:'',
+  flex:false,flexRod:'',rigid:false,spacingRule:[],spacing:'',oneStep:false,sweep:false,elbow45:false,cap:false,label:false,flow:'',
+  slopeStd:'',len:'',hiD:'',hiA:'',loD:'',loA:''});
+const newVent=()=>({kind:'vent',ventOf:'',flow:'',brDesign:'',brBrand:['灰管'],brSize:'',mnDesign:'',mnBrand:['灰管'],mnSize:'',
+  rigid:false,oneStep:false,hD:'',hA:'',toStack:false,stackH:''});
+const newSpace=()=>({name:'',pos:'',pipes:[newDrain(),newDrain(),newDrain(),newVent(),newVent()]});
+const newDrainForm=()=>({floor:'',roomType:'四人房',roomOther:'',part:'廁所吊管',spaces:[newSpace()],
+  result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
+function drainLoc(f){const rt=f.roomType==='其他'?(f.roomOther||''):f.roomType;return [f.floor,[rt,f.part].filter(Boolean).join('-')].filter(Boolean).join(' ')}
+function slopeOf(p){
+  const L=parseFloat(p.len),h=parseFloat(p.hiA),l=parseFloat(p.loA);
+  if(!(L>0)||isNaN(h)||isNaN(l))return null;
+  const drop=+(h-l).toFixed(2),pct=drop/L*100,need=p.slopeStd==='3'?2:p.slopeStd==='4'?1:null;
+  return {drop,pct,need,ok:need==null?null:pct>=need};
+}
+function pipeSummary(p,n){
+  if(p.kind==='vent'){const ok=p.stackH!==''?(parseFloat(p.stackH)>=90?'≥90 ✓':'<90 ✗'):'';
+    return `透氣管 ${n}${p.ventOf?'（'+p.ventOf+'）':''}${p.mnSize?' · 幹管 '+p.mnSize:''}${p.stackH?' · 立管 '+p.stackH+'cm '+ok:''}`}
+  const s=slopeOf(p),t=p.type==='其他'?p.typeOther:p.type;
+  return `排水管 ${n}${t?'：'+t:''}${p.mnSize?' · 幹管 '+p.mnSize:''}${s?` · 坡度 ${s.pct.toFixed(2)}%${s.ok===true?' ✓':s.ok===false?' ✗':''}`:''}`;
+}
+/* 小元件：one=單選、many=複選、bool=勾選 */
+function getP(o,path){return path.split('.').reduce((a,k)=>a?.[k],o)}
+function setP(o,path,v){const ks=path.split('.'),last=ks.pop();ks.reduce((a,k)=>a[k],o)[last]=v}
+function opts(path,list,mode,val){
+  return `<div class="opts">${list.map(o=>{const[v,l]=Array.isArray(o)?o:[o,o];
+    const on=mode==='many'?(val||[]).includes(v):val===v;
+    return `<button type="button" class="opt ${on?'on':''}" data-path="${path}" data-mode="${mode}" data-val="${esc(v)}" aria-pressed="${on}">${esc(l)}</button>`}).join('')}</div>`;
+}
+const chk=(path,label,val)=>`<button type="button" class="opt ${val?'on':''}" data-path="${path}" data-mode="bool" aria-pressed="${!!val}">${val?'☑':'☐'} ${esc(label)}</button>`;
+const inp=(path,val,ph,num)=>`<input type="text" data-path="${path}" value="${esc(val)}" placeholder="${esc(ph||'')}" ${num?'inputmode="decimal"':''}>`;
+const fl=(label,body,wide)=>`<div class="fld ${wide?'wide':''}"><span>${label}</span>${body}</div>`;
+
+function pipeHTML(si,pi,p,n){
+  const b=`spaces.${si}.pipes.${pi}`;
+  let body;
+  if(p.kind==='drain'){
+    const s=slopeOf(p);
+    body=`
+    ${fl('管別',opts(b+'.type',['污水管','廢水管','除濕機+電熱水管','其他'],'one',p.type)+(p.type==='其他'?inp(b+'.typeOther',p.typeOther,'請填管別'):''),1)}
+    ${fl('支管 設計值 Ø（吋）',inp(b+'.brDesign',p.brDesign,'例：2',1))}
+    ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',D_BR,'one',p.brSize))}
+    ${fl('幹管 設計值 Ø（吋）',inp(b+'.mnDesign',p.mnDesign,'例：4',1))}
+    ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',D_MN,'one',p.mnSize))}
+    ${fl('吊架型式',`<div class="opts">${chk(b+'.flex','撓性吊架：熱浸鍍鋅螺桿＋管束',p.flex)}</div>${p.flex?opts(b+'.flexRod',['3/8"','1/2"'],'one',p.flexRod):''}<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}</div>`,1)}
+    ${fl('吊架、支撐間距規定',opts(b+'.spacingRule',[['1.5','1½" 以下每 1.5M 內一處'],['2.0','2" 以上每 2.0M 內一處，轉折處加強固定']],'many',p.spacingRule),1)}
+    ${fl('吊架間距（cm）',`<div class="row">${inp(b+'.spacing',p.spacing,'cm',1)}${chk(b+'.oneStep','僅一步（無間距）',p.oneStep)}</div>`)}
+    ${fl('彎頭及管口',`<div class="opts">${chk(b+'.sweep','排水彎頭採順水型式',p.sweep)}${chk(b+'.elbow45','90° 彎頭以 45°×2 銜接',p.elbow45)}${chk(b+'.cap','管口有管帽封閉',p.cap)}</div>`,1)}
+    ${fl('管路標示',`<div class="opts">${chk(b+'.label','管路種類標示',p.label)}</div><span class="muted">水流方向標示</span>${opts(b+'.flow',['正確','不正確'],'one',p.flow)}`)}
+    ${fl('洩水坡度標準',opts(b+'.slopeStd',[['3','3" 含以下 1/50'],['4','4" 含以上 1/100']],'one',p.slopeStd))}
+    <div class="fld wide"><span>洩水坡度量測（1m 線上，cm）</span>
+      <div class="meas">
+        <label>管路長度${inp(b+'.len',p.len,'cm',1)}</label>
+        <label>高點 設計${inp(b+'.hiD',p.hiD,'cm',1)}</label><label>高點 實際${inp(b+'.hiA',p.hiA,'cm',1)}</label>
+        <label>低點 設計${inp(b+'.loD',p.loD,'cm',1)}</label><label>低點 實際${inp(b+'.loA',p.loA,'cm',1)}</label>
+      </div>
+      <div class="calc" data-calc="${si}-${pi}">${calcText(p)}</div>
+    </div>`;
+  }else{
+    body=`
+    ${fl('透氣管',opts(b+'.ventOf',['污水','廢水'],'one',p.ventOf))}
+    ${fl('方向標示',opts(b+'.flow',['正確','不正確'],'one',p.flow))}
+    ${fl('支管 設計值 Ø（吋）',inp(b+'.brDesign',p.brDesign,'例：2',1))}
+    ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',V_BR,'one',p.brSize))}
+    ${fl('幹管 設計值 Ø（吋）',inp(b+'.mnDesign',p.mnDesign,'例：4',1))}
+    ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',V_MN,'one',p.mnSize))}
+    ${fl('吊架',`<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}${chk(b+'.oneStep','吊架間距：僅一步（無間距）',p.oneStep)}</div>`,1)}
+    <div class="fld wide"><span>管路高度及通氣立管（cm）</span>
+      <div class="meas">
+        <label>管路高度 設計${inp(b+'.hD',p.hD,'cm',1)}</label><label>管路高度 實際${inp(b+'.hA',p.hA,'cm',1)}</label>
+        <label>接通氣立管 實測（1m 線上）${inp(b+'.stackH',p.stackH,'cm',1)}</label>
+      </div>
+      <div class="opts">${chk(b+'.toStack','通氣管上端接通氣立管',p.toStack)}</div>
+      <div class="calc" data-calc="${si}-${pi}">${calcText(p)}</div>
+    </div>`;
+  }
+  return `<details class="pipe ${p.kind}" ${pi===0?'open':''}><summary><span class="ps" data-sum="${si}-${pi}">${esc(pipeSummary(p,n))}</span>
+    <button type="button" class="btn small danger" data-delpipe="${si}-${pi}">刪除</button></summary><div class="pbody">${body}</div></details>`;
+}
+function calcText(p){
+  if(p.kind==='vent'){const h=parseFloat(p.stackH);if(isNaN(h))return '通氣立管接點須位於地板面 90cm 以上';
+    return h>=90?`<b class="good">實測 ${h} cm ≥ 90 cm，符合</b>`:`<b class="bad">實測 ${h} cm，低於 90 cm</b>`}
+  const s=slopeOf(p);
+  if(!s)return '填入管路長度及高、低點實際值後自動計算坡度';
+  const t=`高低落差 ${s.drop} cm ÷ 管路長度 ${p.len} cm ＝ <b>${s.pct.toFixed(2)}%</b>`;
+  if(s.need==null)return t+'　（請選擇坡度標準）';
+  return t+(s.ok?`　<b class="good">≥ ${s.need}%，符合</b>`:`　<b class="bad">未達 ${s.need}%</b>`);
+}
+function viewDrain(r){
+  const c=cat(r.cat),t=typ(r.type),p=proj(r.projectId),f=r.form;
+  setTop(`${c.name}・${t.name}<span class="sub">${esc(p?.name)}</span>`,`cat-${r.cat}-${r.type}`);
+  $('#view').innerHTML=`
+  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+    <div class="panel fields">
+      <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
+      <label class="field"><span>樓層</span><input type="text" data-path="floor" value="${esc(f.floor)}" placeholder="例：2F"></label>
+      <label class="field"><span>房型</span><select id="f_room">${ROOM_TYPES.map(x=>`<option ${x===f.roomType?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field" id="roomOtherWrap" ${f.roomType==='其他'?'':'hidden'}><span>房型名稱</span><input type="text" data-path="roomOther" value="${esc(f.roomOther)}" placeholder="例：雙人房"></label>
+      <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：廁所吊管"></label>
+      <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div id="locView" class="locv">${esc(drainLoc(f))||'—'}</div></div>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">抽驗情形　空間 <span class="num" id="spCount">${f.spaces.length}</span> 個</p></div>
+    <div id="spaces" class="spaces"></div>
+    <button class="btn primary" id="addSpace" style="width:100%;margin-top:10px">＋ 新增空間</button>
+  </section>
+  <section><p class="label">抽查結果</p>
+    <div class="panel fields">
+      ${fl('結果',opts('result',[['ok','合格，符合圖說規範規定內容'],['ng','不合格']],'one',f.result),1)}
+      <div class="fld wide" id="ngWrap" ${f.result==='ng'?'':'hidden'}><span>不合格處置</span>${opts('fixType',['改善','拆除重作'],'one',f.fixType)}
+        <label class="field" style="max-width:240px"><span>改善期限</span><input type="date" data-path="deadline" value="${esc(f.deadline)}"></label></div>
+      ${fl('缺失處理方法',opts('method',['修補改善','拆除重作'],'one',f.method),1)}
+      ${fl('複驗結果',opts('recheck',[['ok','合格'],['ng','不合格']],'one',f.recheck),1)}
+      <label class="field" style="grid-column:1/-1"><span>備註</span><textarea data-path="remark">${esc(f.remark)}</textarea></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">現場照片 <span class="num">（${r.photos.length}）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" id="phIn" accept="image/*" capture="environment" multiple hidden></label></div>
+    <div class="photos" id="photos"></div></section>
+  <section><p class="label">簽名</p><div class="signs" id="signs"></div></section>
+  <datalist id="spaceNames">${SPACE_NAMES.map(x=>`<option value="${x}">`).join('')}</datalist>`;
+  renderSpaces();renderPhotos();renderSigns();
+  const v=$('#view');
+  $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
+  $('#f_room').onchange=e=>{f.roomType=e.target.value;$('#roomOtherWrap').hidden=f.roomType!=='其他';updLoc();dirty()};
+  v.oninput=e=>{
+    const el=e.target;if(!el.dataset.path||el.closest('#signs'))return;
+    setP(f,el.dataset.path,el.value);afterChange(el.dataset.path);dirty();
+  };
+  v.onclick=e=>{
+    const b=e.target.closest('.opt');
+    if(b&&b.dataset.path){
+      const path=b.dataset.path,mode=b.dataset.mode,val=b.dataset.val;
+      if(mode==='bool'){const nv=!getP(f,path);setP(f,path,nv);b.classList.toggle('on',nv);b.setAttribute('aria-pressed',nv);b.textContent=(nv?'☑':'☐')+b.textContent.slice(1);
+        if(/\.flex$/.test(path))renderSpaces();}
+      else if(mode==='many'){const a=[...(getP(f,path)||[])],i=a.indexOf(val);i<0?a.push(val):a.splice(i,1);setP(f,path,a);b.classList.toggle('on',i<0);b.setAttribute('aria-pressed',i<0)}
+      else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);
+        b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
+        if(/\.type$/.test(path))renderSpaces();}
+      afterChange(path);dirty();return;
+    }
+    const dp=e.target.closest('[data-delpipe]');
+    if(dp){e.preventDefault();const[si,pi]=dp.dataset.delpipe.split('-').map(Number);
+      if(!dp.dataset.arm){dp.dataset.arm='1';dp.textContent='確定？';setTimeout(()=>{if(dp.isConnected){dp.dataset.arm='';dp.textContent='刪除'}},2500);return}
+      f.spaces[si].pipes.splice(pi,1);renderSpaces();dirty();return}
+    const sa=e.target.closest('[data-sp]');
+    if(sa){const si=+sa.dataset.sp,act=sa.dataset.act;
+      if(act==='drain')f.spaces[si].pipes.push(newDrain());
+      if(act==='vent')f.spaces[si].pipes.push(newVent());
+      if(act==='copy'){const cp=JSON.parse(JSON.stringify(f.spaces[si]));cp.pos='';f.spaces.splice(si+1,0,cp)}
+      if(act==='del'){if(!sa.dataset.arm){sa.dataset.arm='1';sa.textContent='再按一次刪除';setTimeout(()=>{if(sa.isConnected){sa.dataset.arm='';sa.textContent='刪除空間'}},2500);return}f.spaces.splice(si,1)}
+      renderSpaces();dirty();
+    }
+  };
+  $('#addSpace').onclick=()=>{f.spaces.push(newSpace());renderSpaces();dirty();
+    const all=document.querySelectorAll('.space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
+  $('#phIn').onchange=async e=>{for(const fl_ of e.target.files){try{r.photos.push({src:await shrink(fl_),cap:''})}catch(err){toast('照片讀取失敗')}}e.target.value='';renderPhotos();dirty()};
+  function updLoc(){r.location=drainLoc(f);$('#locView').textContent=r.location||'—'}
+  function afterChange(path){
+    if(['floor','roomOther','part'].includes(path))updLoc();
+    if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
+    const m=path.match(/^spaces\.(\d+)\.pipes\.(\d+)\./);
+    if(m){const p=f.spaces[+m[1]].pipes[+m[2]];
+      const sm=document.querySelector(`[data-sum="${m[1]}-${m[2]}"]`);if(sm)sm.textContent=pipeSummary(p,pipeNo(f.spaces[+m[1]],+m[2]));
+      const cl=document.querySelector(`[data-calc="${m[1]}-${m[2]}"]`);if(cl)cl.innerHTML=calcText(p);}
+  }
+  $('#savebar').hidden=false;
+  $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
+    <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn" id="toPrint">列印表單</button>`;
+  $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
+  $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
+    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(`cat-${r.cat}-${r.type}`)};
+}
+function pipeNo(sp,pi){const k=sp.pipes[pi].kind;return sp.pipes.slice(0,pi+1).filter(p=>p.kind===k).length}
+function renderSpaces(){
+  const f=cur.form;
+  const openSet=new Set([...document.querySelectorAll('details.pipe[open]')].map(d=>d.querySelector('[data-sum]')?.dataset.sum));
+  const first=!document.querySelector('.space');
+  $('#spaces').innerHTML=f.spaces.length?f.spaces.map((sp,si)=>`<div class="space">
+    <div class="sphead"><span class="spno num">${si+1}</span>
+      <label class="field grow"><span>空間名稱</span><input type="text" list="spaceNames" data-path="spaces.${si}.name" value="${esc(sp.name)}" placeholder="例：廁所"></label>
+      <label class="field grow"><span>位置</span><input type="text" data-path="spaces.${si}.pos" value="${esc(sp.pos)}" placeholder="例：A 床側／軸線"></label></div>
+    <div class="pipes">${sp.pipes.map((p,pi)=>pipeHTML(si,pi,p,pipeNo(sp,pi))).join('')||'<div class="empty">此空間沒有管段</div>'}</div>
+    <div class="row sptools">
+      <button class="btn small" data-sp="${si}" data-act="drain" type="button">＋ 排水管</button>
+      <button class="btn small" data-sp="${si}" data-act="vent" type="button">＋ 透氣管</button>
+      <button class="btn small" data-sp="${si}" data-act="copy" type="button">複製此空間</button>
+      <span class="grow"></span>
+      <button class="btn small danger" data-sp="${si}" data-act="del" type="button">刪除空間</button>
+    </div></div>`).join(''):'<div class="empty">尚無空間，按下方「新增空間」。</div>';
+  if(!first)document.querySelectorAll('details.pipe').forEach(d=>{d.open=openSet.has(d.querySelector('[data-sum]').dataset.sum)});
+  $('#spCount').textContent=f.spaces.length;
+}
+
+/* 排水吊管列印表單 */
+function drainSheet(r){
+  const p=proj(r.projectId)||{},f=r.form;
+  const cb=(on,l)=>`${on?'■':'□'}${l}`;
+  const u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
+  const sizes=(list,val)=>list.map(x=>cb(val===x,x)).join(' ');
+  const brands=a=>BRANDS.map(x=>cb((a||[]).includes(x),x)).join(' ');
+  const pipeTxt=pp=>{
+    if(pp.kind==='vent')return `<div class="pp">
+      <div>管別：■透氣管(${cb(pp.ventOf==='污水','污水')}${cb(pp.ventOf==='廢水','廢水')}) ■管路種類標示：■透氣管 方向標示：${cb(pp.flow==='正確','正確')} ${cb(pp.flow==='不正確','不正確')}</div>
+      <div>支管規格：設計值：Ø${u(pp.brDesign)}" 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(V_BR,pp.brSize)}</div>
+      <div>幹管規格：設計值：Ø${u(pp.mnDesign)}" 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(V_MN,pp.mnSize)}</div>
+      <div>${cb(pp.rigid,'剛性吊架配管以50mm*50mm*5mm熱浸鍍鋅角鋼+U型螺栓固定')}　${cb(pp.oneStep,'吊架間距：僅一步(無間距)')}</div>
+      <div>□管路高度(設計)：${u(pp.hD)}cm 實際：${u(pp.hA)}cm；${cb(pp.toStack,'通氣管之上端接通氣立管')}，實測${u(pp.stackH)}cm(1米線上)(須位於地板面90公分以上)</div></div>`;
+    const s=slopeOf(pp),t=pp.type;
+    return `<div class="pp">
+      <div>管別：${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} ${cb(t==='其他',u(pp.typeOther))}</div>
+      <div>支管規格：設計值：Ø${u(pp.brDesign)}" 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(D_BR,pp.brSize)}</div>
+      <div>幹管規格：設計值：Ø${u(pp.mnDesign)}" 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(D_MN,pp.mnSize)}</div>
+      <div>${cb(pp.flex,'撓性吊架配管以')}${cb(pp.flexRod==='3/8"','3/8"')} ${cb(pp.flexRod==='1/2"','1/2"')} 熱浸鍍鋅螺桿+熱浸鍍鋅管束吊掛固定</div>
+      <div>${cb(pp.rigid,'剛性吊架配管以50mm*50mm*5mm熱浸鍍鋅角鋼+U型螺栓固定')}</div>
+      <div>${cb(pp.spacingRule.includes('1.5'),'吊架、支撐間距1½"以下每1.5M內一處')} ${cb(pp.spacingRule.includes('2.0'),'2"以上每2.0M內一處及管路轉折處需加強固定')}</div>
+      <div>${cb(pp.spacing!=='','吊架間距')}：⑴${u(pp.spacing)}cm ${cb(pp.oneStep,'僅一步(無間距)')}</div>
+      <div>${cb(pp.sweep,'排水彎頭採用順水型式')} ${cb(pp.elbow45,'排水管90度彎頭有使用45度x2只施工銜接')} ${cb(pp.cap,'管口有管帽封閉')}</div>
+      <div>${cb(pp.label,'管路種類標示')}${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} 水流方向標示 ${cb(pp.flow==='正確','正確')} ${cb(pp.flow==='不正確','不正確')}</div>
+      <div>洩水坡度量測 洩水坡度${cb(pp.slopeStd==='3','(3")含以下者為1/50')} ${cb(pp.slopeStd==='4','(4")含以上者1/100')}</div>
+      <div>管路長度：${u(pp.len)}cm 高點(設計)：${u(pp.hiD)}cm 實際：${u(pp.hiA)}cm；低點(設計)：${u(pp.loD)}cm 實際：${u(pp.loA)}cm(1m↑)</div>
+      <div>高低落差：${u(s?s.drop:'')}cm　落差值${u(s?s.drop:'')}／管路長度${u(pp.len)}＝${u(s?s.pct.toFixed(2):'')}%</div></div>`;
+  };
+  const sg=k=>r.signs[k]||{};
+  return `<div class="sheet dsheet">
+    <div class="dtop"><span>表7-2 工程查驗紀錄表</span><span>編號：${esc(r.formNo)}</span></div>
+    <h3>工程查驗紀錄表(不定期抽查)</h3>
+    <table>
+      <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
+      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">抽查位置</td><td>${esc(drainLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
+      <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>
+        ${f.spaces.map((sp,si)=>`<div class="dsp"><div class="dsph">${si+1}.空間名稱：${u(sp.name)}　位置：${u(sp.pos)}</div>${sp.pipes.map(pipeTxt).join('<hr>')}</div>`).join('')}
+        <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
+      </td></tr>
+      <tr><td colspan="4">二、缺失處理方法：${cb(f.method==='修補改善','修補改善')}　${cb(f.method==='拆除重作','拆除重作')}</td></tr>
+      <tr><td colspan="4">三、複驗結果：${cb(f.recheck==='ok','合格')}　${cb(f.recheck==='ng','不合格')}</td></tr>
+      <tr><td colspan="4">備註：${esc(f.remark).replace(/\n/g,'<br>')}</td></tr>
+    </table>
+    <div class="dsign">${DRAIN_SIGNERS.map(([k,l])=>`<div>${l}：${sg(k).img?`<img src="${sg(k).img}" alt="">`:''}<span>${esc(sg(k).name)}</span></div>`).join('')}</div>
+    ${r.photos.length?`<div class="sec"><div class="pgrid">${r.photos.map((x,n)=>`<figure><img src="${x.src}" alt=""><figcaption>照片 ${n+1}${x.cap?'：'+esc(x.cap):''}</figcaption></figure>`).join('')}</div></div>`:''}
+  </div>`;
+}
+
+/* ---------- 列印 ---------- */
+function sheetHTML(r){
+  const p=proj(r.projectId)||{},c=cat(r.cat),t=typ(r.type);
+  const ngItems=r.items.map((i,n)=>({...i,n:n+1})).filter(i=>i.result==='ng');
+  const defect=[...ngItems.map(i=>`第 ${i.n} 項 ${i.t}${i.note?'：'+i.note:''}`),r.defect].filter(Boolean);
+  const sg=k=>r.signs[k]||{};
+  const ph=r.photos;
+  return `<div class="sheet">
+    <h3>${esc(p.name)}</h3>
+    <h4>${c.name}工程　${t.name}　施工查驗紀錄表</h4>
+    <div class="fno">表單編號：${esc(r.formNo)}</div>
+    <table>
+      <tr><td class="k">標案編號</td><td>${esc(p.no)}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
+      <tr><td class="k">監造單位</td><td>${esc(p.sup)}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
+      <tr><td class="k">查驗日期</td><td>${rocDate(r.date)}</td><td class="k">檢查時機</td><td>${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
+      <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>
+    </table>
+    <table class="sec">
+      <colgroup><col style="width:7%"><col style="width:22%"><col style="width:38%"><col style="width:9%"><col style="width:24%"></colgroup>
+      <tr><th>項次</th><th>檢查項目</th><th>檢查標準</th><th>結果</th><th>實測紀錄／說明</th></tr>
+      ${r.items.map((i,n)=>`<tr><td class="c">${n+1}</td><td>${esc(i.t)}</td><td class="small">${esc(i.s)}</td><td class="res-sym">${SYM[i.result]||''}</td><td class="small">${esc(i.note)}</td></tr>`).join('')}
+    </table>
+    <div class="legend">檢查結果：○ 合格　× 不合格　／ 無此檢查項目</div>
+    <table>
+      <tr><td class="k">缺失內容</td><td colspan="3">${defect.length?defect.map(esc).join('<br>'):'無'}</td></tr>
+      <tr><td class="k">改善情形</td><td colspan="3">${esc(r.fix).replace(/\n/g,'<br>')}</td></tr>
+      <tr><td class="k">複查日期</td><td>${rocDate(r.recheckDate)}</td><td class="k">複查結果</td><td>${r.recheck==='ok'?'■已改善合格　□未改善':r.recheck==='ng'?'□已改善合格　■未改善':'□已改善合格　□未改善'}</td></tr>
+      ${r.remark?`<tr><td class="k">備註</td><td colspan="3">${esc(r.remark)}</td></tr>`:''}
+    </table>
+    ${ph.length?`<div class="sec"><div class="pgrid">${ph.map((x,n)=>`<figure><img src="${x.src}" alt=""><figcaption>照片 ${n+1}${x.cap?'：'+esc(x.cap):''}</figcaption></figure>`).join('')}</div></div>`:''}
+    <table class="sec">
+      <tr>${SIGNERS.map(([,l])=>`<th>${l}</th>`).join('')}</tr>
+      <tr class="signrow">${SIGNERS.map(([k])=>`<td>${sg(k).img?`<img src="${sg(k).img}" alt="">`:''}<div class="small">${esc(sg(k).name)}</div></td>`).join('')}</tr>
+    </table>
+  </div>`;
+}
+function showPrint(list,back,title){
+  setTop(title,back);
+  $('#view').hidden=true;
+  const pa=$('#printArea');
+  pa.className='preview';
+  pa.style.display='block';
+  pa.innerHTML=`<div class="print-toolbar" style="padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="muted grow">A4 直式預覽，共 ${list.length} 張。電腦請按「列印」，或選「另存為 PDF」。</span>
+      <button class="btn primary" id="doPrint">列印</button></div>
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>r.kind==='drain'?drainSheet(r):sheetHTML(r)).join('')}</div>`;
+  $('#doPrint').onclick=()=>window.print();
+}
+function viewPrint(id){
+  const r=records.find(x=>x.id===id);if(!r)return go('home');
+  showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.formNo)}</span>`);
+}
+function viewPrintAll(ck,tk){
+  const list=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!list.length)return go(`cat-${ck}-${tk}`);
+  showPrint(list,`cat-${ck}-${tk}`,`列印預覽<span class="sub">${cat(ck).name}・${typ(tk).name}</span>`);
+}
+const _setTop=setTop;
+setTop=function(t,b){_setTop(t,b);$('#printArea').style.display=''};
+
+/* ---------- 備份 ---------- */
+$('#setBtn').onclick=async()=>{
+  try{const e=await navigator.storage?.estimate?.();$('#usage').textContent=e?`已使用約 ${(e.usage/1048576).toFixed(1)} MB／可用約 ${(e.quota/1048576).toFixed(0)} MB`:''}catch(_){}
+  $('#ver').textContent=APP_VERSION;$('#setDlg').showModal()};
+$('#setClose').onclick=()=>$('#setDlg').close();
+$('#expBtn').onclick=async()=>{
+  await flush();
+  const blob=new Blob([JSON.stringify({app:'site-inspection',v:1,exported:new Date().toISOString(),projects,records})],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`施工查驗備份_${today()}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('備份檔已下載');
+};
+$('#impFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.app!=='site-inspection')throw 0;
+    let np=0,nr=0;
+    for(const p of d.projects||[]){const o=proj(p.id);if(!o||(p.updated||0)>(o.updated||0)){await DB.put('projects',p);np++}}
+    for(const r of d.records||[]){const o=records.find(x=>x.id===r.id);if(!o||(r.updated||0)>(o.updated||0)){await DB.put('records',r);nr++}}
+    projects=await DB.all('projects');records=await DB.all('records');
+    toast(`已匯入 ${np} 個標案、${nr} 筆查驗`);$('#setDlg').close();render();
+  }catch(_){toast('這不是本 APP 的備份檔')}
+  e.target.value='';
+};
+
+/* ---------- 啟動 ---------- */
+(async()=>{
+  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');}
+  catch(e){$('#view').innerHTML='<div class="empty">此瀏覽器無法儲存資料（可能是無痕模式）。請改用一般模式開啟。</div>';return}
+  render();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "現場施工查驗",
+  "short_name": "施工查驗",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef1f3",
+  "theme_color": "#1f3a4d",
+  "lang": "zh-Hant",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

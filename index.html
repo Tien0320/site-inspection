@@ -280,6 +280,8 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .pbody{padding:4px 12px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 8px 8px}
 .sptools{gap:6px}
 .dsheet{font-size:10pt}
+.dsheet .dsub{font-size:11pt;padding-left:3em;margin:2px 0}
+.dsheet .dsub+table{margin-top:4px}
 .dsheet .dtop{display:flex;justify-content:space-between;font-size:9.5pt;margin-bottom:2px}
 .dsheet .dbody{vertical-align:top;line-height:1.5}
 .dsheet .dsp{margin-top:4px;break-inside:auto}
@@ -389,7 +391,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-29';
+const APP_VERSION='2026.11.06-30';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1336,8 +1338,9 @@ function drainSheet(r){
   };
   const sg=k=>r.signs[k]||{};
   return `<div class="sheet dsheet">
-    <div class="dtop"><span>表7-2 工程查驗紀錄表</span><span>編號：${esc(r.formNo)}</span></div>
-    <h3>工程查驗紀錄表(不定期抽查)</h3>
+    <h3>表7-2 工程查驗紀錄表</h3>
+    <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
+    <div class="dsub">編號：${esc(r.formNo)}</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>

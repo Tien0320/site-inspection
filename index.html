@@ -417,7 +417,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-78';
+const APP_VERSION='2026.11.06-79';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -2381,7 +2381,8 @@ const Cloud={
     this.unsub.forEach(f=>f());this.unsub=[];this.user=u;
     if(!u){this.set('signedout');return}
     this.set('syncing');
-    const err=e=>this.set('error',e.code==='permission-denied'?`此帳號（${u.email}）沒有權限，請聯絡管理者加入`:(e.message||e.code));
+    this.denied=false;
+    const err=e=>{if(e.code==='permission-denied')this.denied=true;this.set('error',e.code==='permission-denied'?`此帳號（${u.email}）沒有權限，請聯絡管理者加入`:(e.message||e.code))};
     this.unsub.push(this.fs.collection('projects').onSnapshot(s=>this.apply('projects',s),err));
     this.unsub.push(this.fs.collection('records').onSnapshot(s=>this.apply('records',s),err));
     this.unsub.push(this.fs.collection('meta').doc('rooms').onSnapshot(d=>{if(!d.exists){roomsErr='雲端尚無空間資料，請管理者上傳';if($('#setDlg').open)renderCloudBox();return}try{const o=JSON.parse(d.data().json);roomsErr='';setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();roomsChanged()}catch(e){roomsErr='空間資料格式錯誤：'+e.message}},e=>{roomsErr=(e.code==='permission-denied'?'沒有讀取權限（帳號未加入名單）':'讀取失敗：'+(e.code||e.message));if($('#setDlg').open)renderCloudBox()}));
@@ -2418,9 +2419,9 @@ const Cloud={
     const k=kind==='records'?'r':'p',seen=this.seen(k);seen.delete(id);this.keep(k,seen);this.pending();
   },
   delPhoto(id){if(this.on)this.fs.collection('photos').doc(id).delete().catch(()=>{})},
-  fail(e){this.set('error',e.code==='permission-denied'?'此帳號沒有寫入權限':(e.message||String(e)))},
+  fail(e){if(e.code==='permission-denied')this.denied=true;this.set('error',e.code==='permission-denied'?`此帳號（${this.user&&this.user.email}）沒有權限，請聯絡管理者加入`:(e.message||String(e)))},
   pending(){
-    if(!this.on)return;
+    if(!this.on||this.denied)return;
     this.set(navigator.onLine?'syncing':'offline',navigator.onLine?'':'恢復網路後會自動上傳');
     const t=this.pendT={};
     this.fs.waitForPendingWrites().then(()=>{if(this.pendT===t&&this.state!=='error')this.set(navigator.onLine?'synced':'offline')});

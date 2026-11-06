@@ -107,6 +107,9 @@ textarea{min-height:72px;resize:vertical}
 /* 子項分頁 */
 .seg.seg3{grid-template-columns:repeat(3,1fr)}
 .seg.seg1{grid-template-columns:minmax(0,1fr)}
+.axis{display:flex;align-items:center;gap:4px}
+.axis input{width:0;flex:1;min-width:0;text-align:center;font-family:var(--mono)}
+.axis i,.axis b{font-style:normal;color:var(--ink-2);font-weight:700;padding:0 2px}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
@@ -393,7 +396,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-39';
+const APP_VERSION='2026.11.06-40';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1695,6 +1698,13 @@ function testSheet(r){
   </div>`;
 }
 
+/* 位置：兩組軸線，中間「~」已填好（例：5 ~ 6 ／ C ~ D） */
+function axisPos(x){const a=[x.px1,x.px2].filter(Boolean).join('~'),b=[x.py1,x.py2].filter(Boolean).join('~');return [a,b].filter(Boolean).join(' / ')}
+function axisHTML(b,x){
+  if(x.pos&&x.px1==null){const m=x.pos.match(/^\s*([^~／/\s]+)\s*~\s*([^／/\s]+)\s*[／/]\s*([^~\s]+)\s*~\s*(\S+)\s*$/);if(m){x.px1=m[1];x.px2=m[2];x.py1=m[3];x.py2=m[4]}}
+  const f=(k,ph)=>`<input type="text" data-path="${b}.${k}" value="${esc(x[k]||'')}" placeholder="${ph}" maxlength="4">`;
+  return `<div class="field grow"><span>位置（軸線）</span><div class="axis">${f('px1','5')}<i>~</i>${f('px2','6')}<b>/</b>${f('py1','C')}<i>~</i>${f('py2','D')}</div></div>`;
+}
 /* ---------- 穿樑套管（依「施工抽查紀錄表-(穿梁套管)」） ---------- */
 const FLOORS_ALL=['B3F','B2F','B1F',...Array.from({length:10},(_,i)=>`${i+1}F`),'R1F','R2F','RLF','停機坪']; // 第二期醫療大樓
 const floorsOf=pid=>isDorm(pid)?FLOORS:FLOORS_ALL;
@@ -1708,7 +1718,7 @@ function sleeveItemHTML(i,x){
   return `<div class="space" data-si="${i}">
     <div class="sphead"><span class="spno num">${i+1}</span>
       <label class="field grow"><span>編號（自動編列，可修改）</span>${inp(b+'.no',x.no||String(i+1),'')}</label>
-      <label class="field grow"><span>位置</span>${inp(b+'.pos',x.pos,'例：C~D／5~6 軸')}</label></div>
+      ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('構件',opts(b+'.member',['梁','外牆','內牆'],'one',x.member))}
       <label class="field"><span>空間</span>${inp(b+'.space',x.space,'例：走廊')}</label>
@@ -1758,6 +1768,7 @@ function viewSleeve(r){
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
+    const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     if(path==='floor'||path==='part'){r.location=sleeveLoc(f);$('#locView').textContent=r.location}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     const m=path.match(/^items\.(\d+)\.(botD|botA|topD|topA|distD|distA)$/);
@@ -1824,7 +1835,7 @@ function slabItemHTML(i,x){
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span>
-      <label class="field grow"><span>位置</span>${inp(b+'.pos',x.pos,'例：C~D／5~6 軸')}</label>
+      ${axisHTML(b,x)}
       <label class="field grow"><span>空間編號名稱</span>${inp(b+'.space',x.space,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
@@ -1885,6 +1896,7 @@ function viewSlab(r){
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
+    const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     if(path==='floor'||path==='part'){r.location=slabLoc(f);$('#locView').textContent=r.location||'—'}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     let m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);
@@ -1960,7 +1972,7 @@ function dfItemHTML(i,x){
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span>
       <label class="field grow"><span>空間名稱編號</span>${inp(b+'.space',x.space,'例：5F-男廁')}</label>
-      <label class="field grow"><span>位置</span>${inp(b+'.pos',x.pos,'例：C~D／5~6 軸')}</label></div>
+      ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('部位',opts(b+'.face',['頂版','底版','壁面'],'one',x.face))}
       ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
@@ -2008,6 +2020,7 @@ function viewDf(r){
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
+    const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     if(path==='floor'||path==='part'){r.location=dfLoc(f);$('#locView').textContent=r.location||'—'}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     const m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);

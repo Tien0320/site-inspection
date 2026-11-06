@@ -267,6 +267,8 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 @media (max-width:520px){.pextra{grid-template-columns:1fr}}
 .ptable td,.ptable th{font-size:9.5pt;padding:3px}
 .updbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));z-index:60;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;padding:10px 18px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;max-width:calc(100vw - 32px)}
+.printbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media print{.printbar,.psys{display:none!important}}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
@@ -439,7 +441,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-88';
+const APP_VERSION='2026.11.06-89';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -2408,8 +2410,15 @@ function showPrint(list,back,title,editId){
       <span class="muted grow">A4 直式預覽，共 ${list.length} 份表單（照片黏貼表接在各表單後）。電腦請按「列印」，或選「另存為 PDF」。</span>
       ${editId?`<button class="btn primary" id="doEdit">編輯</button>`:''}
       <button class="btn ${editId?'':'primary'}" id="doPrint">列印</button></div>
-    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
+    ${list.length===1&&list[0].kind==='slab'&&list[0].form.items.some(x=>x.sys)?`<div class="stabs psys" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 10px">${['全部','電氣','弱電','消防','空調','其他'].filter(t=>t==='全部'||list[0].form.items.some(x=>x.sys===t)).map(t=>`<button type="button" class="${(printSys||'全部')===t?'on':''}" data-psys="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}</button>`).join('')}</div>`:''}
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
+  const bar=document.createElement('div');bar.className='printbar';
+  bar.innerHTML=`<div class="savebar-in">${editId?`<button class="btn" id="doEdit2" type="button">編輯</button>`:''}<span class="grow"></span><button class="btn primary" id="doPrint2" type="button">列印</button></div>`;
+  pa.appendChild(bar);
+  $('#doPrint2').onclick=()=>window.print();
+  if(editId){const ed=()=>go('rec-'+editId);$('#doEdit2').onclick=ed;if($('#doEdit'))$('#doEdit').onclick=ed}
+  document.querySelectorAll('[data-psys]').forEach(b=>b.onclick=()=>{printSys=b.dataset.psys==='全部'?'':b.dataset.psys;const y=scrollY;showPrint(list,back,title,editId);scrollTo(0,y)});
 }
 async function viewPreview(id){
   const r=records.find(x=>x.id===id);if(!r)return go('home');
@@ -2420,7 +2429,7 @@ async function viewPreview(id){
 async function viewPrint(id){
   const r=records.find(x=>x.id===id);if(!r)return go('home');
   await ensurePhotos(r);
-  showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.location||'')}</span>`);
+  showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.location||'')}</span>`,id);
 }
 async function viewPrintAll(ck,tk,md){
   const list=records.filter(r=>r.projectId===curProj&&inCat(r,ck)&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));

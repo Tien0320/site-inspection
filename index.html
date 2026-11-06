@@ -343,6 +343,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
       <label class="field"><span>專管單位</span><input type="text" id="pf_pm"></label>
       <label class="field"><span>監造單位</span><input type="text" id="pf_sup"></label>
       <label class="field"><span>承攬廠商（營造單位）</span><input type="text" id="pf_con"></label>
+      <label class="field"><span>表單編號前綴</span><input type="text" id="pf_prefix" placeholder="例：10812-EP-"></label>
     </div>
     <div class="acts">
       <button type="button" class="btn danger" id="projDel" hidden>刪除標案</button>
@@ -386,7 +387,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-23';
+const APP_VERSION='2026.11.06-25';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -774,7 +775,7 @@ function openProj(p){
   editingProj=p||null;
   $('#projDlgTitle').textContent=p?'編輯標案':'新增標案';
   $('#pf_name').value=p?.name||''; $('#pf_no').value=p?.no||''; $('#pf_owner').value=p?.owner||'';
-  $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||''; $('#pf_pm').value=p?.pm||'';
+  $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||''; $('#pf_pm').value=p?.pm||''; $('#pf_prefix').value=p?prefixOf(p):'';
   $('#projDel').hidden=!p; $('#projDel').textContent='刪除標案'; $('#projDel').dataset.arm='';
   $('#projDlg').showModal();
 }
@@ -782,7 +783,7 @@ $('#projCancel').onclick=()=>$('#projDlg').close();
 $('#projForm').onsubmit=async e=>{
   e.preventDefault();
   const p=editingProj||{id:uid(),created:Date.now()};
-  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),pm:$('#pf_pm').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),updated:Date.now()});
+  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),pm:$('#pf_pm').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),prefix:$('#pf_prefix').value.trim(),updated:Date.now()});
   if(!p.name)return;
   await DB.put('projects',p);
   if(!editingProj)projects.push(p);
@@ -842,13 +843,19 @@ function viewMat(tk){
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-mat-${tk}-mat`));
   bindRecRows();
 }
+const prefixOf=p=>p&&p.prefix!=null&&p.prefix!==''?p.prefix:(p&&p.id==='p-nycuh-dorm'?'10812-EP-':'');
+function nextFormNo(pid,fallback){
+  const pre=prefixOf(proj(pid));if(!pre)return fallback;
+  const used=records.filter(r=>r.projectId===pid&&(r.formNo||'').startsWith(pre)).map(r=>parseInt(r.formNo.slice(pre.length))||0);
+  return pre+String(Math.max(0,...used)+1).padStart(3,'0');
+}
 async function newRec(ck,tk,md){
   md=mode(md).key;
   const d=today();
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工中',inspector:'',
     mat:{name:'',brand:'',spec:'',qty:'',ref:''},
-    formNo:`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`,
+    formNo:nextFormNo(curProj,`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`),
     items:(tk==='test'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
   if(md==='mat'&&isPipeType(tk))r.pipes=[newPipeRow(tk)];
@@ -990,7 +997,7 @@ function photoTarget(r,p){
   if(r.kind==='drain'){
     for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
       if(pi>=0){const pp=sp.pipes[pi],n=pipeNo(sp,pi),t=pp.kind==='vent'?`透氣管${n}`:`排水管${n}${pp.type?'（'+(pp.type==='其他'?pp.typeOther:pp.type)+'）':''}`;
-        return `${sp.name||'空間'+(si+1)}${sp.pos?'・'+sp.pos:''} ${t}`}}
+        return `${spName(sp)||'空間'+(si+1)}${sp.pos?'・'+sp.pos:''} ${t}`}}
     return '';
   }
   const n=r.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.items[n].t}`:'';
@@ -1067,6 +1074,11 @@ $('#sigOk').onclick=()=>{if(sigDrawn){(cur.signs[sigKey]??={}).img=cv.toDataURL(
 const FLOORS=['B1','1F','2F','3F','4F','5F','6F','7F','8F','9F','R1F','R2F'];
 const ROOM_TYPES=['單人房','三人房','四人房','其他'];
 const SPACE_NAMES=['浴廁','陽台','臥室']; // 職務宿舍專用
+/* 職務宿舍各樓層房間所在軸線：由 CAD 平面圖（xref 陽明附設醫院_職務宿舍2F~9F.dwg）房名屬性位置對照柱心線計算 */
+const DORM_ROOMS={"2F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"3F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"4F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"5F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / D~E","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"6F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"7F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"8F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"9F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"3~4 / B~C","浴廁4":"3~4 / B~C","浴廁5":"4~5 / B~C","浴廁6":"2~3 / C~D","浴廁7":"2~3 / D~E","浴廁8":"2~3 / D~E","浴廁9":"3~4 / D~E","浴廁10":"3~4 / D~E","浴廁11":"4~5 / D~E","浴廁12":"5~6 / B~C","浴廁13":"6~7 / C~D","浴廁14":"6~7 / C~D","浴廁15":"5~6 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"3~4 / B~C","臥室4":"3~4 / B~C","臥室5":"4~5 / B~C","臥室6":"2~3 / C~D","臥室7":"2~3 / D~E","臥室8":"2~3 / D~E","臥室9":"3~4 / D~E","臥室10":"3~4 / D~E","臥室11":"4~5 / D~E","臥室12":"5~6 / B~C","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"3~4 / A~B","陽台4":"3~4 / A~B","陽台5":"4~5 / A~B","陽台6":"1~2 / C~D","陽台7":"1~2 / C~D","陽台8":"2~3 / E~F","陽台9":"2~3 / E~F","陽台10":"3~4 / E~F","陽台11":"3~4 / E~F","陽台12":"4~5 / E~F","陽台13":"5~6 / D~E","陽台14":"5~6 / B~C","陽台15":"6~7 / B~C","陽台16":"6~7 / D~E"}};
+const spName=sp=>(sp.name||'')+(sp.no||'');
+const roomNos=(fl,nm)=>Object.keys((DORM_ROOMS[fl]||{})).filter(k=>k.startsWith(nm)).map(k=>k.slice(nm.length)).sort((a,b)=>a-b);
+const roomGrid=(fl,sp)=>(DORM_ROOMS[fl]||{})[spName(sp)]||'';
 const BRANDS=['南亞CNS1298','橘紅色','灰管'];
 const D_BR=['1"','1-1/2"','2"','4"'], D_MN=['1-1/2"','3"','4"','5"'];
 const V_BR=['1"','2"','3"','4"'], V_MN=['3"','4"','5"','6"'];
@@ -1225,7 +1237,7 @@ function viewDrain(r){
     if(sa){const si=+sa.dataset.sp,act=sa.dataset.act;
       if(act==='drain')f.spaces[si].pipes.push(newDrain());
       if(act==='vent')f.spaces[si].pipes.push(newVent());
-      if(act==='copy'){const cp=JSON.parse(JSON.stringify(f.spaces[si]));cp.pos='';cp.id=uid();cp.pipes.forEach(p=>p.id=uid());f.spaces.splice(si+1,0,cp)}
+      if(act==='copy'){const cp=JSON.parse(JSON.stringify(f.spaces[si]));cp.pos='';cp.no='';cp.posAuto=false;cp.id=uid();cp.pipes.forEach(p=>p.id=uid());f.spaces.splice(si+1,0,cp)}
       if(act==='del'){if(!sa.dataset.arm){sa.dataset.arm='1';sa.textContent='再按一次刪除';setTimeout(()=>{if(sa.isConnected){sa.dataset.arm='';sa.textContent='刪除空間'}},2500);return}const [gs]=f.spaces.splice(si,1);orphan(gs.pipes.map(p=>p.id));renderPhotos()}
       renderSpaces();dirty();
     }
@@ -1233,7 +1245,14 @@ function viewDrain(r){
   $('#addSpace').onclick=()=>{f.spaces.push(newSpace());renderSpaces();dirty();
     const all=document.querySelectorAll('.space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
   function updLoc(){r.location=drainLoc(f);$('#locView').textContent=r.location||'—'}
+  function autoPos(sp){const g=roomGrid(f.floor,sp);if(g&&(!sp.pos||sp.posAuto)){sp.pos=g;sp.posAuto=true}else if(!g&&sp.posAuto){sp.pos='';sp.posAuto=false}}
+  $('#spaces').addEventListener('change',e=>{const el=e.target;
+    if(el.dataset.spName!=null){const sp=f.spaces[+el.dataset.spName];sp.name=el.value;if(!roomNos(f.floor,sp.name).includes(String(sp.no)))sp.no='';autoPos(sp);renderSpaces();dirty()}
+    if(el.dataset.spNo!=null){const sp=f.spaces[+el.dataset.spNo];sp.no=el.value.trim();autoPos(sp);renderSpaces();dirty();
+      if(sp.pos&&sp.posAuto)toast(`${spName(sp)} 位置：${sp.pos}`)}});
   function afterChange(path){
+    if(/^spaces\.\d+\.pos$/.test(path)){const sp=f.spaces[+path.split('.')[1]];sp.posAuto=false}
+    if(path==='floor'){f.spaces.forEach(autoPos);renderSpaces()}
     if(['floor','roomOther','part'].includes(path))updLoc();
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     const m=path.match(/^spaces\.(\d+)\.pipes\.(\d+)\./);
@@ -1256,8 +1275,10 @@ function renderSpaces(){
   const first=!document.querySelector('.space');
   $('#spaces').innerHTML=f.spaces.length?f.spaces.map((sp,si)=>`<div class="space">
     <div class="sphead"><span class="spno num">${si+1}</span>
-      <label class="field grow"><span>空間名稱</span>${isDorm(cur.projectId)?`<select data-path="spaces.${si}.name"><option value="">請選擇</option>${SPACE_NAMES.map(x=>`<option ${x===sp.name?'selected':''}>${x}</option>`).join('')}${sp.name&&!SPACE_NAMES.includes(sp.name)?`<option selected>${esc(sp.name)}</option>`:''}</select>`:`<input type="text" data-path="spaces.${si}.name" value="${esc(sp.name)}" placeholder="例：廁所">`}</label>
-      <label class="field grow"><span>位置</span><input type="text" data-path="spaces.${si}.pos" value="${esc(sp.pos)}" placeholder="例：A 床側／軸線"></label></div>
+      ${isDorm(cur.projectId)?`<label class="field"><span>空間名稱</span><select data-sp-name="${si}"><option value="">請選擇</option>${SPACE_NAMES.map(x=>`<option ${x===sp.name?'selected':''}>${x}</option>`).join('')}${sp.name&&!SPACE_NAMES.includes(sp.name)?`<option selected>${esc(sp.name)}</option>`:''}</select></label>
+      <label class="field"><span>編號</span>${(()=>{const nos=roomNos(cur.form.floor,sp.name);return nos.length?`<select data-sp-no="${si}"><option value="">—</option>${nos.map(n=>`<option ${n===String(sp.no||'')?'selected':''}>${n}</option>`).join('')}</select>`:`<input type="text" inputmode="numeric" data-sp-no="${si}" value="${esc(sp.no||'')}" placeholder="${cur.form.floor?'數字':'先選樓層'}">`})()}</label>`
+      :`<label class="field grow"><span>空間名稱</span><input type="text" data-path="spaces.${si}.name" value="${esc(sp.name)}" placeholder="例：廁所"></label>`}
+      <label class="field grow"><span>位置（軸線）</span><input type="text" data-path="spaces.${si}.pos" value="${esc(sp.pos)}" placeholder="${isDorm(cur.projectId)?'選好樓層與空間後自動帶入':'例：2~3 / B~C'}"></label></div>
     <div class="pipes">${sp.pipes.map((p,pi)=>pipeHTML(si,pi,p,pipeNo(sp,pi))).join('')||'<div class="empty">此空間沒有管段</div>'}</div>
     <div class="row sptools">
       <button class="btn small" data-sp="${si}" data-act="drain" type="button">＋ 排水管</button>
@@ -1309,7 +1330,7 @@ function drainSheet(r){
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
       <tr><td class="k">抽查位置</td><td>${esc(drainLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>
-        ${f.spaces.map((sp,si)=>`<div class="dsp"><div class="dsph">${si+1}.空間名稱：${u(sp.name)}　位置：${u(sp.pos)}</div>${sp.pipes.map(pipeTxt).join('<hr>')}</div>`).join('')}
+        ${f.spaces.map((sp,si)=>`<div class="dsp"><div class="dsph">${si+1}.空間名稱：${u(spName(sp))}　位置：${u(sp.pos)}</div>${sp.pipes.map(pipeTxt).join('<hr>')}</div>`).join('')}
         <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
       </td></tr>
       <tr><td colspan="4">二、缺失處理方法：${cb(f.method==='修補改善','修補改善')}　${cb(f.method==='拆除重作','拆除重作')}</td></tr>

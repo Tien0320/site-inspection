@@ -417,7 +417,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-76';
+const APP_VERSION='2026.11.06-77';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -750,7 +750,7 @@ function setTop(title,back){
   $('#topTabs').hidden=true;
   $('#backBtn').onclick=()=>go(back||'home');
   $('#savebar').hidden=true; $('#printArea').innerHTML=''; $('#printArea').className='';
-  $('#view').hidden=false; $('#view').oninput=null; $('#view').onclick=null;
+  $('#view').hidden=false; $('#view').oninput=null; $('#view').onclick=null; $('#view').onchange=null;
 }
 function render(){
   const h=location.hash.slice(1)||'home';
@@ -1630,14 +1630,25 @@ function testJudge(f,row){
   const auto=chk.length?(chk.every(Boolean)?'ok':'ng'):'';
   return {dur,auto,res:row.res||auto,msg};
 }
-function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.note].filter(Boolean).join(' ')}
+function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.space,l.note].filter(Boolean).join(' ')}
 function testSub(r){const k=stdsOf(r.form);return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${k.includes('press')&&k.includes('drain')?'給排水':k[0]==='drain'?'排水':k[0]==='fire'?'消防':'給水'}配管施工查驗`}
 function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
   return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}${l.floor&&!floorsOf(r.projectId).includes(l.floor)?`<option selected>${esc(l.floor)}</option>`:''}</select></label>
     <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${LOC_PARTS.map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!LOC_PARTS.includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
+    ${spaceLocField(r)}
     <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>
     <div class="field" style="grid-column:1/-1"><span>查驗位置（自動組合）</span><div class="locv" id="locView">${esc(testLoc(r))||'—'}</div></div>`}
+function spaceLocField(r){const l=r.loc||{},list=roomsFor(r.projectId,l.floor);
+  if(!list)return `<span id="l_space_w" hidden></span>`;
+  return `<label class="field" id="l_space_w" style="grid-column:1/-1"><span>空間（依平面圖）</span><select id="l_space"><option value="">請選擇空間</option>${list.map(q=>`<option value="${esc(q[0])}" ${q[0]===l.space?'selected':''}>${esc(q[0])}${q[1]&&!q[0].includes(q[1])?'　'+esc(q[1]):''}</option>`).join('')}${l.space&&!list.some(q=>q[0]===l.space)?`<option selected>${esc(l.space)}</option>`:''}</select></label>`}
 function bindLoc(r,after){
+  const v0=$('#view');
+  v0.onchange=e=>{
+    if(e.target.id==='l_floor'){const w=$('#l_space_w');if(w){w.outerHTML=spaceLocField(r)}}
+    if(e.target.id==='l_space'){r.loc.space=e.target.value;const q=(roomsFor(r.projectId,r.loc.floor)||[]).find(x=>x[0]===r.loc.space);
+      if(q&&q[2]){r.loc.note=`${q[2]}~${q[3]} / ${q[4]}~${q[5]}`;const n=$('#l_note');if(n)n.value=r.loc.note;toast(`${q[0]}：${r.loc.note}`)}
+      r.location=testLoc(r);const v=$('#locView');if(v)v.textContent=r.location||'—';if(after)after();dirty()}
+  };
   ['floor','part','note'].forEach(k=>{const el=$('#l_'+k);if(el)el.addEventListener('input',e=>{r.loc[k]=e.target.value;r.location=testLoc(r);
     const v=$('#locView');if(v)v.textContent=r.location||'—';if(after)after();dirty()})});
 }
@@ -2373,7 +2384,7 @@ const Cloud={
     const err=e=>this.set('error',e.code==='permission-denied'?`此帳號（${u.email}）沒有權限，請聯絡管理者加入`:(e.message||e.code));
     this.unsub.push(this.fs.collection('projects').onSnapshot(s=>this.apply('projects',s),err));
     this.unsub.push(this.fs.collection('records').onSnapshot(s=>this.apply('records',s),err));
-    loadRoomsCloud();
+    this.unsub.push(this.fs.collection('meta').doc('rooms').onSnapshot(d=>{if(!d.exists)return;try{const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();roomsChanged()}catch(e){}},()=>{}));
     this.migrate();
   },
   apply(kind,s){
@@ -2436,6 +2447,7 @@ async function loadRoomsCloud(){
   try{const d=await Cloud.fs.collection('meta').doc('rooms').get();
     if(d.exists){const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();softRender()}}catch(e){}
 }
+function roomsChanged(){if(!cur)return softRender();if($('#sleeves')||$('#slabs')||$('#dfits'))refreshPhotos();else if($('#l_space_w'))$('#l_space_w').outerHTML=spaceLocField(cur)}
 function roomsSummary(){const a=Object.keys(MED2_ROOMS).length,b=Object.keys(DORM_ROOMS).length;return a||b?`空間資料：二期 ${a} 層、宿舍 ${b} 層`:'空間資料：尚未載入'}
 async function uploadRooms(file){
   try{const txt=await file.text(),o=JSON.parse(txt);if(o.app!=='site-inspection-rooms')throw new Error('這不是空間資料檔');

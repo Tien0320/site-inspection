@@ -82,6 +82,8 @@ textarea{min-height:72px;resize:vertical}
 .pbtn b{font-size:18px;line-height:1.3;word-break:break-all}
 @media (max-width:520px){.pbtn{padding:12px;min-height:96px}.pbtn b{font-size:15px}}
 .pbtn span{font-size:13px;color:var(--ink-2)}
+.pbtn.bigpick{min-height:150px;align-items:center;justify-content:center;text-align:center}
+.pbtn.bigpick b{font-size:26px}
 .pbtn:hover{border-color:var(--ink-2)}
 .pbtn.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
 .pbtn.on span{color:var(--brand-ink);opacity:.8}
@@ -396,7 +398,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-47';
+const APP_VERSION='2026.11.06-48';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -768,7 +770,7 @@ function viewHome(){
   document.querySelectorAll('[data-mat]').forEach(b=>b.onclick=()=>go('mat-'+b.dataset.mat));
   document.querySelectorAll('.mseg [data-m]').forEach(b=>b.onclick=()=>{LS.set('mode',b.dataset.m);const y=scrollY;viewHome();scrollTo(0,y)});
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
-  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+typesOf(b.dataset.cat)[0].key+'-work'));
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+(b.dataset.cat==='beam'?'pick':typesOf(b.dataset.cat)[0].key)+'-work'));
   bindRecRows();
 }
 function recRow(r){
@@ -818,13 +820,20 @@ function viewCat(ck,tk,md){
   const c=cat(ck),p=proj(curProj);
   if(!c||!p)return go('home');
   md=mode(md).key;LS.set('mode',md);
-  setTop(`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,'home');
   const all=records.filter(r=>r.projectId===curProj&&r.cat===ck);
+  if(ck==='beam'&&!BEAM_TYPES.some(t=>t.key===tk)){ // 其他：先選穿樑或穿牆
+    setTop(`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,'home');
+    $('#view').innerHTML=`<p class="label">請選擇查驗項目</p><div class="pswitch">${BEAM_TYPES.map(t=>{const n=all.filter(r=>r.type===t.key).length;
+      return `<button type="button" class="pbtn bigpick" data-pick="${t.key}"><b>${t.name}</b><span>${esc(t.hint)}</span><span class="num">${n} 筆</span></button>`}).join('')}</div>`;
+    document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>go(`cat-beam-${b.dataset.pick}-${md}`));
+    return;
+  }
+  setTop(ck==='beam'?`${c.name}・${typN(ck,tk).name}<span class="sub">${esc(p.name)}</span>`:`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,ck==='beam'?`cat-beam-pick-${md}`:'home');
   const recs=all.filter(r=>modeOf(r)===md);
   const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
   const T=`${typN(ck,tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
-    <div class="seg ${typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
+    <div ${ck==='beam'?'hidden':''} class="seg ${typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
       return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
       <button class="btn primary grow" id="newRec">＋ 新增${T}</button>

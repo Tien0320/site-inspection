@@ -350,7 +350,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-11';
+const APP_VERSION='2026.11.06-12';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1211,7 +1211,14 @@ $('#impFile').onchange=async e=>{
 
 /* ---------- 雲端同步（Firebase Firestore，紀錄與照片自動上傳） ---------- */
 // 取得 Firebase 專案設定後填在這裡，所有裝置打開網址就會自動啟用雲端同步
-const CLOUD_CONFIG=null;
+const CLOUD_CONFIG={
+  apiKey:"AIzaSyAG0ywVigK0QFHcu-acI2IeDi_zhy-5bRM",
+  authDomain:"site-inspection-31bf6.firebaseapp.com",
+  projectId:"site-inspection-31bf6",
+  storageBucket:"site-inspection-31bf6.firebasestorage.app",
+  messagingSenderId:"334972440280",
+  appId:"1:334972440280:web:ccefcd47511e63215b11ad"
+};
 const FB_VER='10.12.2';
 const clean=v=>JSON.parse(JSON.stringify(v));
 const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});

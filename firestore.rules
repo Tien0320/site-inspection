@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function allowed() {
       return request.auth != null
-        && request.auth.token.email in ['your.name@gmail.com', 'coworker@gmail.com'];
+        && request.auth.token.email in ['wanz0320@gmail.com'];
     }
     match /{document=**} {
       allow read, write: if allowed();

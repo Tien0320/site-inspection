@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-63';
+const APP_VERSION='2026.11.06-64';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -930,7 +930,7 @@ function viewRec(id){
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   const v=$('#view');
   v.innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">表單編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>查驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${modeOf(r)==='mat'?`
@@ -1077,7 +1077,7 @@ function photoPages(r){
   for(let i=0;i<list.length;i+=per)pages.push(list.slice(i,i+per));
   return pages.map((pg,pi)=>`<div class="sheet phsheet">
     <h3>施工照片黏貼表</h3>
-    <div class="fno">表單編號：${esc(r.formNo)}　第 ${pi+1}／${pages.length} 頁</div>
+    <div class="fno">表單編號：　第 ${pi+1}／${pages.length} 頁</div>
     <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
       <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typN(r.cat,r.type).name}</td></tr></table>
@@ -1247,7 +1247,7 @@ function viewDrain(r){
   const c=cat(r.cat),t=typN(r.cat,r.type),p=proj(r.projectId),f=r.form;
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
@@ -1395,7 +1395,7 @@ function drainSheet(r){
   return `<div class="sheet dsheet">
     <h3>表7-2 工程查驗紀錄表</h3>
     <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
-    <div class="dsub">編號：${esc(r.formNo)}</div>
+    <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
@@ -1614,7 +1614,7 @@ function viewTest(r){
   const p=proj(r.projectId),f=r.form;
   setTop(`給排水・試水<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>檢查日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${locFields(r)}
@@ -1707,7 +1707,7 @@ function testSheet(r){
   const rows=f.rows.slice();while(rows.length<6)rows.push(null);
   return `<div class="sheet tsheet">
     <h3>試壓抽查紀錄表</h3>
-    <div class="fno">編號：${v(r.formNo)}</div>
+    <div class="fno">編號：</div>
     <table><colgroup><col style="width:15%"><col style="width:45%"><col style="width:13%"><col style="width:27%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="3">${v(p.name)}</td></tr>
       <tr><td class="k">分項工程名稱</td><td colspan="3">${v(testSub(r))}</td></tr>
@@ -1777,7 +1777,7 @@ function viewSleeve(r){
   const p=proj(r.projectId),f=r.form;
   setTop(`${f.label||'穿樑'}套管<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
@@ -1843,7 +1843,7 @@ function sleeveSheet(r){
   return `<div class="sheet dsheet">
     <h3>表7-2 工程查驗紀錄表</h3>
     <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
-    <div class="dsub">編號：${esc(r.formNo)}</div>
+    <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
@@ -1909,7 +1909,7 @@ function viewSlab(r){
   const p=proj(r.projectId),f=r.form;
   setTop(`${cat(r.cat).name}・樓板接線盒<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
@@ -1981,7 +1981,7 @@ function slabSheet(r){
   return `<div class="sheet dsheet">
     <h3>表7-2 工程查驗紀錄表</h3>
     <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
-    <div class="dsub">編號：${esc(r.formNo)}</div>
+    <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
@@ -2033,7 +2033,7 @@ function viewDf(r){
   const p=proj(r.projectId),f=r.form;
   setTop(`給排水・排水樓板接頭<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
-  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+  <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
@@ -2099,7 +2099,7 @@ function dfSheet(r){
   return `<div class="sheet dsheet">
     <h3>表7-2 工程查驗紀錄表</h3>
     <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
-    <div class="dsub">編號：${esc(r.formNo)}</div>
+    <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
@@ -2125,7 +2125,7 @@ function sheetHTML(r){
   return `<div class="sheet">
     <h3>${esc(p.name)}</h3>
     <h4>${modeOf(r)==='mat'?typeName(r)+'　材料進場查驗紀錄表':c.name+'工程　'+t.name+'　施工查驗紀錄表'}</h4>
-    <div class="fno">表單編號：${esc(r.formNo)}</div>
+    <div class="fno">表單編號：</div>
     <table>
       <tr><td class="k">標案編號</td><td>${esc(p.no)}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
       <tr><td class="k">專管單位</td><td>${esc(p.pm)}</td><td class="k">監造單位</td><td>${esc(p.sup)}</td></tr>
@@ -2172,13 +2172,13 @@ function showPrint(list,back,title,editId){
 async function viewPreview(id){
   const r=records.find(x=>x.id===id);if(!r)return go('home');
   await ensurePhotos(r);
-  showPrint([r],'home',`查驗預覽<span class="sub">${esc(r.formNo)}</span>`,id);
+  showPrint([r],'home',`查驗預覽<span class="sub">${esc(r.location||'')}</span>`,id);
   $('#doEdit').onclick=()=>go('rec-'+id);
 }
 async function viewPrint(id){
   const r=records.find(x=>x.id===id);if(!r)return go('home');
   await ensurePhotos(r);
-  showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.formNo)}</span>`);
+  showPrint([r],'rec-'+id,`列印預覽<span class="sub">${esc(r.location||'')}</span>`);
 }
 async function viewPrintAll(ck,tk,md){
   const list=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md).sort((a,b)=>a.date.localeCompare(b.date));

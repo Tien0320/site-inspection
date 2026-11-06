@@ -106,6 +106,7 @@ textarea{min-height:72px;resize:vertical}
 
 /* 子項分頁 */
 .seg.seg3{grid-template-columns:repeat(3,1fr)}
+.seg.seg1{grid-template-columns:minmax(0,1fr)}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
@@ -391,14 +392,14 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-32';
+const APP_VERSION='2026.11.06-34';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
   hvac:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M4.9 6l14.2 12M4.9 18L19.1 6"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/></svg>',
   plumb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0013 0C18.5 10 12 2.5 12 2.5z"/></svg>',
   low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0120 0M5.5 12.5a10 10 0 0113 0M9 16a5 5 0 016 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg>',
-  beam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="1"/><circle cx="12" cy="12" r="3"/></svg>',
+  beam:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>',
   fire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22c4 0 7-2.8 7-6.8 0-4.6-4-7-4.5-11.2C11 6 9 9 9.5 12 8 11.3 7 9.8 7 8.5 5.6 10.2 5 12.6 5 15.2 5 19.2 8 22 12 22z"/></svg>'
 };
 const CATS = [
@@ -407,7 +408,7 @@ const CATS = [
   {key:'plumb',name:'給排水',code:'P'},
   {key:'low',  name:'弱電',  code:'L'},
   {key:'fire', name:'消防',  code:'F'},
-  {key:'beam', name:'穿樑套管', code:'S'}
+  {key:'beam', name:'其他', code:'S'}
 ];
 const TYPES = [
   {key:'box',  name:'預埋接線盒', code:'B', hint:'澆置混凝土前'},
@@ -420,7 +421,7 @@ const PLUMB_TYPES = [
   {key:'box',  name:'預埋管', code:'B', hint:'澆置混凝土前'},
   {key:'test', name:'試水',   code:'T', hint:'壓力／滿水試驗'}
 ];
-const BEAM_TYPES = [{key:'sleeve', name:'穿樑套管', code:'', hint:'澆置混凝土前'}];
+const BEAM_TYPES = [{key:'sleeve', name:'穿樑', code:'', hint:'穿樑套管・澆置混凝土前'}];
 const typesOf = ck => ck==='plumb' ? PLUMB_TYPES : ck==='beam' ? BEAM_TYPES : TYPES;
 const typN = (ck,tk) => typesOf(ck).find(t=>t.key===tk) || typ(tk);
 const MODES = [
@@ -681,7 +682,7 @@ const proj=id=>projects.find(p=>p.id===id);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1800)}
 function status(r){
   if(r.kind==='wtest') return testStatus(r);
-  if(r.kind==='sleeve'||r.kind==='slab') return sleeveStatus(r);
+  if(r.kind==='sleeve'||r.kind==='slab'||r.kind==='dfit') return sleeveStatus(r);
   if(r.kind==='drain'){
     const f=r.form;
     if(f.result==='ng') return f.recheck==='ok'?{k:'ok',t:'已改善'}:{k:'ng',t:'待改善'};
@@ -770,7 +771,7 @@ function recRow(r){
   const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
   return `<button class="rec" data-rec="${r.id}">
     <span class="d">${esc(r.date)}</span>
-    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+t.name+' · 施工'}</span></span>
+    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+(r.kind==='dfit'?'排水樓板接頭':t.name)+' · 施工'}</span></span>
     <span class="chip ${s.k}">${s.t}</span></button>`;
 }
 function bindRecRows(){document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>go('rec-'+b.dataset.rec))}
@@ -819,16 +820,18 @@ function viewCat(ck,tk,md){
   const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
   const T=`${typN(ck,tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
-    <div ${typesOf(ck).length<2?'hidden':''} class="seg ${typesOf(ck).length>2?'seg3':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
+    <div class="seg ${typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
       return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
       <button class="btn primary grow" id="newRec">＋ 新增${T}</button>
+      ${md==='work'&&ck==='plumb'&&tk==='box'?`<button class="btn primary grow" id="newDf">＋ 新增排水樓板接頭</button>`:''}
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
       :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
+  if($('#newDf'))$('#newDf').onclick=()=>newRec(ck,tk,md,'dfit');
   $('#printAll')&&($('#printAll').onclick=()=>go(`printall-${ck}-${tk}-${md}`));
   bindRecRows();
 }
@@ -855,7 +858,7 @@ function nextFormNo(pid,fallback){
   const used=records.filter(r=>r.projectId===pid&&(r.formNo||'').startsWith(pre)).map(r=>parseInt(r.formNo.slice(pre.length))||0);
   return pre+String(Math.max(0,...used)+1).padStart(3,'0');
 }
-async function newRec(ck,tk,md){
+async function newRec(ck,tk,md,variant){
   md=mode(md).key;
   const d=today();
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
@@ -867,6 +870,7 @@ async function newRec(ck,tk,md){
   if(md==='mat'&&isPipeType(tk)){if(PIPE_GROUPS[tk])r.sub=PIPE_DEFAULT[tk];r.pipes=[newPipeRow(stdKey(r))]}
   if(md==='work'&&tk==='sleeve'){r.kind='sleeve';r.form=newSleeveForm()}
   if(md==='work'&&tk==='slab'){r.kind='slab';r.form=newSlabForm(ck)}
+  if(variant==='dfit'){r.kind='dfit';r.items=[];r.form=newDfForm()}
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   records.push(r);await DB.put('records',r);
@@ -882,6 +886,7 @@ function viewRec(id){
   r.items.forEach(i=>{if(!i.id)i.id=uid()});
   if(r.kind==='sleeve'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewSleeve(r)}
   if(r.kind==='slab'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewSlab(r)}
+  if(r.kind==='dfit'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewDf(r)}
   if(r.kind==='wtest'){r.form.rows.forEach(x=>{if(!x.id)x.id=uid()});return viewTest(r)}
   if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
@@ -982,7 +987,7 @@ function phStrip(ref){
 }
 function refreshPhotos(){
   if(!cur)return;
-  if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
+  if(cur.kind==='dfit'){if($('#dfits'))renderDf()}else if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
   renderPhotos();
 }
 function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
@@ -1011,9 +1016,10 @@ document.addEventListener('click',async e=>{
   toast(msg);if(b.isConnected){b.disabled=false;b.textContent='儲存'}
 });
 /* 照片說明：樓層＋位置＋項目（隨表單內容自動更新） */
-function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):r.kind==='sleeve'?sleeveLoc(r.form):r.kind==='slab'?slabLoc(r.form):(r.location||'')}
+function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):r.kind==='sleeve'?sleeveLoc(r.form):r.kind==='slab'?slabLoc(r.form):r.kind==='dfit'?dfLoc(r.form):(r.location||'')}
 function photoTarget(r,p){
   if(!p.ref)return '';
+  if(r.kind==='dfit'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].name?' '+r.form.items[n].name:''}`.trim():''}
   if(r.kind==='slab'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
   if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].no||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
   if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''}`.trim():''}
@@ -1941,6 +1947,124 @@ function slabSheet(r){
   </div>`;
 }
 
+/* ---------- 排水樓板接頭（依「施工抽查紀錄表-(排水樓板接頭)」） ---------- */
+const DF_NAMES=['馬桶排水','小便斗排水','地板排水','面盆排水','清潔口','虹吸'];
+const DF_SPEC=['南亞','CNS 1298','PVC管','B管','HDPE管'];
+const newDfItem=()=>({id:uid(),space:'',pos:'',face:'底版',name:'',spec:[],sizeD:'',sizeA:'',screw:false,tied:false,height:'',
+  ewDir:'',ewRef:'',ewD:'',ewA:'',ewLine:'',nsDir:'',nsRef:'',nsD:'',nsA:'',nsLine:''});
+const newDfForm=()=>({floor:'',part:'底板 排水',items:[newDfItem()],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
+const dfLoc=f=>[f.floor,f.part].filter(Boolean).join(' ');
+function dfItemHTML(i,x){
+  const b=`items.${i}`,diff=k=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
+  const posBlock=(k,dirs,title)=>`<div class="fld wide"><span>${title}</span>${opts(b+'.'+k+'Dir',dirs,'one',x[k+'Dir'])}${opts(b+'.'+k+'Ref',['梁','柱','牆'],'one',x[k+'Ref'])}
+    <div class="meas"><label>設計值 cm${inp(b+'.'+k+'D',x[k+'D'],'cm',1)}</label><label>實測值 cm${inp(b+'.'+k+'A',x[k+'A'],'cm',1)}</label></div>
+    <div class="row"><span class="muted">1M線</span>${opts(b+'.'+k+'Line',['上','下'],'one',x[k+'Line'])}${diff(k)}</div></div>`;
+  return `<div class="space">
+    <div class="sphead"><span class="spno num">${i+1}</span>
+      <label class="field grow"><span>空間名稱編號</span>${inp(b+'.space',x.space,'例：5F-男廁')}</label>
+      <label class="field grow"><span>位置</span>${inp(b+'.pos',x.pos,'例：C~D／5~6 軸')}</label></div>
+    <div class="pbody" style="border-top:0;padding:0;background:none">
+      ${fl('部位',opts(b+'.face',['頂版','底版','壁面'],'one',x.face))}
+      ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
+      ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec),1)}
+      <div class="fld"><span>管徑尺寸 Ø</span><div class="meas"><label>設計值${inp(b+'.sizeD',x.sizeD,'例：4"')}</label><label>實測值${inp(b+'.sizeA',x.sizeA,'')}</label></div></div>
+      <div class="fld wide"><span>配管銜接</span><div class="opts">${chk(b+'.screw','以螺絲鎖固定於鋼承鈑上',x.screw)}${chk(b+'.tied','鐵線綁紮固定',x.tied)}</div>
+        <label class="field" style="max-width:220px"><span>高度 cm</span>${inp(b+'.height',x.height,'cm',1)}</label></div>
+      ${posBlock('ew',['東側','西側'],'安裝位置（東西向）')}
+      ${posBlock('ns',['南側','北側'],'安裝位置（南北向）')}
+      <div class="fld wide"><span>此處照片</span>${phStrip(x.id)}</div>
+    </div>
+    <div class="row sptools"><button class="btn small" type="button" data-df="copy" data-i="${i}">複製此處</button><span class="grow"></span><button class="btn small danger" type="button" data-df="del" data-i="${i}">刪除</button></div>
+  </div>`;
+}
+function renderDf(){const f=cur.form,box=$('#dfits');if(!box)return;
+  box.innerHTML=f.items.length?f.items.map((x,i)=>dfItemHTML(i,x)).join(''):'<div class="empty">尚無資料，按下方「新增一處」。</div>';
+  const c=$('#dfCount');if(c)c.textContent=f.items.length}
+function viewDf(r){
+  const p=proj(r.projectId),f=r.form;
+  setTop(`給排水・排水樓板接頭<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  $('#view').innerHTML=`
+  <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
+    <div class="panel fields">
+      <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：底板(教研棟)排水"></label>
+      <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(dfLoc(f))||'—'}</div></div>
+    </div></section>
+  <section><p class="label">抽驗情形　共 <span class="num" id="dfCount">${f.items.length}</span> 處</p>
+    <div id="dfits" class="spaces"></div>
+    <button class="btn primary" id="addDf" type="button" style="width:100%;margin-top:10px">＋ 新增一處</button></section>
+  <section><p class="label">抽查結果</p>
+    <div class="panel fields">
+      ${fl('結果',opts('result',[['ok','合格，符合圖說規範規定內容'],['ng','不合格']],'one',f.result),1)}
+      <div class="fld wide" id="ngWrap" ${f.result==='ng'?'':'hidden'}><span>不合格處置</span>${opts('fixType',['改善','拆除重作'],'one',f.fixType)}
+        <label class="field" style="max-width:240px"><span>改善期限</span><input type="date" data-path="deadline" value="${esc(f.deadline)}"></label></div>
+      ${fl('缺失處理方法',opts('method',['修補改善','拆除重作'],'one',f.method),1)}
+      ${fl('複驗結果',opts('recheck',[['ok','合格'],['ng','不合格']],'one',f.recheck),1)}
+      <label class="field" style="grid-column:1/-1"><span>備註</span><textarea data-path="remark">${esc(f.remark)}</textarea></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">其他照片 <span class="muted" style="font-weight:400">（未指定）</span></p>
+    <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
+    <div class="photos" id="photos"></div></section>`;
+  renderDf();renderPhotos();
+  const v=$('#view');
+  $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
+  const after=path=>{
+    if(path==='floor'||path==='part'){r.location=dfLoc(f);$('#locView').textContent=r.location||'—'}
+    if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
+    const m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);
+    if(m){const x=f.items[+m[1]],k=m[2].slice(0,2),el=v.querySelector(`[data-sd="${k}${m[1]}"]`);if(el)el.textContent=sleeveDiff(x[k+'D'],x[k+'A'])}
+  };
+  v.oninput=e=>{const el=e.target;if(!el.dataset.path||el.type==='file')return;setP(f,el.dataset.path,el.value);after(el.dataset.path);dirty()};
+  v.onclick=e=>{
+    const b=e.target.closest('.opt');
+    if(b&&b.dataset.path){const path=b.dataset.path,mode=b.dataset.mode,val=b.dataset.val;
+      if(mode==='bool'){const nv=!getP(f,path);setP(f,path,nv);b.classList.toggle('on',nv);b.setAttribute('aria-pressed',nv);b.textContent=(nv?'☑':'☐')+b.textContent.slice(1)}
+      else if(mode==='many'){const a=[...(getP(f,path)||[])],i=a.indexOf(val);i<0?a.push(val):a.splice(i,1);setP(f,path,a);b.classList.toggle('on',i<0);b.setAttribute('aria-pressed',i<0)}
+      else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)})}
+      after(path);dirty();return}
+    const s=e.target.closest('[data-df]');
+    if(s){const i=+s.dataset.i;
+      if(s.dataset.df==='copy'){const cp=JSON.parse(JSON.stringify(f.items[i]));cp.id=uid();cp.space='';cp.pos='';cp.ewA='';cp.nsA='';cp.sizeA='';f.items.splice(i+1,0,cp)}
+      if(s.dataset.df==='del'){if(!s.dataset.arm){s.dataset.arm='1';s.textContent='再按一次刪除';setTimeout(()=>{if(s.isConnected){s.dataset.arm='';s.textContent='刪除'}},2500);return}
+        const [g]=f.items.splice(i,1);orphan([g.id]);renderPhotos()}
+      renderDf();dirty()}
+  };
+  $('#addDf').onclick=()=>{const last=f.items[f.items.length-1];let n;
+    if(last){n=JSON.parse(JSON.stringify(last));n.id=uid();n.space='';n.pos='';n.ewD='';n.ewA='';n.nsD='';n.nsA='';n.sizeA='';n.height=''}else n=newDfItem();
+    f.items.push(n);renderDf();dirty();const all=document.querySelectorAll('#dfits .space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
+  saveBar(r);
+}
+function dfSheet(r){
+  const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
+  const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm　${cb(!!x[k+'Line'],'1M線')}${cb(x[k+'Line']==='上','上')} ${cb(x[k+'Line']==='下','下')}`;
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
+    <div>${['頂版','底版','壁面'].map(s=>cb(x.face===s,s)).join(' ')}</div>
+    <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>
+    <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管徑尺寸：設計值：Ø${u(x.sizeD)}　實測值：Ø${u(x.sizeA)}</div>
+    <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')} ${cb(x.height!=='','高度')}：${u(x.height)}cm</div>
+    <div>${pos(x,'ew',['東側','西側'],'安裝位置：')}</div>
+    <div>${pos(x,'ns',['南側','北側'],'　　　　　')}</div>
+  </div></div>`;
+  return `<div class="sheet dsheet">
+    <h3>表7-2 工程查驗紀錄表</h3>
+    <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
+    <div class="dsub">編號：${esc(r.formNo)}</div>
+    <table>
+      <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
+      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">抽查位置</td><td>${esc(dfLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
+      <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${f.items.map(item).join('<hr>')}
+        <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
+      </td></tr>
+      <tr><td colspan="4">二、缺失處理方法：${cb(f.method==='修補改善','修補改善')}　${cb(f.method==='拆除重作','拆除重作')}</td></tr>
+      <tr><td colspan="4">三、複驗結果：${cb(f.recheck==='ok','合格')}　${cb(f.recheck==='ng','不合格')}</td></tr>
+      <tr><td colspan="4">備註：${esc(f.remark).replace(/\n/g,'<br>')}</td></tr>
+    </table>
+    <div class="dsign"><div>監造主任：</div><div>監造工程師：</div></div>
+  </div>`;
+}
+
 /* ---------- 列印 ---------- */
 function sheetHTML(r){
   const p=proj(r.projectId)||{},c=cat(r.cat),t=typN(r.cat,r.type);
@@ -1991,7 +2115,7 @@ function showPrint(list,back,title){
   pa.innerHTML=`<div class="print-toolbar" style="padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="muted grow">A4 直式預覽，共 ${list.length} 份表單（照片黏貼表接在各表單後）。電腦請按「列印」，或選「另存為 PDF」。</span>
       <button class="btn primary" id="doPrint">列印</button></div>
-    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
 }
 async function viewPrint(id){

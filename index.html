@@ -313,7 +313,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-2';
+const APP_VERSION='2026.11.06-3';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -537,8 +537,7 @@ function viewHome(){
     <div class="panel proj">
       ${projects.length?`<div class="row">
         <select id="projSel" class="grow" aria-label="選擇標案">${projects.map(x=>`<option value="${x.id}" ${x.id===curProj?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
-        <button class="btn" id="projEdit">編輯</button>
-        <button class="btn" id="projAdd">＋ 新增標案</button></div>
+        <button class="btn" id="projEdit">編輯</button></div>
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>
           <div><b>主辦機關</b>${esc(p.owner)||'—'}</div>

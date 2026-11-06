@@ -387,7 +387,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-26';
+const APP_VERSION='2026.11.06-27';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -928,6 +928,7 @@ function viewRec(id){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
@@ -988,6 +989,15 @@ document.addEventListener('click',e=>{
   if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}
   const i=cur.photos.findIndex(p=>p.id===b.dataset.phdel);if(i<0)return;
   const [gone]=cur.photos.splice(i,1);Cloud.delPhoto(gone.id);refreshPhotos();dirty();
+});
+/* 儲存按鈕：立即存到本機，已登入時同步上傳雲端 */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest&&e.target.closest('#saveNow');if(!b||!cur)return;
+  b.disabled=true;b.textContent='儲存中…';
+  cur.updated=Date.now();await flush();
+  let msg='已儲存';
+  if(Cloud.on){try{await Promise.race([Cloud.fs.waitForPendingWrites(),new Promise((_,no)=>setTimeout(no,8000))]);msg='已儲存並上傳雲端'}catch(_){msg=navigator.onLine?'已儲存，雲端上傳中':'已儲存（離線，恢復網路後自動上傳）'}}
+  toast(msg);if(b.isConnected){b.disabled=false;b.textContent='儲存'}
 });
 /* 照片說明：樓層＋位置＋項目（隨表單內容自動更新） */
 function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):(r.location||'')}
@@ -1263,6 +1273,7 @@ function viewDrain(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
@@ -1612,6 +1623,7 @@ function saveBar(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
+    <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}

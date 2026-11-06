@@ -410,7 +410,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-66';
+const APP_VERSION='2026.11.06-67';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1882,12 +1882,12 @@ const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 function slabItemHTML(i,x){
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
-    <div class="sphead"><span class="spno num">${i+1}</span>
+    <div class="sphead"><span class="spno num">${i+1}</span><span class="chip na" style="align-self:center">${esc(x.sys||'未分系統')}</span>
       ${axisHTML(b,x)}
       <label class="field grow"><span>空間編號名稱</span>${inp(b+'.space',x.space,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
-      ${fl('系統',opts(b+'.sys',['弱電','電氣','消防','空調','其他'],'one',x.sys)+(x.sys==='其他'?inp(b+'.sysOther',x.sysOther,'系統名稱'):''),1)}
+      ${x.sys==='其他'?`<label class="field"><span>其他系統名稱</span>${inp(b+'.sysOther',x.sysOther,'系統名稱')}</label>`:''}
       <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"><option value="">請選擇</option>${EQUIP_OF[x.sys].map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
       ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',['鋼承鈑','模板'],'one',x.screwOn))}
       ${fl('出線盒有貼合',opts(b+'.fitOn',['鋼承鈑','模板'],'one',x.fitOn))}

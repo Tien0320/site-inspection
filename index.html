@@ -322,7 +322,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-5';
+const APP_VERSION='2026.11.06-6';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -783,6 +783,7 @@ $('#sigCancel').onclick=()=>$('#sigDlg').close();
 $('#sigOk').onclick=()=>{if(sigDrawn){(cur.signs[sigKey]??={}).img=cv.toDataURL('image/png');renderSigns();dirty()}$('#sigDlg').close()};
 
 /* ---------- 給排水・吊管 專用表單（依「施工抽查紀錄表-排水吊管」） ---------- */
+const FLOORS=['B1','1F','2F','3F','4F','5F','6F','7F','8F','9F','R1F','R2F'];
 const ROOM_TYPES=['單人房','三人房','四人房','其他'];
 const SPACE_NAMES=['廁所','浴室','陽台','洗衣間','茶水間','走廊','公共浴廁'];
 const BRANDS=['南亞CNS1298','橘紅色','灰管'];
@@ -883,7 +884,7 @@ function viewDrain(r){
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      <label class="field"><span>樓層</span><input type="text" data-path="floor" value="${esc(f.floor)}" placeholder="例：2F"></label>
+      <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${FLOORS.map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!FLOORS.includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
       <label class="field"><span>房型</span><select id="f_room">${ROOM_TYPES.map(x=>`<option ${x===f.roomType?'selected':''}>${x}</option>`).join('')}</select></label>
       <label class="field" id="roomOtherWrap" ${f.roomType==='其他'?'':'hidden'}><span>房型名稱</span><input type="text" data-path="roomOther" value="${esc(f.roomOther)}" placeholder="例：雙人房"></label>
       <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：廁所吊管"></label>

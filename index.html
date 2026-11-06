@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-54';
+const APP_VERSION='2026.11.06-55';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1865,7 +1865,7 @@ function slabItemHTML(i,x){
       <div class="fld wide"><span>出線盒安裝位置（南北向）</span>${opts(b+'.nsDir',['南側','北側'],'one',x.nsDir)}${opts(b+'.nsRef',['梁','柱','牆','出線盒'],'one',x.nsRef)}
         <div class="meas"><label>設計值 cm${inp(b+'.nsD',x.nsD,'cm',1)}</label><label>實測值 cm${inp(b+'.nsA',x.nsA,'cm',1)}</label></div>${diff('ns')}</div>
       ${fl('配管規格',`<div class="opts">${chk(b+'.e1302','南亞 CNS 1302 PVC E管',x.e1302)}</div>`+opts(b+'.size',[['1/2"','½"(16)'],['3/4"','¾"(20)'],['1"','1"(28)']],'one',x.size),1)}
-      ${fl('配管配置',opts(b+'.layIn',[['deck','配置於鋼承鈑及鋼絲網之中'],['rebar','配置於雙層鋼筋之中']],'one',x.layIn),1)}
+      ${fl('配管配置（可複選）',opts(b+'.layIn',[['deck','配置於鋼承鈑及鋼絲網之中'],['rebar','配置於雙層鋼筋之中']],'many',layArr(x)),1)}
       <div class="fld wide"><span>配管固定</span><div class="opts">${chk(b+'.tied','以鐵線綁紮固定',x.tied)}</div>
         <div class="sp2"><label>⑴${inp(b+'.tie1',x.tie1,'cm',1)}</label><label>⑵${inp(b+'.tie2',x.tie2,'cm',1)}</label></div></div>
       <div class="fld wide"><span>銜接與管口</span><div class="opts">${chk(b+'.joint','樓版配管以盒接頭銜接出線盒',x.joint)}${chk(b+'.capped','管口有封閉',x.capped)}</div>
@@ -1878,7 +1878,8 @@ function slabItemHTML(i,x){
     <div class="row sptools"><button class="btn small" type="button" data-sb="copy" data-i="${i}">複製此處</button><span class="grow"></span><button class="btn small danger" type="button" data-sb="del" data-i="${i}">刪除</button></div>
   </div>`;
 }
-function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;
+const layArr=x=>Array.isArray(x.layIn)?x.layIn:(x.layIn?[x.layIn]:[]);
+function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x)});
   box.innerHTML=f.items.length?f.items.map((x,i)=>slabItemHTML(i,x)).join(''):'<div class="empty">尚無資料，按下方「新增一處」。</div>';
   const c=$('#sbCount');if(c)c.textContent=f.items.length}
 function viewSlab(r){
@@ -1924,6 +1925,7 @@ function viewSlab(r){
     const b=e.target.closest('.opt');
     if(b&&b.dataset.path){const path=b.dataset.path,mode=b.dataset.mode,val=b.dataset.val;
       if(mode==='bool'){const nv=!getP(f,path);setP(f,path,nv);b.classList.toggle('on',nv);b.setAttribute('aria-pressed',nv);b.textContent=(nv?'☑':'☐')+b.textContent.slice(1)}
+      else if(mode==='many'){const a=[...(getP(f,path)||[])],k=a.indexOf(val);k<0?a.push(val):a.splice(k,1);setP(f,path,a);b.classList.toggle('on',k<0);b.setAttribute('aria-pressed',k<0)}
       else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
         if(/\.sys$/.test(path))renderSlab()}
       after(path);dirty();return}
@@ -1948,7 +1950,7 @@ function slabSheet(r){
     <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')} ${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
     <div>${pos(x,'ew',['東側','西側'])}</div><div>${pos(x,'ns',['南側','北側'])}</div>
     <div>${cb(x.e1302||!!x.size,'配管規格')}：${cb(x.e1302,'南亞CNS 1302 PVC E管')} ${cb(x.size==='1/2"','½"(16)')} ${cb(x.size==='3/4"','¾"(20)')} ${cb(x.size==='1"','1"(28)')}</div>
-    <div>${cb(x.layIn==='deck','配管有配置於鋼承鈑及鋼絲網之中')} ${cb(x.layIn==='rebar','配管有配置於雙層鋼筋之中')}</div>
+    <div>${cb(layArr(x).includes('deck'),'配管有配置於鋼承鈑及鋼絲網之中')} ${cb(layArr(x).includes('rebar'),'配管有配置於雙層鋼筋之中')}</div>
     <div>${cb(x.tied,'配管以鐵線綁紮固定')} ${cb(x.tie1!==''||x.tie2!=='','固定間距')}：⑴${u(x.tie1)}cm、⑵${u(x.tie2)}cm</div>
     <div>${cb(x.joint,'樓版配管以盒接頭銜接出線盒')} ${cb(x.capped,'管口有封閉')} ${cb(x.riser!=='','升管預留')}${u(x.riser)}cm</div>
     <div>${cb(x.over30||x.bends3,'是')} ${cb(!(x.over30||x.bends3),'否')} ${cb(x.over30,'導線管長度超過30m')} ${cb(x.bends3,'三個以上90°彎頭')} ${cb(!!x.pullBox,'在維修可及之處做拉線盒')} ${cb(x.pullBox==='是','是')} ${cb(x.pullBox==='否','否')}</div>

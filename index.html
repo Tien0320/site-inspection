@@ -222,15 +222,19 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
 .phsheet .pgrid{margin-top:6px}
 .dphoto{display:flex;flex-direction:column;gap:8mm}
-.mphoto h3{margin-bottom:4px}
-.mhdr td{font-size:10pt;padding:3px 5px}
-.mhdr .k small{font-size:7.5pt;font-weight:400}
+.mtitle{font-size:18pt;color:#666;font-family:"Microsoft JhengHei",sans-serif;margin:0 0 2mm}
+.mhdr{border-collapse:collapse;width:100%;table-layout:fixed}
+.sheet .mhdr td{border:0 !important;border-top:1px solid #aaa !important;border-bottom:1px solid #aaa !important;border-top:1px solid #aaa;border-bottom:1px solid #aaa;padding:2px 4px;font-size:10pt;color:#555;font-family:"Microsoft JhengHei",sans-serif;vertical-align:middle}
+.sheet .mhdr .k{background:none;font-weight:400;text-align:left;width:auto;line-height:1.15}
+.sheet .mhdr .k small{display:block;font-size:7pt;font-weight:700;color:#555}
+.sheet .mhdr .v{color:#444}
+.sheet .mhdr .v.big{font-size:12pt}
 .mph{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:5mm;break-inside:avoid}
 .mph td{border:1px solid #000;padding:3px 6px;font-size:10.5pt;vertical-align:middle}
-.mph .mimg{padding:2px;height:66mm;text-align:center}
-.mph .mimg img{width:100%;height:65mm;object-fit:cover;display:block}
-.mph .mk{text-align:center;font-weight:700;background:#f3f3f3;height:8mm}
-.mph .mdesc{vertical-align:top;line-height:1.5}
+.mph .mimg{padding:3mm 2mm;height:68mm;text-align:center}
+.mph .mimg img{max-width:100%;height:64mm;object-fit:contain;display:block;margin:0 auto}
+.mph .mk{text-align:center;font-weight:400;height:8mm}
+.mph .mdesc{vertical-align:middle;line-height:1.45}
 .dph{width:100%;border-collapse:collapse;table-layout:fixed;break-inside:avoid}
 .dph td{border:1px solid #000;padding:2px 6px;font-size:11pt;vertical-align:middle}
 .dph .dimg{padding:2px;text-align:center;height:72mm}
@@ -433,7 +437,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-82';
+const APP_VERSION='2026.11.06-85';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1081,7 +1085,7 @@ document.addEventListener('change',async e=>{
   refreshPhotos();dirty();
 });
 document.addEventListener('click',e=>{
-  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(cur.projectId==='p-nycuh-med2'&&['slab','sleeve','dfit'].includes(cur.kind)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
+  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(['p-nycuh-med2','p-nycuh-dorm'].includes(cur.projectId)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
   const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;
   e.preventDefault();
   if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}
@@ -1189,15 +1193,21 @@ function dfPhotoText(r,p){
   }
   return {item,where,desc};
 }
+function genPhotoText(r,p){
+  const l=r.loc||{};
+  const item=modeOf(r)==='mat'?`${typeName(r)}材料進場查驗`:r.kind==='wtest'?'給排水管壓力試驗':r.kind==='drain'?'污廢水管吊管施工查驗':`${cat(r.cat).name}設備配管施工查驗`;
+  const where=r.kind==='drain'?drainLoc(r.form):r.loc?[l.floor,l.part,l.space].filter(Boolean).join(' ')+(l.note?' Line '+l.note:''):photoWhere(r);
+  const desc=p.cap?p.cap.split(/\s*\/\s*|\n/):[photoTarget(r,p)].filter(Boolean);
+  return {item,where,desc};
+}
 function slabPhotoPages(r){
   const list=sortedPhotos(r);if(!list.length)return '';
-  const textOf=r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:slabPhotoText;
-  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const textOf=r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
-  const hdr=`<h3>施工查驗照片</h3><table class="mhdr"><colgroup><col style="width:17%"><col style="width:36%"><col style="width:19%"><col style="width:28%"></colgroup>
-    <tr><td class="k">專案名稱<br><small>Project Name</small></td><td colspan="3">${esc(H.name)}</td></tr>
-    <tr><td class="k">專案編號<br><small>Project No.</small></td><td>${esc(H.no)}</td><td class="k">日期<br><small>Date</small></td><td>${rocSlash(r.date)}</td></tr>
-    <tr><td class="k">施工廠商<br><small>Contractor</small></td><td>${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<br><small>Building Permit No.</small></td><td class="small">${esc(H.permit)}</td></tr></table>`;
+  const hdr=`<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
+    <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
+    <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}${pg.map(p=>{const t=textOf(r,p);return `<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>
     <tr><td rowspan="4" class="mimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
     <tr><td>查驗項目:${esc(t.item)}</td></tr>
@@ -1205,8 +1215,7 @@ function slabPhotoPages(r){
     <tr><td class="mdesc">${t.desc.map(esc).join('<br>')}</td></tr></table>`}).join('')}</div>`).join('');
 }
 function photoPages(r){
-  if(r.projectId==='p-nycuh-dorm')return dormPhotoPages(r);
-  if(r.projectId==='p-nycuh-med2'&&['slab','sleeve','dfit'].includes(r.kind))return slabPhotoPages(r);
+  if(r.projectId==='p-nycuh-dorm'||r.projectId==='p-nycuh-med2')return slabPhotoPages(r);
   const list=sortedPhotos(r);if(!list.length)return '';
   const pr=proj(r.projectId)||{},per=6,pages=[];
   for(let i=0;i<list.length;i+=per)pages.push(list.slice(i,i+per));

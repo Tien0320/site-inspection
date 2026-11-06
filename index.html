@@ -398,7 +398,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-49';
+const APP_VERSION='2026.11.06-50';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1977,7 +1977,7 @@ function dfItemHTML(i,x){
   const b=`items.${i}`,diff=k=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   const posBlock=(k,dirs,title)=>`<div class="fld wide"><span>${title}</span>${opts(b+'.'+k+'Dir',dirs,'one',x[k+'Dir'])}${opts(b+'.'+k+'Ref',['梁','柱','牆'],'one',x[k+'Ref'])}
     <div class="meas"><label>設計值 cm${inp(b+'.'+k+'D',x[k+'D'],'cm',1)}</label><label>實測值 cm${inp(b+'.'+k+'A',x[k+'A'],'cm',1)}</label></div>
-    <div class="row"><span class="muted">1M線</span>${opts(b+'.'+k+'Line',['上','下'],'one',x[k+'Line'])}${diff(k)}</div></div>`;
+    <div class="row">${diff(k)}</div></div>`;
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span>
       <label class="field grow"><span>空間名稱編號</span>${inp(b+'.space',x.space,'例：5F-男廁')}</label>
@@ -2057,7 +2057,7 @@ function viewDf(r){
 }
 function dfSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
-  const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm　${cb(!!x[k+'Line'],'1M線')}${cb(x[k+'Line']==='上','上')} ${cb(x[k+'Line']==='下','下')}`;
+  const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
     <div>${['頂版','底版','壁面'].map(s=>cb(x.face===s,s)).join(' ')}</div>
     <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>

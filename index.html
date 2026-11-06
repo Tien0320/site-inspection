@@ -396,7 +396,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-44';
+const APP_VERSION='2026.11.06-45';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -425,7 +425,7 @@ const PLUMB_TYPES = [
   {key:'box',  name:'預埋管', code:'B', hint:'澆置混凝土前'},
   {key:'test', name:'試水',   code:'T', hint:'壓力／滿水試驗'}
 ];
-const BEAM_TYPES = [{key:'sleeve', name:'穿樑', code:'', hint:'穿樑套管・澆置混凝土前'}];
+const BEAM_TYPES = [{key:'sleeve', name:'穿樑', code:'', hint:'穿樑套管・澆置混凝土前'},{key:'wall', name:'穿牆', code:'W', hint:'穿牆套管・澆置混凝土前'}];
 const typesOf = ck => ck==='plumb' ? PLUMB_TYPES : ck==='beam' ? BEAM_TYPES : TYPES;
 const typN = (ck,tk) => typesOf(ck).find(t=>t.key===tk) || typ(tk);
 const MODES = [
@@ -832,7 +832,7 @@ function viewCat(ck,tk,md){
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
-      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
+      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
   if($('#newDf'))$('#newDf').onclick=()=>newRec(ck,tk,md,'dfit');
@@ -869,10 +869,11 @@ async function newRec(ck,tk,md,variant){
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工中',inspector:'',
     mat:{name:'',brand:'',spec:'',qty:'',ref:''},
     formNo:nextFormNo(curProj,`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`),
-    items:(tk==='test'||tk==='sleeve'||tk==='slab'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
+    items:(tk==='test'||tk==='sleeve'||tk==='wall'||tk==='slab'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
   if(md==='mat'&&isPipeType(tk)){if(PIPE_GROUPS[tk])r.sub=PIPE_DEFAULT[tk];r.pipes=[newPipeRow(stdKey(r))]}
   if(md==='work'&&tk==='sleeve'){r.kind='sleeve';r.form=newSleeveForm()}
+  if(md==='work'&&tk==='wall'){r.kind='sleeve';r.form=newSleeveForm();r.form.label='穿牆';r.form.part='';r.form.items[0].member='外牆'}
   if(md==='work'&&tk==='slab'){r.kind='slab';r.form=newSlabForm(ck)}
   if(variant==='dfit'){r.kind='dfit';r.items=[];r.form=newDfForm()}
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
@@ -1711,7 +1712,7 @@ const floorsOf=pid=>isDorm(pid)?FLOORS:FLOORS_ALL;
 const newSleeve=()=>({id:uid(),no:'',pos:'',member:'梁',space:'',sys:'',sysOther:'',shape:'套管',sizeD:'',sizeA:'',
   botD:'',botA:'',botRef:false,topD:'',topA:'',topRef:'',ring:'',dir:'',ref:'',distD:'',distA:''});
 const newSleeveForm=()=>({floor:'',part:'頂板',items:[newSleeve()],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
-const sleeveLoc=f=>[f.floor,f.part?`${f.part}（穿樑套管）`:'穿樑套管'].filter(Boolean).join(' ');
+const sleeveLoc=f=>{const L=(f.label||'穿樑')+'套管';return [f.floor,f.part?`${f.part}（${L}）`:L].filter(Boolean).join(' ')};
 function sleeveDiff(d,a){const x=num(d),y=num(a);return x==null||y==null?'':`差 ${r2(y-x)>0?'+':''}${r2(y-x)} cm`}
 function sleeveItemHTML(i,x){
   const b=`items.${i}`;
@@ -1739,13 +1740,13 @@ function renderSleeves(){const f=cur.form,box=$('#sleeves');if(!box)return;
   const c=$('#slCount');if(c)c.textContent=f.items.length}
 function viewSleeve(r){
   const p=proj(r.projectId),f=r.form;
-  setTop(`穿樑套管<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  setTop(`${f.label||'穿樑'}套管<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料 <span class="num" style="float:right;font-weight:400">編號 ${esc(r.formNo)}</span></p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：頂板"></label>
+      <label class="field"><span>部位</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="${f.label==='穿牆'?'例：外牆':'例：頂板'}"></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(sleeveLoc(f))}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="slCount">${f.items.length}</span> 處</p>

@@ -114,6 +114,7 @@ textarea{min-height:72px;resize:vertical}
 .axis i,.axis b{font-style:normal;color:var(--ink-2);font-weight:700;padding:0 2px}
 .toptabs{max-width:880px;margin:8px auto 0}
 .zonetabs{flex-wrap:wrap;margin-bottom:4px}
+.syssel{align-self:center;width:auto;min-height:32px;padding:2px 8px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);font-weight:700;background:var(--surface)}
 .stabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .toptabs .stabs button{background:rgba(255,255,255,.12);border-color:transparent;color:var(--brand-ink)}
 .toptabs .stabs button .num{color:var(--brand-ink);opacity:.75}
@@ -438,7 +439,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-87';
+const APP_VERSION='2026.11.06-88';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1141,7 +1142,7 @@ const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程'
 const rocSlash=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return `${+y-1911}/${m}/${dd}`};
 function slabPhotoText(r,p){
   const f=r.form,x=f.items.find(i=>i.id===p.ref);
-  const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):'';
+  const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):(printSys||SYS_OF[r.cat]||'');
   const item=`${sys||''}系統配管施工查驗`;
   const where=`${f.floor||''}${f.part||''}${x&&x.pos?'Line '+x.pos:''}`;
   let desc=[];
@@ -1202,7 +1203,9 @@ function genPhotoText(r,p){
   return {item,where,desc};
 }
 function slabPhotoPages(r){
-  const list=sortedPhotos(r);if(!list.length)return '';
+  let list=sortedPhotos(r);
+  if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
+  if(!list.length)return '';
   const textOf=r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
@@ -2056,7 +2059,7 @@ const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 function slabItemHTML(i,x){
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
-    <div class="sphead"><span class="spno num">${i+1}</span><span class="chip na" style="align-self:center">${esc(x.sys||'未分系統')}</span>
+    <div class="sphead"><span class="spno num">${i+1}</span><select class="syssel" data-path="${b}.sys" aria-label="系統" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${['電氣','弱電','消防','空調','其他'].map(t=>`<option ${t===x.sys?'selected':''}>${t}</option>`).join('')}</select>
       ${axisHTML(b,x)}
       <label class="field grow"><span>空間編號名稱</span>${spaceInput(b,x,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
@@ -2129,6 +2132,7 @@ function viewSlab(r){
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
+    const sy=path.match(/^items\.(\d+)\.sys$/);if(sy){const x=f.items[+sy[1]];if(x.equip&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab();toast(`已改為${x.sys}`)}
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
     if(path==='floor')setTimeout(refreshPhotos,0);

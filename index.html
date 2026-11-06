@@ -396,7 +396,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-45';
+const APP_VERSION='2026.11.06-46';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1959,7 +1959,7 @@ function slabSheet(r){
 
 /* ---------- 排水樓板接頭（依「施工抽查紀錄表-(排水樓板接頭)」） ---------- */
 const DF_NAMES=['馬桶排水','小便斗排水','地板排水','面盆排水','清潔口','虹吸'];
-const DF_SPEC=['南亞','CNS 1298','PVC管','B管','HDPE管'];
+const DF_SPEC=['南亞','CNS 1298','PVC管','A管','B管','HDPE管'];
 const newDfItem=()=>({id:uid(),space:'',pos:'',face:'底版',name:'',spec:[],sizeD:'',sizeA:'',screw:false,tied:false,height:'',
   ewDir:'',ewRef:'',ewD:'',ewA:'',ewLine:'',nsDir:'',nsRef:'',nsD:'',nsA:'',nsLine:''});
 const newDfForm=()=>({floor:'',part:'底板 排水',items:[newDfItem()],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});

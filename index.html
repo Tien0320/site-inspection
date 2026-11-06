@@ -386,7 +386,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-19';
+const APP_VERSION='2026.11.06-20';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1081,6 +1081,8 @@ const isDorm=pid=>/宿舍/.test(proj(pid)?.name||'');
 const newDrainForm=pid=>({floor:'',roomType:'四人房',roomOther:'',part:isDorm(pid)?'浴廁':'',spaces:[newSpace()],
   result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
 function drainLoc(f){const rt=f.roomType==='其他'?(f.roomOther||''):f.roomType;const pt=f.part?(/吊管$/.test(f.part)?f.part:f.part+'吊管'):'';return [f.floor,[rt,pt].filter(Boolean).join('-')].filter(Boolean).join(' ')}
+/* 依支管管徑自動判斷洩水坡度標準：3" 含以下 1/50、4" 含以上 1/100 */
+function autoSlope(sz){if(!sz)return '';const v=sz.replace(/"/g,'').split('-').reduce((a,x)=>a+(x.includes('/')?(+x.split('/')[0])/(+x.split('/')[1]):+x),0);return v>=4?'4':'3'}
 function slopeOf(p){
   const L=parseFloat(p.len),h=parseFloat(p.hiA),l=parseFloat(p.loA);
   if(!(L>0)||isNaN(h)||isNaN(l))return null;
@@ -1210,6 +1212,8 @@ function viewDrain(r){
       else if(mode==='many'){const a=[...(getP(f,path)||[])],i=a.indexOf(val);i<0?a.push(val):a.splice(i,1);setP(f,path,a);b.classList.toggle('on',i<0);b.setAttribute('aria-pressed',i<0)}
       else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);
         b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
+        if(/\.(brDesign|brSize)$/.test(path)){const m=path.match(/^spaces\.(\d+)\.pipes\.(\d+)\./),pp=m&&f.spaces[+m[1]].pipes[+m[2]];
+          if(pp&&pp.kind==='drain'){const sz=pp.brDesign||pp.brSize;const ns=autoSlope(sz);if(ns){pp.slopeStd=ns;toast(`支管 ${sz} → 洩水坡度標準自動選 ${ns==='3'?'1/50':'1/100'}`)}renderSpaces();}}
         if(/\.type$/.test(path))renderSpaces();}
       afterChange(path);dirty();return;
     }

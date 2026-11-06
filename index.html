@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-51';
+const APP_VERSION='2026.11.06-52';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -721,6 +721,7 @@ function render(){
   if(v==='mat') return viewMat(a||'pipe');
   if(v==='rec') return viewRec(a);
   if(v==='print') return viewPrint(a);
+  if(v==='view') return viewPreview(a);
   if(v==='printall') return viewPrintAll(a,b,m||'work');
   viewHome();
 }
@@ -764,7 +765,7 @@ function viewHome(){
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
     const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
-    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
+    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
   }
   $('#view').innerHTML=html;
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
@@ -774,6 +775,7 @@ function viewHome(){
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+(b.dataset.cat==='beam'?'pick':typesOf(b.dataset.cat)[0].key)+'-work'));
   bindRecRows();
+  document.querySelectorAll('#recentList [data-rec]').forEach(b=>b.onclick=()=>go('view-'+b.dataset.rec));
 }
 function recRow(r){
   const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
@@ -2127,7 +2129,7 @@ function sheetHTML(r){
     </table>
   </div>`;
 }
-function showPrint(list,back,title){
+function showPrint(list,back,title,editId){
   setTop(title,back);
   $('#view').hidden=true;
   const pa=$('#printArea');
@@ -2135,9 +2137,16 @@ function showPrint(list,back,title){
   pa.style.display='block';
   pa.innerHTML=`<div class="print-toolbar" style="padding:16px max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="muted grow">A4 直式預覽，共 ${list.length} 份表單（照片黏貼表接在各表單後）。電腦請按「列印」，或選「另存為 PDF」。</span>
-      <button class="btn primary" id="doPrint">列印</button></div>
+      ${editId?`<button class="btn primary" id="doEdit">編輯</button>`:''}
+      <button class="btn ${editId?'':'primary'}" id="doPrint">列印</button></div>
     <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 40px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
+}
+async function viewPreview(id){
+  const r=records.find(x=>x.id===id);if(!r)return go('home');
+  await ensurePhotos(r);
+  showPrint([r],'home',`查驗預覽<span class="sub">${esc(r.formNo)}</span>`,id);
+  $('#doEdit').onclick=()=>go('rec-'+id);
 }
 async function viewPrint(id){
   const r=records.find(x=>x.id===id);if(!r)return go('home');

@@ -400,7 +400,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-55';
+const APP_VERSION='2026.11.06-56';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1843,7 +1843,7 @@ const SYS_OF={elec:'電氣',low:'弱電',fire:'消防',hvac:'空調'};
 const ELEC_EQUIP=['照明','110V埋入式插座','陽台防雨插座']; // 樓板接線盒：電氣設備選項
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
-  e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:false,bends3:false,pullBox:''});
+  e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});
 const newSlabForm=ck=>({floor:'',part:'頂板',items:[newSlabItem(SYS_OF[ck])],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
 const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 function slabItemHTML(i,x){
@@ -1870,16 +1870,18 @@ function slabItemHTML(i,x){
         <div class="sp2"><label>⑴${inp(b+'.tie1',x.tie1,'cm',1)}</label><label>⑵${inp(b+'.tie2',x.tie2,'cm',1)}</label></div></div>
       <div class="fld wide"><span>銜接與管口</span><div class="opts">${chk(b+'.joint','樓版配管以盒接頭銜接出線盒',x.joint)}${chk(b+'.capped','管口有封閉',x.capped)}</div>
         <label class="field" style="max-width:220px"><span>升管預留 cm</span>${inp(b+'.riser',x.riser,'cm',1)}</label></div>
-      <div class="fld wide"><span>拉線盒</span><div class="opts">${chk(b+'.over30','導線管長度超過 30m',x.over30)}${chk(b+'.bends3','三個以上 90° 彎頭',x.bends3)}</div>
-        <span class="muted">在維修可及之處做拉線盒</span>${opts(b+'.pullBox',['是','否'],'one',x.pullBox)}
-        <div class="pwarn" data-pw="${i}" ${(x.over30||x.bends3)&&x.pullBox==='否'?'':'hidden'}>⚠ 導線管超過 30m 或有三個以上 90° 彎頭，應在維修可及之處設拉線盒</div></div>
+      <div class="fld wide"><span>拉線盒</span>
+        <div class="row"><span class="muted" style="min-width:150px">導線管長度超過 30M</span>${opts(b+'.over30',['是','否'],'one',x.over30)}</div>
+        <div class="row"><span class="muted" style="min-width:150px">三個以上 90° 彎頭</span>${opts(b+'.bends3',['是','否'],'one',x.bends3)}</div>
+        <div class="row"><span class="muted" style="min-width:150px">在維修可及之處做拉線盒</span>${opts(b+'.pullBox',['是','否'],'one',x.pullBox)}</div>
+        <div class="pwarn" data-pw="${i}" ${(x.over30==='是'||x.bends3==='是')&&x.pullBox==='否'?'':'hidden'}>⚠ 導線管超過 30m 或有三個以上 90° 彎頭，應在維修可及之處設拉線盒</div></div>
       <div class="fld wide"><span>此處照片</span>${phStrip(x.id)}</div>
     </div>
     <div class="row sptools"><button class="btn small" type="button" data-sb="copy" data-i="${i}">複製此處</button><span class="grow"></span><button class="btn small danger" type="button" data-sb="del" data-i="${i}">刪除</button></div>
   </div>`;
 }
 const layArr=x=>Array.isArray(x.layIn)?x.layIn:(x.layIn?[x.layIn]:[]);
-function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x)});
+function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x);if(typeof x.over30==='boolean')x.over30=x.over30?'是':'';if(typeof x.bends3==='boolean')x.bends3=x.bends3?'是':''});
   box.innerHTML=f.items.length?f.items.map((x,i)=>slabItemHTML(i,x)).join(''):'<div class="empty">尚無資料，按下方「新增一處」。</div>';
   const c=$('#sbCount');if(c)c.textContent=f.items.length}
 function viewSlab(r){
@@ -1918,7 +1920,7 @@ function viewSlab(r){
     let m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);
     if(m){const x=f.items[+m[1]],k=m[2].slice(0,2),el=v.querySelector(`[data-sd="${k}${m[1]}"]`);if(el)el.textContent=sleeveDiff(x[k+'D'],x[k+'A'])}
     m=path.match(/^items\.(\d+)\.(over30|bends3|pullBox)$/);
-    if(m){const x=f.items[+m[1]],w=v.querySelector(`[data-pw="${m[1]}"]`);if(w)w.hidden=!((x.over30||x.bends3)&&x.pullBox==='否')}
+    if(m){const x=f.items[+m[1]],w=v.querySelector(`[data-pw="${m[1]}"]`);if(w)w.hidden=!((x.over30==='是'||x.bends3==='是')&&x.pullBox==='否')}
   };
   v.oninput=e=>{const el=e.target;if(!el.dataset.path||el.type==='file')return;setP(f,el.dataset.path,el.value);after(el.dataset.path);dirty()};
   v.onclick=e=>{
@@ -1953,7 +1955,7 @@ function slabSheet(r){
     <div>${cb(layArr(x).includes('deck'),'配管有配置於鋼承鈑及鋼絲網之中')} ${cb(layArr(x).includes('rebar'),'配管有配置於雙層鋼筋之中')}</div>
     <div>${cb(x.tied,'配管以鐵線綁紮固定')} ${cb(x.tie1!==''||x.tie2!=='','固定間距')}：⑴${u(x.tie1)}cm、⑵${u(x.tie2)}cm</div>
     <div>${cb(x.joint,'樓版配管以盒接頭銜接出線盒')} ${cb(x.capped,'管口有封閉')} ${cb(x.riser!=='','升管預留')}${u(x.riser)}cm</div>
-    <div>${cb(x.over30||x.bends3,'是')} ${cb(!(x.over30||x.bends3),'否')} ${cb(x.over30,'導線管長度超過30m')} ${cb(x.bends3,'三個以上90°彎頭')} ${cb(!!x.pullBox,'在維修可及之處做拉線盒')} ${cb(x.pullBox==='是','是')} ${cb(x.pullBox==='否','否')}</div>
+    <div>${cb(x.over30==='是','是')} ${cb(x.over30==='否','否')} 導線管長度超過30M　${cb(x.bends3==='是','是')} ${cb(x.bends3==='否','否')} 三個以上90°彎頭　在維修可及之處做拉線盒 ${cb(x.pullBox==='是','是')} ${cb(x.pullBox==='否','否')}</div>
   </div></div>`;
   return `<div class="sheet dsheet">
     <h3>表7-2 工程查驗紀錄表</h3>

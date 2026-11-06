@@ -112,7 +112,11 @@ textarea{min-height:72px;resize:vertical}
 .axis{display:flex;align-items:center;gap:4px}
 .axis input{width:0;flex:1;min-width:0;text-align:center;font-family:var(--mono)}
 .axis i,.axis b{font-style:normal;color:var(--ink-2);font-weight:700;padding:0 2px}
-.stabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:thin}
+.toptabs{max-width:880px;margin:8px auto 0}
+.stabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.toptabs .stabs button{background:rgba(255,255,255,.12);border-color:transparent;color:var(--brand-ink)}
+.toptabs .stabs button .num{color:var(--brand-ink);opacity:.75}
+.toptabs .stabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .stabs button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;gap:6px}
 .stabs button .num{font-size:12px;color:var(--ink-2)}
 .stabs button.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:700}
@@ -341,6 +345,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
       <span>備份</span>
     </button>
   </div>
+  <div class="toptabs" id="topTabs" hidden><div class="stabs" role="tablist" aria-label="切換系統"></div></div>
 </header>
 
 <main id="view"></main>
@@ -405,7 +410,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-65';
+const APP_VERSION='2026.11.06-66';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -733,6 +738,7 @@ function askLeave(r,to){
 }
 function setTop(title,back){
   $('#title').innerHTML=title; $('#backBtn').hidden=!back;
+  $('#topTabs').hidden=true;
   $('#backBtn').onclick=()=>go(back||'home');
   $('#savebar').hidden=true; $('#printArea').innerHTML=''; $('#printArea').className='';
   $('#view').hidden=false; $('#view').oninput=null; $('#view').onclick=null;
@@ -1908,7 +1914,7 @@ function slabItemHTML(i,x){
 }
 const layArr=x=>Array.isArray(x.layIn)?x.layIn:(x.layIn?[x.layIn]:[]);
 function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x);if(typeof x.over30==='boolean')x.over30=x.over30?'是':'';if(typeof x.bends3==='boolean')x.bends3=x.bends3?'是':''});
-  const tabs=$('#slabTabs');
+  const tabs=$('#topTabs .stabs');if(tabs)$('#topTabs').hidden=false;
   if(tabs){tabs.innerHTML=['全部','電氣','弱電','消防','空調','其他'].map(t=>{const n=t==='全部'?f.items.length:f.items.filter(x=>x.sys===t).length;
       return `<button type="button" class="${slabTab===t?'on':''}" data-stab="${t}">${t}<span class="num">${n}</span></button>`}).join('');
     tabs.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{slabTab=b.dataset.stab;renderSlab();const a=$('#addSlab');if(a)a.textContent=slabTab==='全部'?'＋ 新增一處':`＋ 新增一處（${slabTab}）`})}
@@ -1929,7 +1935,6 @@ function viewSlab(r){
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(slabLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="sbCount">${f.items.length}</span> 處</p>
-    <div id="slabTabs" class="stabs" role="tablist" aria-label="切換系統"></div>
     <div id="slabs" class="spaces"></div>
     <button class="btn primary" id="addSlab" type="button" style="width:100%;margin-top:10px">＋ 新增一處</button></section>
   <section><p class="label">抽查結果</p>

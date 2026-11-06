@@ -77,6 +77,14 @@ textarea{min-height:72px;resize:vertical}
 
 /* 標案卡 */
 .proj{display:flex;flex-direction:column;gap:10px}
+.pswitch{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.pbtn{border:2px solid var(--line);background:var(--surface-2);border-radius:var(--r);padding:16px;min-height:84px;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.pbtn b{font-size:18px;line-height:1.3}
+.pbtn span{font-size:13px;color:var(--ink-2)}
+.pbtn:hover{border-color:var(--ink-2)}
+.pbtn.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.pbtn.on span{color:var(--brand-ink);opacity:.8}
+.pbtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .proj-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 16px;font-size:13px}
 .proj-meta b{color:var(--ink-2);font-weight:400;margin-right:6px}
 
@@ -313,7 +321,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-3';
+const APP_VERSION='2026.11.06-4';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -535,9 +543,10 @@ function viewHome(){
   let html=`<section>
     <p class="label">標案</p>
     <div class="panel proj">
-      ${projects.length?`<div class="row">
-        <select id="projSel" class="grow" aria-label="選擇標案">${projects.map(x=>`<option value="${x.id}" ${x.id===curProj?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
-        <button class="btn" id="projEdit">編輯</button></div>
+      ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projects.map(x=>{
+          const n=records.filter(r=>r.projectId===x.id).length;
+          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}"><b>${esc(x.name)}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
+        <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>
           <div><b>主辦機關</b>${esc(p.owner)||'—'}</div>
@@ -560,7 +569,7 @@ function viewHome(){
   $('#view').innerHTML=html;
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
-  $('#projSel')&&($('#projSel').onchange=e=>{curProj=e.target.value;LS.set('curProj',curProj);viewHome()});
+  document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-box'));
   bindRecRows();
 }

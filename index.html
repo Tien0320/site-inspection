@@ -416,7 +416,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-71';
+const APP_VERSION='2026.11.06-72';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -2178,7 +2178,7 @@ function viewZone(z,s){
   const sname=Z.systems.find(([k])=>k===s)[1],fname=zoneFormName(z,s);
   $('#view').innerHTML=`
     <div class="stabs zonetabs" role="tablist" aria-label="系統">${Z.systems.map(([k,n])=>`<button type="button" class="${k===s?'on':''}" data-zs="${k}" style="--c:var(--c-${k==='wallsl'?'beam':k})">${n}<span class="num">${mine.filter(r=>zoneMatch(z,k,r)).length}</span></button>`).join('')}</div>
-    <div class="row"><button class="btn primary grow" id="zNew">＋ 新增${sname==='穿牆'?'':sname+'・'}${fname}</button>
+    <div class="row"><button class="btn primary grow" id="zNew">＋ ${fname}</button>
       ${list.length?`<button class="btn" id="zPrint">列印全部（${list.length}）</button>`:''}</div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`:`<div class="empty">還沒有${Z.name}・${sname}的查驗紀錄。按「新增」開始。</div>`}`;
   document.querySelectorAll('[data-zs]').forEach(b=>b.onclick=()=>go(`zone-${z}-${b.dataset.zs}`));

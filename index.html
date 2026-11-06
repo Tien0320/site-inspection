@@ -416,7 +416,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-73';
+const APP_VERSION='2026.11.06-74';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1170,7 +1170,7 @@ const FLOORS=['B1','1F','2F','3F','4F','5F','6F','7F','8F','9F','R1F','R2F'];
 const ROOM_TYPES=['單人房','三人房','四人房','其他'];
 const SPACE_NAMES=['浴廁','陽台','臥室']; // 職務宿舍專用
 /* 職務宿舍各樓層房間所在軸線：由 CAD 平面圖（xref 陽明附設醫院_職務宿舍2F~9F.dwg）房名屬性位置對照柱心線計算 */
-const DORM_ROOMS={"2F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"3F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"4F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"6~7 / B~C","浴廁22":"6~7 / B~C","浴廁23":"6~7 / D~E","浴廁24":"6~7 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / B~C","臥室19":"5~6 / D~E","臥室20":"5~6 / D~E","臥室21":"6~7 / C~D","臥室22":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / B~C","陽台19":"5~6 / D~E","陽台20":"5~6 / D~E","陽台21":"6~7 / C~D","陽台22":"6~7 / C~D"},"5F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台18":"5~6 / D~E","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"6F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"7F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"8F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"2~3 / B~C","浴廁4":"3~4 / B~C","浴廁5":"3~4 / B~C","浴廁6":"3~4 / B~C","浴廁7":"4~5 / B~C","浴廁8":"2~3 / C~D","浴廁9":"2~3 / C~D","浴廁10":"2~3 / D~E","浴廁11":"2~3 / D~E","浴廁12":"2~3 / D~E","浴廁13":"3~4 / D~E","浴廁14":"3~4 / D~E","浴廁15":"3~4 / D~E","浴廁16":"4~5 / D~E","浴廁17":"4~5 / B~C","浴廁18":"5~6 / C~D","浴廁19":"4~5 / D~E","浴廁20":"5~6 / C~D","浴廁21":"5~6 / C~D","浴廁22":"6~7 / B~C","浴廁23":"5~6 / C~D","浴廁24":"6~7 / D~E","浴廁25":"5~6 / C~D","浴廁26":"5~6 / C~D","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"2~3 / B~C","臥室4":"3~4 / B~C","臥室5":"3~4 / B~C","臥室6":"3~4 / B~C","臥室7":"4~5 / B~C","臥室8":"2~3 / C~D","臥室9":"2~3 / C~D","臥室10":"2~3 / D~E","臥室11":"2~3 / D~E","臥室12":"2~3 / D~E","臥室13":"3~4 / D~E","臥室14":"3~4 / D~E","臥室15":"3~4 / D~E","臥室16":"4~5 / D~E","臥室17":"5~6 / B~C","臥室18":"5~6 / D~E","臥室19":"6~7 / B~C","臥室20":"6~7 / D~E","臥室21":"6~7 / C~D","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"2~3 / A~B","陽台4":"3~4 / A~B","陽台5":"3~4 / A~B","陽台6":"3~4 / A~B","陽台7":"4~5 / A~B","陽台8":"1~2 / C~D","陽台9":"1~2 / C~D","陽台10":"2~3 / E~F","陽台11":"2~3 / E~F","陽台12":"2~3 / E~F","陽台13":"3~4 / E~F","陽台14":"3~4 / E~F","陽台15":"3~4 / E~F","陽台16":"4~5 / E~F","陽台17":"5~6 / B~C","陽台19":"6~7 / B~C","陽台20":"6~7 / D~E","陽台21":"6~7 / C~D"},"9F":{"浴廁1":"2~3 / B~C","浴廁2":"2~3 / B~C","浴廁3":"3~4 / B~C","浴廁4":"3~4 / B~C","浴廁5":"4~5 / B~C","浴廁6":"2~3 / C~D","浴廁7":"2~3 / D~E","浴廁8":"2~3 / D~E","浴廁9":"3~4 / D~E","浴廁10":"3~4 / D~E","浴廁11":"4~5 / D~E","浴廁12":"5~6 / B~C","浴廁13":"6~7 / C~D","浴廁14":"6~7 / C~D","浴廁15":"5~6 / D~E","臥室1":"2~3 / B~C","臥室2":"2~3 / B~C","臥室3":"3~4 / B~C","臥室4":"3~4 / B~C","臥室5":"4~5 / B~C","臥室6":"2~3 / C~D","臥室7":"2~3 / D~E","臥室8":"2~3 / D~E","臥室9":"3~4 / D~E","臥室10":"3~4 / D~E","臥室11":"4~5 / D~E","臥室12":"5~6 / B~C","陽台1":"2~3 / A~B","陽台2":"2~3 / A~B","陽台3":"3~4 / A~B","陽台4":"3~4 / A~B","陽台5":"4~5 / A~B","陽台6":"1~2 / C~D","陽台7":"1~2 / C~D","陽台8":"2~3 / E~F","陽台9":"2~3 / E~F","陽台10":"3~4 / E~F","陽台11":"3~4 / E~F","陽台12":"4~5 / E~F","陽台13":"5~6 / D~E","陽台14":"5~6 / B~C","陽台15":"6~7 / B~C","陽台16":"6~7 / D~E"}};
+let DORM_ROOMS={}; // 由雲端載入（meta/rooms），不放在程式碼
 const spName=sp=>(sp.name||'')+(sp.no||'');
 const roomNos=(fl,nm)=>Object.keys((DORM_ROOMS[fl]||{})).filter(k=>k.startsWith(nm)).map(k=>k.slice(nm.length)).sort((a,b)=>a-b);
 const roomGrid=(fl,sp)=>(DORM_ROOMS[fl]||{})[spName(sp)]||'';
@@ -1760,6 +1760,24 @@ function testSheet(r){
   </div>`;
 }
 
+/* 二期各樓層空間：由 CAD 平面圖（1150604 二期平面修正，xref 陽明附設醫院_二期醫療大樓 B3F~10F、RR1F）房名圖塊與柱心線計算
+   每筆：[空間名稱, 空間編號, 軸1, 軸2, 軸A, 軸B] */
+let MED2_ROOMS={}; // 由雲端載入（meta/rooms），不放在程式碼
+function roomsFor(pid,fl){
+  if(pid==='p-nycuh-med2')return MED2_ROOMS[fl]||null;
+  if(pid==='p-nycuh-dorm'&&DORM_ROOMS[fl])return Object.entries(DORM_ROOMS[fl]).map(([k,v])=>{const m=v.match(/^(\S+)~(\S+) \/ (\S+)~(\S+)$/);return m?[k,'',m[1],m[2],m[3],m[4]]:[k,'','','','','']});
+  return null;
+}
+function spaceInput(b,x,ph){
+  const list=roomsFor(cur.projectId,cur.form.floor);
+  if(!list)return inp(b+'.space',x.space,cur.form.floor||!['p-nycuh-med2','p-nycuh-dorm'].includes(cur.projectId)?ph:'先選樓層');
+  const has=list.some(r=>r[0]===x.space);
+  return `<select data-path="${b}.space"><option value="">請選擇空間</option>${list.map(r=>`<option value="${esc(r[0])}" ${r[0]===x.space?'selected':''}>${esc(r[0])}${r[1]&&!r[0].includes(r[1])?'　'+esc(r[1]):''}</option>`).join('')}${x.space&&!has?`<option selected>${esc(x.space)}</option>`:''}</select>`;
+}
+function applyRoom(x){
+  const list=roomsFor(cur.projectId,cur.form.floor)||[],r=list.find(q=>q[0]===x.space);if(!r||!r[2])return false;
+  x.px1=r[2];x.px2=r[3];x.py1=r[4];x.py2=r[5];x.pos=axisPos(x);return true;
+}
 /* 位置：兩組軸線，中間「~」已填好（例：5 ~ 6 ／ C ~ D） */
 function axisPos(x){const a=[x.px1,x.px2].filter(Boolean).join('~'),b=[x.py1,x.py2].filter(Boolean).join('~');return [a,b].filter(Boolean).join(' / ')}
 function axisHTML(b,x){
@@ -1782,7 +1800,7 @@ function sleeveItemHTML(i,x){
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('構件',opts(b+'.member',['梁','外牆','內牆'],'one',x.member))}
-      <label class="field"><span>空間</span>${inp(b+'.space',x.space,'例：走廊')}</label>
+      <label class="field"><span>空間</span>${spaceInput(b,x,'例：走廊')}</label>
       ${fl('系統',opts(b+'.sys',['電氣','弱電','排水','空調','其他'],'one',x.sys)+(x.sys==='其他'?inp(b+'.sysOther',x.sysOther,'系統名稱'):''),1)}
       ${fl('型式',opts(b+'.shape',['套管','方孔'],'one',x.shape))}
       <div class="fld"><span>${x.shape==='方孔'?'方孔尺寸':'套管尺寸 ø'}</span><div class="meas"><label>設計${x.shape==='方孔'?inp(b+'.sizeD',x.sizeD,'例：30×20'):`<div class="pm"><i>ø</i>${inp(b+'.sizeD',x.sizeD,'例：4"')}</div>`}</label><label>實測${x.shape==='方孔'?inp(b+'.sizeA',x.sizeA,''):`<div class="pm"><i>ø</i>${inp(b+'.sizeA',x.sizeA,'')}</div>`}</label></div></div>
@@ -1830,6 +1848,8 @@ function viewSleeve(r){
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
+    const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
+    if(path==='floor')setTimeout(refreshPhotos,0);
     if(path==='floor'||path==='part'){r.location=sleeveLoc(f);$('#locView').textContent=r.location}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     const m=path.match(/^items\.(\d+)\.(botD|botA|topD|topA|distD|distA)$/);
@@ -1899,7 +1919,7 @@ function slabItemHTML(i,x){
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span><span class="chip na" style="align-self:center">${esc(x.sys||'未分系統')}</span>
       ${axisHTML(b,x)}
-      <label class="field grow"><span>空間編號名稱</span>${inp(b+'.space',x.space,'例：4F-診間3')}</label>
+      <label class="field grow"><span>空間編號名稱</span>${spaceInput(b,x,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${x.sys==='其他'?`<label class="field"><span>其他系統名稱</span>${inp(b+'.sysOther',x.sysOther,'系統名稱')}</label>`:''}
@@ -1971,6 +1991,8 @@ function viewSlab(r){
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
+    const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
+    if(path==='floor')setTimeout(refreshPhotos,0);
     if(path==='floor'||path==='part'){r.location=slabLoc(f);$('#locView').textContent=r.location||'—'}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     let m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);
@@ -2047,7 +2069,7 @@ function dfItemHTML(i,x){
     <div class="row">${diff(k)}</div></div>`;
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span>
-      <label class="field grow"><span>空間名稱編號</span>${inp(b+'.space',x.space,'例：5F-男廁')}</label>
+      <label class="field grow"><span>空間名稱編號</span>${spaceInput(b,x,'例：5F-男廁')}</label>
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('部位',opts(b+'.face',['頂版','底版'],'one',x.face))}
@@ -2096,6 +2118,8 @@ function viewDf(r){
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
+    const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
+    if(path==='floor')setTimeout(refreshPhotos,0);
     if(path==='floor'||path==='part'){r.location=dfLoc(f);$('#locView').textContent=r.location||'—'}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
     const m=path.match(/^items\.(\d+)\.(ewD|ewA|nsD|nsA)$/);
@@ -2339,6 +2363,7 @@ const Cloud={
     const err=e=>this.set('error',e.code==='permission-denied'?`此帳號（${u.email}）沒有權限，請聯絡管理者加入`:(e.message||e.code));
     this.unsub.push(this.fs.collection('projects').onSnapshot(s=>this.apply('projects',s),err));
     this.unsub.push(this.fs.collection('records').onSnapshot(s=>this.apply('records',s),err));
+    loadRoomsCloud();
     this.migrate();
   },
   apply(kind,s){
@@ -2393,6 +2418,22 @@ const Cloud={
     return n;
   }
 };
+/* 空間資料（房名＋軸線）：存在雲端 meta/rooms，只有名單內帳號可讀；本機快取供離線使用 */
+function setRooms(o){if(o&&o.dorm)DORM_ROOMS=o.dorm;if(o&&o.med2)MED2_ROOMS=o.med2}
+try{setRooms(JSON.parse(LS.get('roomsCache')||'null'))}catch(e){}
+async function loadRoomsCloud(){
+  if(!Cloud.on)return;
+  try{const d=await Cloud.fs.collection('meta').doc('rooms').get();
+    if(d.exists){const o=JSON.parse(d.data().json);setRooms(o);LS.set('roomsCache',JSON.stringify(o));if($('#setDlg').open)renderCloudBox();softRender()}}catch(e){}
+}
+function roomsSummary(){const a=Object.keys(MED2_ROOMS).length,b=Object.keys(DORM_ROOMS).length;return a||b?`空間資料：二期 ${a} 層、宿舍 ${b} 層`:'空間資料：尚未載入'}
+async function uploadRooms(file){
+  try{const txt=await file.text(),o=JSON.parse(txt);if(o.app!=='site-inspection-rooms')throw new Error('這不是空間資料檔');
+    if(!Cloud.on)throw new Error('請先登入');
+    await Cloud.fs.collection('meta').doc('rooms').set({json:JSON.stringify({dorm:o.dorm||{},med2:o.med2||{}}),version:o.version||'',updated:Date.now(),by:Cloud.user.email});
+    setRooms(o);LS.set('roomsCache',JSON.stringify({dorm:o.dorm||{},med2:o.med2||{}}));toast('空間資料已上傳，所有人登入後都會套用');renderCloudBox();
+  }catch(e){toast('上傳失敗：'+(e.message||e))}
+}
 async function ensurePhotos(r){
   if(!Cloud.fs||!r||!r.photos)return 0;
   const miss=r.photos.filter(p=>!p.src&&p.id&&!p.tried);if(!miss.length)return 0;
@@ -2426,13 +2467,15 @@ function renderCloudBox(){
   b.innerHTML=`<div class="row"><b class="grow">雲端同步：${st}</b></div>
     ${C.msg?`<p class="muted" style="margin:0">${esc(C.msg)}</p>`:''}
     ${C.user?`<p class="muted" style="margin:0">登入帳號：${esc(C.user.email)}</p>
-      <div class="row"><button class="btn primary" id="syncNow">立即同步（一鍵上傳）</button><button class="btn" id="signOut">登出</button></div>`
+      <div class="row"><button class="btn primary" id="syncNow">立即同步（一鍵上傳）</button><button class="btn" id="signOut">登出</button></div>
+      <div class="row"><span class="muted grow">${roomsSummary()}</span><label class="btn small">上傳空間資料<input type="file" id="roomsIn" accept=".json,application/json" hidden></label></div>`
      :C.fs?`<p class="muted" style="margin:0">用 Google 帳號登入後才會上傳。手機和電腦要登入已授權的帳號。</p>
       <div class="row"><button class="btn primary" id="signIn">用 Google 帳號登入</button></div>`:''}
     ${CLOUD_CONFIG?'':`<button class="btn small" id="cfgClear" style="align-self:flex-start">移除雲端設定</button>`}`;
   if($('#signIn'))$('#signIn').onclick=()=>C.signIn();
   if($('#signOut'))$('#signOut').onclick=()=>C.signOut();
   if($('#cfgClear'))$('#cfgClear').onclick=()=>{LS.set('fbcfg','');location.reload()};
+  if($('#roomsIn'))$('#roomsIn').onchange=e=>{const f=e.target.files[0];if(f)uploadRooms(f);e.target.value=''};
   if($('#syncNow'))$('#syncNow').onclick=async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='上傳中…';
     await flush();const n=await C.migrate();
     for(const r of records)if(r.photos&&r.photos.some(p=>p.src&&!p.up))C.push('records',r);

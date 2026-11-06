@@ -229,12 +229,13 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .sheet .mhdr .k small{display:block;font-size:7pt;font-weight:700;color:#555}
 .sheet .mhdr .v{color:#444}
 .sheet .mhdr .v.big{font-size:12pt}
-.mph{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:5mm;break-inside:avoid}
+.mph{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:5mm}
 .mph td{border:1px solid #000;padding:3px 6px;font-size:10.5pt;vertical-align:middle}
 .mph .mimg{padding:3mm 2mm;height:68mm;text-align:center}
 .mph .mimg img{max-width:100%;height:64mm;object-fit:contain;display:block;margin:0 auto}
-.mph .mk{text-align:center;font-weight:400;height:8mm}
-.mph .mdesc{vertical-align:middle;line-height:1.45}
+.mph .mk{text-align:center;font-weight:400;height:7mm;padding:1px 6px}
+.mph .mrow{height:8mm;padding:1px 6px;font-size:10pt;line-height:1.25}
+.mph .mdesc{vertical-align:middle;line-height:1.45;height:45mm}
 .dph{width:100%;border-collapse:collapse;table-layout:fixed;break-inside:avoid}
 .dph td{border:1px solid #000;padding:2px 6px;font-size:11pt;vertical-align:middle}
 .dph .dimg{padding:2px;text-align:center;height:72mm}
@@ -437,7 +438,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-85';
+const APP_VERSION='2026.11.06-87';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1208,11 +1209,11 @@ function slabPhotoPages(r){
   const hdr=`<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
     <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
     <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;
-  return pages.map(pg=>`<div class="sheet mphoto">${hdr}${pg.map(p=>{const t=textOf(r,p);return `<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>
+  return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
     <tr><td rowspan="4" class="mimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
-    <tr><td>查驗項目:${esc(t.item)}</td></tr>
-    <tr><td>照片位置:${esc(t.where)}</td></tr>
-    <tr><td class="mdesc">${t.desc.map(esc).join('<br>')}</td></tr></table>`}).join('')}</div>`).join('');
+    <tr><td class="mrow">查驗項目:${esc(t.item)}</td></tr>
+    <tr><td class="mrow">照片位置:${esc(t.where)}</td></tr>
+    <tr><td class="mdesc">${t.desc.map(esc).join('<br>')}</td></tr>`}).join('')}</table></div>`).join('');
 }
 function photoPages(r){
   if(r.projectId==='p-nycuh-dorm'||r.projectId==='p-nycuh-med2')return slabPhotoPages(r);

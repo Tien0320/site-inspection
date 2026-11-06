@@ -199,6 +199,8 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .fld{display:flex;flex-direction:column;gap:6px;min-width:0}
 .fld>span{font-size:12px;color:var(--ink-2);font-weight:700}
 .fld.wide{grid-column:1/-1}
+.sp2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sp2 label{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ink-2)}
 .meas{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .meas label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .calc{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:8px 10px}
@@ -322,7 +324,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-7';
+const APP_VERSION='2026.11.06-9';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -790,7 +792,7 @@ const BRANDS=['南亞CNS1298','橘紅色','灰管'];
 const D_BR=['1"','1-1/2"','2"','4"'], D_MN=['1-1/2"','3"','4"','5"'];
 const V_BR=['1"','2"','3"','4"'], V_MN=['3"','4"','5"','6"'];
 const newDrain=()=>({kind:'drain',type:'',typeOther:'',brDesign:'',brBrand:[],brSize:'',mnDesign:'',mnBrand:[],mnSize:'',
-  flex:false,flexRod:'',rigid:false,spacingRule:[],spacing:'',oneStep:false,sweep:false,elbow45:false,cap:false,label:false,flow:'',
+  flex:false,flexRod:'',rigid:false,spacingRule:[],spacing:'',spacing2:'',oneStep:false,sweep:false,elbow45:false,cap:false,label:false,flow:'',
   slopeStd:'',len:'',hiD:'',hiA:'',loD:'',loA:''});
 const newVent=()=>({kind:'vent',ventOf:'',flow:'',brDesign:'',brBrand:['灰管'],brSize:'',mnDesign:'',mnBrand:['灰管'],mnSize:'',
   rigid:false,oneStep:false,hD:'',hA:'',toStack:false,stackH:''});
@@ -831,13 +833,13 @@ function pipeHTML(si,pi,p,n){
     const s=slopeOf(p);
     body=`
     ${fl('管別',opts(b+'.type',['污水管','廢水管','除濕機+電熱水管','其他'],'one',p.type)+(p.type==='其他'?inp(b+'.typeOther',p.typeOther,'請填管別'):''),1)}
-    ${fl('支管 設計值 Ø（吋）',inp(b+'.brDesign',p.brDesign,'例：2',1))}
+    ${fl('支管 設計值 Ø',opts(b+'.brDesign',D_BR,'one',p.brDesign))}
     ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',D_BR,'one',p.brSize))}
-    ${fl('幹管 設計值 Ø（吋）',inp(b+'.mnDesign',p.mnDesign,'例：4',1))}
+    ${fl('幹管 設計值 Ø',opts(b+'.mnDesign',D_MN,'one',p.mnDesign))}
     ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',D_MN,'one',p.mnSize))}
     ${fl('吊架型式',`<div class="opts">${chk(b+'.flex','撓性吊架：熱浸鍍鋅螺桿＋管束',p.flex)}</div>${p.flex?opts(b+'.flexRod',['3/8"','1/2"'],'one',p.flexRod):''}<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}</div>`,1)}
     ${fl('吊架、支撐間距規定',opts(b+'.spacingRule',[['1.5','1½" 以下每 1.5M 內一處'],['2.0','2" 以上每 2.0M 內一處，轉折處加強固定']],'many',p.spacingRule),1)}
-    ${fl('吊架間距（cm）',`<div class="row">${inp(b+'.spacing',p.spacing,'cm',1)}${chk(b+'.oneStep','僅一步（無間距）',p.oneStep)}</div>`)}
+    ${fl('吊架間距（cm）',`<div class="sp2"><label>⑴${inp(b+'.spacing',p.spacing,'cm',1)}</label><label>⑵${inp(b+'.spacing2',p.spacing2||'',' cm',1)}</label></div><div class="opts">${chk(b+'.oneStep','僅一步（無間距）',p.oneStep)}</div>`)}
     ${fl('彎頭及管口',`<div class="opts">${chk(b+'.sweep','排水彎頭採順水型式',p.sweep)}${chk(b+'.elbow45','90° 彎頭以 45°×2 銜接',p.elbow45)}${chk(b+'.cap','管口有管帽封閉',p.cap)}</div>`,1)}
     ${fl('管路標示',`<div class="opts">${chk(b+'.label','管路種類標示',p.label)}</div><span class="muted">水流方向標示</span>${opts(b+'.flow',['正確','不正確'],'one',p.flow)}`)}
     ${fl('洩水坡度標準',opts(b+'.slopeStd',[['3','3" 含以下 1/50'],['4','4" 含以上 1/100']],'one',p.slopeStd))}
@@ -853,9 +855,9 @@ function pipeHTML(si,pi,p,n){
     body=`
     ${fl('透氣管',opts(b+'.ventOf',['污水','廢水'],'one',p.ventOf))}
     ${fl('方向標示',opts(b+'.flow',['正確','不正確'],'one',p.flow))}
-    ${fl('支管 設計值 Ø（吋）',inp(b+'.brDesign',p.brDesign,'例：2',1))}
+    ${fl('支管 設計值 Ø',opts(b+'.brDesign',V_BR,'one',p.brDesign))}
     ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',V_BR,'one',p.brSize))}
-    ${fl('幹管 設計值 Ø（吋）',inp(b+'.mnDesign',p.mnDesign,'例：4',1))}
+    ${fl('幹管 設計值 Ø',opts(b+'.mnDesign',V_MN,'one',p.mnDesign))}
     ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',V_MN,'one',p.mnSize))}
     ${fl('吊架',`<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}${chk(b+'.oneStep','吊架間距：僅一步（無間距）',p.oneStep)}</div>`,1)}
     <div class="fld wide"><span>管路高度及通氣立管（cm）</span>
@@ -987,6 +989,7 @@ function renderSpaces(){
 }
 
 /* 排水吊管列印表單 */
+const inch=v=>v?(/"$/.test(v)?v:v+'"'):'';
 function drainSheet(r){
   const p=proj(r.projectId)||{},f=r.form;
   const cb=(on,l)=>`${on?'■':'□'}${l}`;
@@ -996,19 +999,19 @@ function drainSheet(r){
   const pipeTxt=pp=>{
     if(pp.kind==='vent')return `<div class="pp">
       <div>管別：■透氣管(${cb(pp.ventOf==='污水','污水')}${cb(pp.ventOf==='廢水','廢水')}) ■管路種類標示：■透氣管 方向標示：${cb(pp.flow==='正確','正確')} ${cb(pp.flow==='不正確','不正確')}</div>
-      <div>支管規格：設計值：Ø${u(pp.brDesign)}" 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(V_BR,pp.brSize)}</div>
-      <div>幹管規格：設計值：Ø${u(pp.mnDesign)}" 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(V_MN,pp.mnSize)}</div>
+      <div>支管規格：設計值：Ø${u(inch(pp.brDesign))} 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(V_BR,pp.brSize)}</div>
+      <div>幹管規格：設計值：Ø${u(inch(pp.mnDesign))} 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(V_MN,pp.mnSize)}</div>
       <div>${cb(pp.rigid,'剛性吊架配管以50mm*50mm*5mm熱浸鍍鋅角鋼+U型螺栓固定')}　${cb(pp.oneStep,'吊架間距：僅一步(無間距)')}</div>
       <div>□管路高度(設計)：${u(pp.hD)}cm 實際：${u(pp.hA)}cm；${cb(pp.toStack,'通氣管之上端接通氣立管')}，實測${u(pp.stackH)}cm(1米線上)(須位於地板面90公分以上)</div></div>`;
     const s=slopeOf(pp),t=pp.type;
     return `<div class="pp">
       <div>管別：${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} ${cb(t==='其他',u(pp.typeOther))}</div>
-      <div>支管規格：設計值：Ø${u(pp.brDesign)}" 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(D_BR,pp.brSize)}</div>
-      <div>幹管規格：設計值：Ø${u(pp.mnDesign)}" 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(D_MN,pp.mnSize)}</div>
+      <div>支管規格：設計值：Ø${u(inch(pp.brDesign))} 實際規格：${brands(pp.brBrand)} PVC管 ${sizes(D_BR,pp.brSize)}</div>
+      <div>幹管規格：設計值：Ø${u(inch(pp.mnDesign))} 實際規格：${brands(pp.mnBrand)} PVC管 ${sizes(D_MN,pp.mnSize)}</div>
       <div>${cb(pp.flex,'撓性吊架配管以')}${cb(pp.flexRod==='3/8"','3/8"')} ${cb(pp.flexRod==='1/2"','1/2"')} 熱浸鍍鋅螺桿+熱浸鍍鋅管束吊掛固定</div>
       <div>${cb(pp.rigid,'剛性吊架配管以50mm*50mm*5mm熱浸鍍鋅角鋼+U型螺栓固定')}</div>
       <div>${cb(pp.spacingRule.includes('1.5'),'吊架、支撐間距1½"以下每1.5M內一處')} ${cb(pp.spacingRule.includes('2.0'),'2"以上每2.0M內一處及管路轉折處需加強固定')}</div>
-      <div>${cb(pp.spacing!=='','吊架間距')}：⑴${u(pp.spacing)}cm ${cb(pp.oneStep,'僅一步(無間距)')}</div>
+      <div>${cb(pp.spacing!==''||!!pp.spacing2,'吊架間距')}：⑴${u(pp.spacing)}cm ⑵${u(pp.spacing2)}cm ${cb(pp.oneStep,'僅一步(無間距)')}</div>
       <div>${cb(pp.sweep,'排水彎頭採用順水型式')} ${cb(pp.elbow45,'排水管90度彎頭有使用45度x2只施工銜接')} ${cb(pp.cap,'管口有管帽封閉')}</div>
       <div>${cb(pp.label,'管路種類標示')}${cb(t==='污水管','污水管')} ${cb(t==='廢水管','廢水管')} ${cb(t==='除濕機+電熱水管','除濕機+電熱水管')} 水流方向標示 ${cb(pp.flow==='正確','正確')} ${cb(pp.flow==='不正確','不正確')}</div>
       <div>洩水坡度量測 洩水坡度${cb(pp.slopeStd==='3','(3")含以下者為1/50')} ${cb(pp.slopeStd==='4','(4")含以上者1/100')}</div>

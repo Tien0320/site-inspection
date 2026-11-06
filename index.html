@@ -393,7 +393,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-37';
+const APP_VERSION='2026.11.06-38';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -1022,7 +1022,7 @@ function photoTarget(r,p){
   if(!p.ref)return '';
   if(r.kind==='dfit'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].name?' '+r.form.items[n].name:''}`.trim():''}
   if(r.kind==='slab'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
-  if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].no||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
+  if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 編號${r.form.items[n].no||n+1}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
   if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''}`.trim():''}
   if(r.kind==='drain'){
     for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
@@ -1707,7 +1707,7 @@ function sleeveItemHTML(i,x){
   const b=`items.${i}`;
   return `<div class="space" data-si="${i}">
     <div class="sphead"><span class="spno num">${i+1}</span>
-      <label class="field grow"><span>編號</span>${inp(b+'.no',x.no,'例：S-01')}</label>
+      <label class="field grow"><span>編號（自動編列，可修改）</span>${inp(b+'.no',x.no||String(i+1),'')}</label>
       <label class="field grow"><span>位置</span>${inp(b+'.pos',x.pos,'例：C~D／5~6 軸')}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('構件',opts(b+'.member',['梁','外牆','內牆'],'one',x.member))}
@@ -1765,7 +1765,7 @@ function viewSleeve(r){
     const m=path.match(/^items\.(\d+)\.(botD|botA|topD|topA|distD|distA)$/);
     if(m){const x=f.items[+m[1]],k=m[2].slice(0,-1),el=v.querySelector(`[data-sd="${k}${m[1]}"]`);if(el)el.textContent=sleeveDiff(x[k+'D'],x[k+'A'])}
   };
-  v.oninput=e=>{const el=e.target;if(!el.dataset.path||el.type==='file')return;setP(f,el.dataset.path,el.value);after(el.dataset.path);dirty()};
+  v.oninput=e=>{const el=e.target;if(!el.dataset.path||el.type==='file')return;let val=el.value;const mm=el.dataset.path.match(/^items\.(\d+)\.no$/);if(mm&&val.trim()===String(+mm[1]+1))val='';setP(f,el.dataset.path,val);after(el.dataset.path);dirty()};
   v.onclick=e=>{
     const b=e.target.closest('.opt');
     if(b&&b.dataset.path){const path=b.dataset.path,mode=b.dataset.mode,val=b.dataset.val;
@@ -1789,7 +1789,7 @@ function sleeveStatus(r){const f=r.form;
   if(f.result==='ok')return {k:'ok',t:'合格'};return {k:'warn',t:'填寫中'}}
 function sleeveSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
-  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.編號：${u(x.no)}　位置：${u(x.pos)}　${['梁','外牆','內牆'].map(m=>cb(x.member===m,m)).join(' ')}　空間：${u(x.space)}</div><div class="pp">
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.編號：${u(x.no||String(i+1))}　位置：${u(x.pos)}　${['梁','外牆','內牆'].map(m=>cb(x.member===m,m)).join(' ')}　空間：${u(x.space)}</div><div class="pp">
     <div>${cb(!!x.sys,'系統')}：${['電氣','弱電','排水','空調'].map(m=>cb(x.sys===m,m)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}</div>
     <div>${cb(x.shape==='套管','套管')}${cb(x.shape==='方孔','方孔')}尺寸：設計：${u(x.sizeD)}　實測：${u(x.sizeA)}</div>
     <div>${cb(x.botD!==''||x.botA!=='','樓板~管底')}：設計值：${u(x.botD)}cm　實測值：${u(x.botA)}cm　${cb(x.botRef,'1米基準線上')}</div>

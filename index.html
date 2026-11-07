@@ -1832,9 +1832,9 @@ function viewTest(r){
       <div class="fld wide"><span>檢查標準（可新增多項）</span><div id="t_stds">${stdSelHTML(f)}</div></div>
       <label class="field" id="t_headw" ${stdsOf(f).includes('fire')?'':'hidden'}><span>全閉揚程（kg/cm²）</span><input type="text" inputmode="decimal" data-path="head" value="${esc(f.head)}" placeholder="例：8"></label>
     </div></section>
-  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">試驗紀錄</p>
-    <button class="btn small" id="addTRow" type="button">＋ 新增系統</button></div>
-    <div id="testRows" class="prows"></div></section>
+  <section><p class="label">試驗紀錄</p>
+    <div id="testRows" class="prows"></div>
+    <button class="btn primary" id="addTRow" type="button" style="width:100%;margin-top:10px">＋ 新增下一組壓力錶</button></section>
   <section><p class="label">缺失辦理情形</p>
     <div class="panel fields">
       ${fl('改善情形',opts('fix',[['done','已完成改善（檢附改善前中後照片）'],['track','未完成改善，填具「缺失改善追蹤表」追蹤']],'one',f.fix),1)}
@@ -1914,7 +1914,7 @@ function renderTestRows(){
       </div>
       <div class="pwarn" data-tw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
       <div class="fld"><span>此系統照片</span>${phStrip(x.id)}</div></div>`}).join('')
-    :'<div class="empty">尚無試驗系統，按「新增系統」。</div>';
+    :'<div class="empty">尚無試驗紀錄，按下方「新增下一組壓力錶」。</div>';
   box.oninput=e=>{const el=e.target;
     if(el.dataset.hm){const n=+el.dataset.tn,k=el.dataset.hm,row=f.rows[n];el.value=el.value.replace(/\D/g,'').slice(0,2);
       const h=box.querySelector(`[data-hm="${k}"][data-part="h"][data-tn="${n}"]`),m=box.querySelector(`[data-hm="${k}"][data-part="m"][data-tn="${n}"]`);

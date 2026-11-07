@@ -949,6 +949,7 @@ function nextFormNo(pid,fallback){
 }
 async function newRec(ck,tk,md,variant){
   md=mode(md).key;
+  if(!variant&&md==='work'&&tk==='box'&&SYS_OF[ck])variant='wbox'; // 電氣／弱電／消防／空調的預埋接線盒一律用柱/牆接線盒表單
   const d=today();
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工中',inspector:'',

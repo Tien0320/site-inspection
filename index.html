@@ -130,6 +130,7 @@ textarea{min-height:72px;resize:vertical}
 .toptabs .stabs button[style*="--c"].on{background:var(--c);color:#fff}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .hm{display:flex;align-items:center;gap:4px}.hm input{flex:1;min-width:0;text-align:center;font-family:var(--mono)}.hm b{font-size:18px;color:var(--ink)}
+.addgrp{width:100%;border:2px dashed var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:700}
 .tgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}.tgrp-h{display:flex;gap:6px;align-items:center}.tgrp-h select,.tgrp-h input{flex:1;min-width:0;min-height:40px}.tgrp-h .muted{font-size:12px;white-space:nowrap}
 .tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
@@ -1902,7 +1903,7 @@ function renderTestRows(){
           ${g.fx==='其他'?`<input type="text" data-tg="fxOther" ${at} value="${esc(g.fxOther||'')}" placeholder="其他器具名稱">`:''}
           <div class="tgrp-h">${testSpaceInput(r,g.space,n,si)}<input type="text" data-tg="area" ${at} value="${esc(g.area||'')}" placeholder="區域／軸線"></div></div>`}).join('')}
       ${x.sys&&!x.gs.some(g=>g.fx||g.water)?`<div class="muted small">原系統別：${esc(x.sys)}</div>`:''}
-      <button type="button" class="btn small" data-tgadd="${n}">＋ 新增一組（器具／冷熱水／空間）</button>
+      <button type="button" class="btn addgrp" data-tgadd="${n}">＋ 新增一組（器具／冷熱水／空間）</button>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${hm('t0')}</label><label>結束時間${hm('t1')}</label>

@@ -812,7 +812,7 @@ function viewHome(){
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
-          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}"><b>${esc(x.name)}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
+          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}"><b>${esc(x.name).replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>

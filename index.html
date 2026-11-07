@@ -463,7 +463,7 @@ const CATS = [
   {key:'beam', name:'其他', code:'S'}
 ];
 const TYPES = [
-  {key:'box',  name:'柱/牆預埋接線盒', code:'B', hint:'柱/牆預埋盒＋配管'},
+  {key:'box',  name:'柱/牆接線盒', code:'B', hint:'柱/牆預埋盒＋配管'},
   {key:'slab', name:'樓板接線盒', code:'S', hint:'樓板預埋盒＋配管'},
   {key:'hang', name:'吊管',       code:'H', hint:'吊架及管路'}
 ];
@@ -909,14 +909,14 @@ function viewCat(ck,tk,md){
   const T=`${typN(ck,tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
     <div ${ck==='beam'?'hidden':''} class="seg ${typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
-      return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
+      return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name.replace(/^(柱\/牆|樓板)(接線盒)$/,'$1<br>$2')}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
       <button class="btn primary grow" id="newRec">＋ 新增${T}</button>
       ${md==='work'&&ck==='plumb'&&tk==='box'?`<button class="btn primary grow" id="newDf">＋ 新增排水樓板接頭</button>`:''}
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
-      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tk==='box'&&md==='work'&&SYS_OF[ck]?'柱/牆預埋接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
+      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tk==='box'&&md==='work'&&SYS_OF[ck]?'柱/牆接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
   if($('#newDf'))$('#newDf').onclick=()=>newRec(ck,tk,md,'dfit');
@@ -2091,7 +2091,7 @@ const newSlabForm=ck=>({floor:'',part:'頂板',items:[newSlabItem(SYS_OF[ck])],r
 const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 /* 柱牆預埋接線盒：沿用樓板接線盒表單，部分選項改為柱牆用 */
 const isWallBox=r=>!!(r&&r.kind==='slab'&&r.form&&r.form.zone==='wall');
-const slabCfg=r=>isWallBox(r)?{name:'柱/牆預埋接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
+const slabCfg=r=>isWallBox(r)?{name:'柱/牆接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
     pos1:{t:'出線盒安裝位置（水平）',dirs:['東側','西側','南側','北側'],refs:['梁','柱','牆','出線盒']},
     pos2:{t:'出線盒安裝高度',dirs:['完成面','1米基準線上','1米基準線下'],refs:[]},
     lay:[['rebar','配置於雙層鋼筋之中'],['center','配置於柱/牆斷面中心']],joint:'柱/牆配管以盒接頭銜接出線盒',in:'柱/牆',partPh:'例：柱/牆預埋接線盒-A棟'}
@@ -2387,7 +2387,7 @@ function zoneNew(z,s){
   if(s==='plumb')return newRec(s,'box','work');
   return newRec(s,'box','work','wbox');
 }
-const zoneFormName=(z,s)=>z==='slab'?(s==='plumb'?'排水樓板接頭':'樓板接線盒'):(s==='wallsl'?'穿牆套管':s==='plumb'?'預埋管':'柱/牆預埋接線盒');
+const zoneFormName=(z,s)=>z==='slab'?(s==='plumb'?'排水樓板接頭':'樓板接線盒'):(s==='wallsl'?'穿牆套管':s==='plumb'?'預埋管':'柱/牆接線盒');
 let zoneBack='',zoneBackId='',zoneBackPending='';
 function viewZone(z,s){
   const Z=ZONES[z],p=proj(curProj);if(!Z||!p)return go('home');

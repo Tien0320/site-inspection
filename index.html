@@ -2113,7 +2113,7 @@ function slabItemHTML(i,x){
       ${x.equip==='其他'&&EQUIP_OF[x.sys]?`<label class="field"><span>其他設備名稱</span>${inp(b+'.equipOther',x.equipOther,'請輸入設備名稱')}</label>`:''}
       ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',C.fix,'one',x.screwOn))}
       ${fl('出線盒有貼合',opts(b+'.fitOn',C.fix,'one',x.fitOn))}
-      ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']],'one',x.boxType),1)}
+      ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']].filter(o=>!W||o[0]!=='八角盒'),'one',x.boxType),1)}
       <div class="fld wide"><span>${C.pos1.t}</span>${opts(b+'.ewDir',C.pos1.dirs,'one',x.ewDir)}${C.pos1.refs.length?opts(b+'.ewRef',C.pos1.refs,'one',x.ewRef):''}
         <div class="meas"><label>設計值 cm${inp(b+'.ewD',x.ewD,'cm',1)}</label><label>實測值 cm${inp(b+'.ewA',x.ewA,'cm',1)}</label></div>${diff('ew')}</div>
       <div class="fld wide"><span>${C.pos2.t}</span>${opts(b+'.nsDir',C.pos2.dirs,'one',x.nsDir)}${C.pos2.refs.length?opts(b+'.nsRef',C.pos2.refs,'one',x.nsRef):''}
@@ -2220,7 +2220,7 @@ function slabSheet(r){
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(equipName(x))}</div><div class="pp">
     <div>${C.faces.map(s=>cb((isWallBox(r)?f.part:x.face)===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
     <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${C.fix.map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${C.fix.map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
-    <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')} ${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
+    <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${isWallBox(r)?'':cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')+' '}${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
     <div>${pos(x,'ew',C.pos1)}</div><div>${pos(x,'ns',C.pos2)}</div>
     <div>${cb(x.e1302||!!x.size,'配管規格')}：${cb(x.e1302,'南亞CNS 1302 PVC E管')} ${cb(x.size==='1/2"','½"(16)')} ${cb(x.size==='3/4"','¾"(20)')} ${cb(x.size==='1"','1"(28)')}</div>
     <div>${C.lay.map(([k,t])=>cb(layArr(x).includes(k),'配管有'+t)).join(' ')}</div>

@@ -952,7 +952,7 @@ async function newRec(ck,tk,md,variant){
   if(!variant&&md==='work'&&tk==='box'&&SYS_OF[ck])variant='wbox'; // 電氣／弱電／消防／空調的預埋接線盒一律用柱/牆接線盒表單
   const d=today();
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
-  const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工中',inspector:'',
+  const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工完成',inspector:'',
     mat:{name:'',brand:'',spec:'',qty:'',ref:''},
     formNo:nextFormNo(curProj,`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`),
     items:(tk==='test'||tk==='sleeve'||tk==='wall'||tk==='slab'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
@@ -994,7 +994,7 @@ function viewRec(id){
       <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="例：南亞"></label>
       <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="例：4&quot; CNS1298"></label>`}
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
-      :`<label class="field"><span>檢查時機</span><select id="f_stage">${STAGES.map(s=>`<option ${s===r.stage?'selected':''}>${s}</option>`).join('')}</select></label>
+      :`<label class="field"><span>檢查時機</span><input type="text" id="f_stage" value="${esc(r.stage='施工完成')}" readonly></label>
       ${locFields(r)}`}
     </div></section>
 
@@ -2426,7 +2426,7 @@ function sheetHTML(r){
       ${modeOf(r)==='mat'?`
       <tr><td class="k">材料名稱</td><td>${esc(r.mat?.name)}</td><td class="k">廠牌／型號</td><td>${esc(r.mat?.brand)}</td></tr>
       <tr><td class="k">規格</td><td>${esc(PIPE_MAT[r.type]?pipeSpecText(r):r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
-      :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
+      :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s==='施工完成'?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>`}
     </table>
     ${isPipeMat(r)?pipeTable(r):''}

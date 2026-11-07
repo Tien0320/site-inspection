@@ -129,6 +129,7 @@ textarea{min-height:72px;resize:vertical}
 .toptabs .stabs button[style*="--c"]{background:rgba(255,255,255,.08);border-color:var(--c);color:var(--brand-ink)}
 .toptabs .stabs button[style*="--c"].on{background:var(--c);color:#fff}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
 .tdur{min-height:40px;display:flex;align-items:center;font-weight:700;color:var(--ink);font-family:var(--mono)}
@@ -1859,6 +1860,8 @@ function viewTest(r){
 function testSpaceInput(r,x,n){const list=roomsFor(r.projectId,(r.loc||{}).floor);
   if(!list)return `<input type="text" data-tk="space" data-tn="${n}" value="${esc(x.space||'')}" placeholder="${['p-nycuh-med2','p-nycuh-dorm'].includes(r.projectId)&&!(r.loc||{}).floor?'請先選樓層':'例：浴廁'}">`;
   return `<select data-tk="space" data-tn="${n}"><option value="">請選擇空間</option>${list.map(q=>`<option value="${esc(q[0])}" ${q[0]===x.space?'selected':''}>${esc(q[0])}${q[1]&&!q[0].includes(q[1])?'　'+esc(q[1]):''}</option>`).join('')}${x.space&&!list.some(q=>q[0]===x.space)?`<option selected>${esc(x.space)}</option>`:''}</select>`}
+const TEST_FX=['淋浴','面盆','電熱水器','馬桶','小便斗','機房龍頭','其他'];
+const testSysName=x=>[x.fx==='其他'?(x.fxOther||'其他'):x.fx,x.water].filter(Boolean).join(' ');
 const testRowWhere=x=>[x.space,x.area].filter(Boolean).join(' ');
 function renderTestRows(){
   const r=cur,f=r.form,box=$('#testRows');if(!box)return;
@@ -1867,9 +1870,12 @@ function renderTestRows(){
     const inp=(k,ph,type)=>`<input type="${type||'text'}" ${type?'':'inputmode="decimal"'} data-tk="${k}" data-tn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     return `<div class="prow ${j.res==='ng'?'ng':''}">
       <div class="prow-h"><b class="num">${n+1}</b>
-        <input type="text" data-tk="sys" data-tn="${n}" value="${esc(x.sys)}" placeholder="系統別，例：冷水 1F~9F 立管" style="flex:1;min-width:160px">
+        <div class="tsys"><select data-tk="fx" data-tn="${n}" aria-label="器具"><option value="">器具</option>${TEST_FX.map(o=>`<option ${o===x.fx?'selected':''}>${o}</option>`).join('')}</select>
+          <select data-tk="water" data-tn="${n}" aria-label="冷熱水"><option value="">冷／熱水</option>${['冷水','熱水'].map(o=>`<option ${o===x.water?'selected':''}>${o}</option>`).join('')}</select></div>
         <span data-tres="${n}">${j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:''}</span>
         <button type="button" class="btn small danger" data-tdel="${n}">刪除</button></div>
+      ${x.fx==='其他'?`<div class="tgrid"><label>其他器具名稱<input type="text" data-tk="fxOther" data-tn="${n}" value="${esc(x.fxOther||'')}" placeholder="請輸入"></label></div>`:''}
+      ${!x.fx&&x.sys?`<div class="muted small">原系統別：${esc(x.sys)}</div>`:''}
       <div class="tgrid tloc"><label>空間${testSpaceInput(r,x,n)}</label><label>區域／軸線<input type="text" data-tk="area" data-tn="${n}" value="${esc(x.area||'')}" placeholder="例：C~D / 2~3"></label></div>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
@@ -1885,6 +1891,7 @@ function renderTestRows(){
   box.oninput=e=>{const el=e.target,k=el.dataset.tk;if(!k)return;const n=+el.dataset.tn,row=f.rows[n];row[k]=el.value;
     if(k==='space'){const q=(roomsFor(r.projectId,(r.loc||{}).floor)||[]).find(z=>z[0]===row.space);if(q&&q[2]){row.area=`${q[2]}~${q[3]} / ${q[4]}~${q[5]}`;const a=box.querySelector(`[data-tk="area"][data-tn="${n}"]`);if(a)a.value=row.area;toast(`${q[0]}：${row.area}`)}dirty();return}
     if(k==='area'){dirty();return}
+    if(k==='fx'||k==='water'||k==='fxOther'){row.sys=testSysName(row);if(k==='fx'){renderTestRows();if(row.fx==='其他'){const o=box.querySelector(`[data-tk="fxOther"][data-tn="${n}"]`);if(o)o.focus()}}dirty();return}
     if(k==='res'||k==='std'){renderTestRows();dirty();return}
     const j=testJudge(f,row);
     const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=durTxt(j.dur)||'—';

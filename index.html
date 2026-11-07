@@ -2090,10 +2090,10 @@ const newSlabForm=ck=>({floor:'',part:'頂板',items:[newSlabItem(SYS_OF[ck])],r
 const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 /* 柱牆預埋接線盒：沿用樓板接線盒表單，部分選項改為柱牆用 */
 const isWallBox=r=>!!(r&&r.kind==='slab'&&r.form&&r.form.zone==='wall');
-const slabCfg=r=>isWallBox(r)?{name:'柱牆接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
+const slabCfg=r=>isWallBox(r)?{name:'柱/牆接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
     pos1:{t:'出線盒安裝位置（水平）',dirs:['東側','西側','南側','北側'],refs:['梁','柱','牆','出線盒']},
     pos2:{t:'出線盒安裝高度',dirs:['完成面','1米基準線上','1米基準線下'],refs:[]},
-    lay:[['rebar','配置於雙層鋼筋之中'],['center','配置於柱牆斷面中心']],joint:'柱牆配管以盒接頭銜接出線盒',in:'柱牆',partPh:'例：柱牆預埋接線盒-A棟'}
+    lay:[['rebar','配置於雙層鋼筋之中'],['center','配置於柱/牆斷面中心']],joint:'柱/牆配管以盒接頭銜接出線盒',in:'柱/牆',partPh:'例：柱/牆預埋接線盒-A棟'}
   :{name:'樓板接線盒',faces:['頂版','底版','牆面'],fix:['鋼承鈑','模板'],
     pos1:{t:'出線盒安裝位置（東西向）',dirs:['東側','西側'],refs:['梁','柱','牆','出線盒']},
     pos2:{t:'出線盒安裝位置（南北向）',dirs:['南側','北側'],refs:['梁','柱','牆','出線盒']},
@@ -2369,7 +2369,7 @@ function dfSheet(r){
 /* ---------- 依部位：樓板／柱牆 → 再分系統 ---------- */
 const ZONES={
   slab:{name:'樓板',hint:'樓板接線盒＋配管、排水樓板接頭',systems:[['elec','電氣'],['low','弱電'],['fire','消防'],['hvac','空調'],['plumb','給排水']]},
-  wall:{name:'柱牆',hint:'柱牆預埋接線盒、預埋管、穿牆套管',systems:[['elec','電氣'],['low','弱電'],['fire','消防'],['hvac','空調'],['plumb','給排水'],['wallsl','穿牆']]}
+  wall:{name:'柱/牆',hint:'柱/牆預埋接線盒、預埋管、穿牆套管',systems:[['elec','電氣'],['low','弱電'],['fire','消防'],['hvac','空調'],['plumb','給排水'],['wallsl','穿牆']]}
 };
 function zoneMatch(z,s,r){
   if(modeOf(r)!=='work')return false;

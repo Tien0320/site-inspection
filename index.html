@@ -961,6 +961,7 @@ async function newRec(ck,tk,md,variant){
   if(md==='work'&&tk==='wall'){r.kind='sleeve';r.form=newSleeveForm();r.form.label='穿牆';r.form.part='';r.form.items[0].member='外牆'}
   if(md==='work'&&tk==='slab'){r.kind='slab';r.form=newSlabForm(ck)}
   if(variant==='dfit'){r.kind='dfit';r.items=[];r.form=newDfForm()}
+  if(variant==='wbox'){r.kind='slab';r.items=[];r.form=newSlabForm(ck);r.form.zone='wall';r.form.part='';r.form.items[0].face='牆'}
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   r.isNew=true;
@@ -1124,7 +1125,7 @@ function photoTarget(r,p){
 }
 function photoCaption(r,p){return [photoWhere(r),photoTarget(r,p),p.cap].filter(Boolean).join('　')}
 /* 職務宿舍：照片在左、右欄依序「查驗項目／照片位置／照片說明／備註」，每頁 3 張（比照 ●照片.docx） */
-function photoItemName(r){return modeOf(r)==='mat'?'材料・'+typeName(r):r.kind==='drain'?'排水吊管':r.kind==='wtest'?'試水':r.kind==='slab'?'樓板接線盒':r.kind==='dfit'?'排水樓板接頭':r.kind==='sleeve'?(r.form.label||'穿樑')+'套管':cat(r.cat).name+'・'+typN(r.cat,r.type).name}
+function photoItemName(r){return modeOf(r)==='mat'?'材料・'+typeName(r):r.kind==='drain'?'排水吊管':r.kind==='wtest'?'試水':r.kind==='slab'?slabCfg(r).name:r.kind==='dfit'?'排水樓板接頭':r.kind==='sleeve'?(r.form.label||'穿樑')+'套管':cat(r.cat).name+'・'+typN(r.cat,r.type).name}
 function dormPhotoPages(r){
   const list=sortedPhotos(r);if(!list.length)return '';
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
@@ -1150,15 +1151,16 @@ function slabPhotoText(r,p){
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
-    desc.push(`${sys}${x.equip||''} PVC配管`);
+    desc.push(`${sys}${equipName(x)} PVC配管`);
     if(x.e1302)desc.push('南亞CNS 1302 PVC管 E管');
     if(x.size)desc.push(`管徑:ψ${x.size.replace('"','')}"`);
     if(x.joint)desc.push('PVC配管以盒接頭銜接出線盒');
     if(x.ewD||x.ewA)desc.push(`出線盒距離${x.ewDir||''}${x.ewRef||''} 設計${x.ewD||''}cm 實測${x.ewA||''}cm`);
     if(x.nsD||x.nsA)desc.push(`出線盒距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
-    if(x.galv&&x.boxType)desc.push(`樓版配置熱浸鍍鋅${x.boxType} 厚度2.0mm`);
-    if(x.fitOn)desc.push('出線盒有與鋼承鈑或緊貼密合');
-    if(x.screwOn)desc.push('出線盒有使用螺絲鎖固在模板或鋼承鈑上');
+    const C=slabCfg(r);
+    if(x.galv&&x.boxType)desc.push(`${C.in}配置熱浸鍍鋅${x.boxType} 厚度2.0mm`);
+    if(x.fitOn)desc.push(`出線盒有與${x.fitOn}緊貼密合`);
+    if(x.screwOn)desc.push(`出線盒有使用螺絲鎖固在${x.screwOn}上`);
     if(x.tie1||x.tie2)desc.push(`配管固定間距 實測:${x.tie1||''}cm　${x.tie2||''}cm`);
   }
   return {item,where,desc};
@@ -2079,13 +2081,25 @@ function sleeveSheet(r){
 /* ---------- 樓板接線盒＋配管（依「施工抽查紀錄表-樓板接線盒+配管」） ---------- */
 const SYS_OF={elec:'電氣',low:'弱電',fire:'消防',hvac:'空調'};
 const ELEC_EQUIP=['照明','110V埋入式插座','陽台防雨插座']; // 樓板接線盒：電氣設備選項
+const equipName=x=>x.equip==='其他'?(x.equipOther||'其他'):(x.equip||'');
 const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['人體紅外線偵測器','槍型攝影機','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});
 const newSlabForm=ck=>({floor:'',part:'頂板',items:[newSlabItem(SYS_OF[ck])],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
 const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
+/* 柱牆預埋接線盒：沿用樓板接線盒表單，部分選項改為柱牆用 */
+const isWallBox=r=>!!(r&&r.kind==='slab'&&r.form&&r.form.zone==='wall');
+const slabCfg=r=>isWallBox(r)?{name:'柱牆接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
+    pos1:{t:'出線盒安裝位置（水平）',dirs:['東側','西側','南側','北側'],refs:['梁','柱','牆','出線盒']},
+    pos2:{t:'出線盒安裝高度',dirs:['完成面','1米基準線上','1米基準線下'],refs:[]},
+    lay:[['rebar','配置於雙層鋼筋之中'],['center','配置於柱牆斷面中心']],joint:'柱牆配管以盒接頭銜接出線盒',in:'柱牆',partPh:'例：柱牆預埋接線盒-A棟'}
+  :{name:'樓板接線盒',faces:['頂版','底版','牆面'],fix:['鋼承鈑','模板'],
+    pos1:{t:'出線盒安裝位置（東西向）',dirs:['東側','西側'],refs:['梁','柱','牆','出線盒']},
+    pos2:{t:'出線盒安裝位置（南北向）',dirs:['南側','北側'],refs:['梁','柱','牆','出線盒']},
+    lay:[['deck','配置於鋼承鈑及鋼絲網之中'],['rebar','配置於雙層鋼筋之中']],joint:'樓版配管以盒接頭銜接出線盒',in:'樓版',partPh:'例：頂板(R1F底板)預埋管-教研棟'};
 function slabItemHTML(i,x){
+  const C=slabCfg(cur),W=isWallBox(cur);
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
     <div class="sphead"><span class="spno num">${i+1}</span><select class="syssel" data-path="${b}.sys" aria-label="系統" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${['電氣','弱電','消防','空調','其他'].map(t=>`<option ${t===x.sys?'selected':''}>${t}</option>`).join('')}</select>
@@ -2094,19 +2108,21 @@ function slabItemHTML(i,x){
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${x.sys==='其他'?`<label class="field"><span>其他系統名稱</span>${inp(b+'.sysOther',x.sysOther,'系統名稱')}</label>`:''}
-      <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"><option value="">請選擇</option>${EQUIP_OF[x.sys].map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
-      ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',['鋼承鈑','模板'],'one',x.screwOn))}
-      ${fl('出線盒有貼合',opts(b+'.fitOn',['鋼承鈑','模板'],'one',x.fitOn))}
+      <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"><option value="">請選擇</option>${[...EQUIP_OF[x.sys],'其他'].map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&x.equip!=='其他'&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
+      ${x.equip==='其他'&&EQUIP_OF[x.sys]?`<label class="field"><span>其他設備名稱</span>${inp(b+'.equipOther',x.equipOther,'請輸入設備名稱')}</label>`:''}
+      ${W?fl('部位',opts(b+'.face',C.faces,'one',x.face)):''}
+      ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',C.fix,'one',x.screwOn))}
+      ${fl('出線盒有貼合',opts(b+'.fitOn',C.fix,'one',x.fitOn))}
       ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']],'one',x.boxType),1)}
-      <div class="fld wide"><span>出線盒安裝位置（東西向）</span>${opts(b+'.ewDir',['東側','西側'],'one',x.ewDir)}${opts(b+'.ewRef',['梁','柱','牆','出線盒'],'one',x.ewRef)}
+      <div class="fld wide"><span>${C.pos1.t}</span>${opts(b+'.ewDir',C.pos1.dirs,'one',x.ewDir)}${C.pos1.refs.length?opts(b+'.ewRef',C.pos1.refs,'one',x.ewRef):''}
         <div class="meas"><label>設計值 cm${inp(b+'.ewD',x.ewD,'cm',1)}</label><label>實測值 cm${inp(b+'.ewA',x.ewA,'cm',1)}</label></div>${diff('ew')}</div>
-      <div class="fld wide"><span>出線盒安裝位置（南北向）</span>${opts(b+'.nsDir',['南側','北側'],'one',x.nsDir)}${opts(b+'.nsRef',['梁','柱','牆','出線盒'],'one',x.nsRef)}
+      <div class="fld wide"><span>${C.pos2.t}</span>${opts(b+'.nsDir',C.pos2.dirs,'one',x.nsDir)}${C.pos2.refs.length?opts(b+'.nsRef',C.pos2.refs,'one',x.nsRef):''}
         <div class="meas"><label>設計值 cm${inp(b+'.nsD',x.nsD,'cm',1)}</label><label>實測值 cm${inp(b+'.nsA',x.nsA,'cm',1)}</label></div>${diff('ns')}</div>
       ${fl('配管規格',`<div class="opts">${chk(b+'.e1302','南亞 CNS 1302 PVC E管',x.e1302)}</div>`+opts(b+'.size',[['1/2"','½"(16)'],['3/4"','¾"(20)'],['1"','1"(28)']],'one',x.size),1)}
-      ${fl('配管配置（可複選）',opts(b+'.layIn',[['deck','配置於鋼承鈑及鋼絲網之中'],['rebar','配置於雙層鋼筋之中']],'many',layArr(x)),1)}
+      ${fl('配管配置（可複選）',opts(b+'.layIn',C.lay,'many',layArr(x)),1)}
       <div class="fld wide"><span>配管固定</span><div class="opts">${chk(b+'.tied','以鐵線綁紮固定',x.tied)}</div>
         <div class="sp2"><label>⑴${inp(b+'.tie1',x.tie1,'cm',1)}</label><label>⑵${inp(b+'.tie2',x.tie2,'cm',1)}</label></div></div>
-      <div class="fld wide"><span>銜接與管口</span><div class="opts">${chk(b+'.joint','樓版配管以盒接頭銜接出線盒',x.joint)}${chk(b+'.capped','管口有封閉',x.capped)}</div>
+      <div class="fld wide"><span>銜接與管口</span><div class="opts">${chk(b+'.joint',C.joint,x.joint)}${chk(b+'.capped','管口有封閉',x.capped)}</div>
         <label class="field" style="max-width:220px"><span>升管預留 cm</span>${inp(b+'.riser',x.riser,'cm',1)}</label></div>
       <div class="fld wide"><span>拉線盒</span>
         <div class="row"><span class="muted" style="min-width:150px">導線管長度超過 30M</span>${opts(b+'.over30',['是','否'],'one',x.over30)}</div>
@@ -2133,13 +2149,14 @@ let nextSlabTab='',printSys='';
 function viewSlab(r){
   slabTab=nextSlabTab||'全部';nextSlabTab='';
   const p=proj(r.projectId),f=r.form;
-  setTop(`${cat(r.cat).name}・樓板接線盒<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  const C=slabCfg(r);
+  setTop(`${cat(r.cat).name}・${C.name}<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：頂板(R1F底板)預埋管-教研棟"></label>
+      <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="${C.partPh}"></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(slabLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="sbCount">${f.items.length}</span> 處</p>
@@ -2161,7 +2178,8 @@ function viewSlab(r){
   const v=$('#view');
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   const after=path=>{
-    const sy=path.match(/^items\.(\d+)\.sys$/);if(sy){const x=f.items[+sy[1]];if(x.equip&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab();toast(`已改為${x.sys}`)}
+    const sy=path.match(/^items\.(\d+)\.sys$/);if(sy){const x=f.items[+sy[1]];if(x.equip&&x.equip!=='其他'&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab();toast(`已改為${x.sys}`)}
+    const eq=path.match(/^items\.(\d+)\.equip$/);if(eq&&document.querySelector(`select[data-path="${path}"]`)){renderSlab();if(f.items[+eq[1]].equip==='其他'){const o=document.querySelector(`[data-path="items.${eq[1]}.equipOther"]`);if(o)o.focus()}}
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
     if(path==='floor')setTimeout(refreshPhotos,0);
@@ -2179,7 +2197,7 @@ function viewSlab(r){
       if(mode==='bool'){const nv=!getP(f,path);setP(f,path,nv);b.classList.toggle('on',nv);b.setAttribute('aria-pressed',nv);b.textContent=(nv?'☑':'☐')+b.textContent.slice(1)}
       else if(mode==='many'){const a=[...(getP(f,path)||[])],k=a.indexOf(val);k<0?a.push(val):a.splice(k,1);setP(f,path,a);b.classList.toggle('on',k<0);b.setAttribute('aria-pressed',k<0)}
       else{const nv=getP(f,path)===val?'':val;setP(f,path,nv);b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});
-        if(/\.sys$/.test(path)){const x=f.items[+path.split('.')[1]];if(x.equip&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab()}}
+        if(/\.sys$/.test(path)){const x=f.items[+path.split('.')[1]];if(x.equip&&x.equip!=='其他'&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab()}}
       after(path);dirty();return}
     const s=e.target.closest('[data-sb]');
     if(s){const i=+s.dataset.i;
@@ -2190,22 +2208,23 @@ function viewSlab(r){
   };
   $('#addSlab').onclick=()=>{const last=f.items[f.items.length-1];let n;
     if(last){n=JSON.parse(JSON.stringify(last));n.id=uid();n.pos='';n.space='';n.qty='';n.ewA='';n.nsA='';n.ewD='';n.nsD='';n.px1='';n.px2='';n.py1='';n.py2=''}else n=newSlabItem(SYS_OF[r.cat]);
-    if(slabTab!=='全部'&&n.sys!==slabTab){n.sys=slabTab;if(n.equip&&!(EQUIP_OF[n.sys]||[]).includes(n.equip))n.equip=''}
+    if(slabTab!=='全部'&&n.sys!==slabTab){n.sys=slabTab;if(n.equip&&n.equip!=='其他'&&!(EQUIP_OF[n.sys]||[]).includes(n.equip))n.equip=''}
     f.items.push(n);renderSlab();dirty();const all=document.querySelectorAll('#slabs .space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
   saveBar(r);
 }
 function slabSheet(r){
+  const C=slabCfg(r);
   const p=proj(r.projectId)||{},f=r.form,its=printSys?f.items.filter(x=>x.sys===printSys):f.items,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
-  const pos=(x,k,dirs)=>`${cb(x[k+'D']!==''||x[k+'A']!=='','出線盒安裝位置')}：距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆','出線盒'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
-  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(x.equip)}</div><div class="pp">
-    <div>${['頂版','底版','牆面'].map(s=>cb(x.face===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
-    <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${['鋼承鈑','模板'].map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${['鋼承鈑','模板'].map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
+  const pos=(x,k,P)=>`${cb(x[k+'D']!==''||x[k+'A']!=='',P.t.replace(/（.*）/,''))}：距${P.dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${P.refs.map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(equipName(x))}</div><div class="pp">
+    <div>${C.faces.map(s=>cb(x.face===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
+    <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${C.fix.map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${C.fix.map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
     <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')} ${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
-    <div>${pos(x,'ew',['東側','西側'])}</div><div>${pos(x,'ns',['南側','北側'])}</div>
+    <div>${pos(x,'ew',C.pos1)}</div><div>${pos(x,'ns',C.pos2)}</div>
     <div>${cb(x.e1302||!!x.size,'配管規格')}：${cb(x.e1302,'南亞CNS 1302 PVC E管')} ${cb(x.size==='1/2"','½"(16)')} ${cb(x.size==='3/4"','¾"(20)')} ${cb(x.size==='1"','1"(28)')}</div>
-    <div>${cb(layArr(x).includes('deck'),'配管有配置於鋼承鈑及鋼絲網之中')} ${cb(layArr(x).includes('rebar'),'配管有配置於雙層鋼筋之中')}</div>
+    <div>${C.lay.map(([k,t])=>cb(layArr(x).includes(k),'配管有'+t)).join(' ')}</div>
     <div>${cb(x.tied,'配管以鐵線綁紮固定')} ${cb(x.tie1!==''||x.tie2!=='','固定間距')}：⑴${u(x.tie1)}cm、⑵${u(x.tie2)}cm</div>
-    <div>${cb(x.joint,'樓版配管以盒接頭銜接出線盒')} ${cb(x.capped,'管口有封閉')} ${cb(x.riser!=='','升管預留')}${u(x.riser)}cm</div>
+    <div>${cb(x.joint,C.joint)} ${cb(x.capped,'管口有封閉')} ${cb(x.riser!=='','升管預留')}${u(x.riser)}cm</div>
     <div>${cb(x.over30==='是','是')} ${cb(x.over30==='否','否')} 導線管長度超過30M　${cb(x.bends3==='是','是')} ${cb(x.bends3==='否','否')} 三個以上90°彎頭　在維修可及之處做拉線盒 ${cb(x.pullBox==='是','是')} ${cb(x.pullBox==='否','否')}</div>
   </div></div>`;
   return `<div class="sheet dsheet">
@@ -2354,16 +2373,18 @@ const ZONES={
 };
 function zoneMatch(z,s,r){
   if(modeOf(r)!=='work')return false;
-  if(z==='slab'){if(s==='plumb')return r.kind==='dfit';return r.kind==='slab'&&inCat(r,s)}
+  if(z==='slab'){if(s==='plumb')return r.kind==='dfit';return r.kind==='slab'&&!isWallBox(r)&&inCat(r,s)}
   if(s==='wallsl')return r.cat==='beam'&&r.type==='wall';
   if(s==='plumb')return r.cat==='plumb'&&r.type==='box'&&r.kind!=='dfit';
+  if(isWallBox(r))return r.type==='box'&&inCat(r,s);
   return r.cat===s&&r.type==='box'&&!r.kind;
 }
 function zoneNew(z,s){
   zoneBackPending=`zone-${z}-${s}`;
   if(z==='slab')return s==='plumb'?newRec('plumb','box','work','dfit'):newRec(s,'slab','work');
   if(s==='wallsl')return newRec('beam','wall','work');
-  return newRec(s,'box','work');
+  if(s==='plumb')return newRec(s,'box','work');
+  return newRec(s,'box','work','wbox');
 }
 const zoneFormName=(z,s)=>z==='slab'?(s==='plumb'?'排水樓板接頭':'樓板接線盒'):(s==='wallsl'?'穿牆套管':s==='plumb'?'預埋管':'預埋接線盒');
 let zoneBack='',zoneBackId='',zoneBackPending='';

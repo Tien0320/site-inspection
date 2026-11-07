@@ -252,7 +252,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .prow-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .prow-h select{width:auto;min-height:38px;padding:6px 8px}
 .prow-h>b{width:26px;height:26px;border-radius:6px;background:var(--c-plumb);color:#fff;display:grid;place-items:center;font-size:13px}
-.pgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pgrid2{display:grid;grid-template-columns:1fr;gap:10px}
 .pcol{display:flex;flex-direction:column;gap:6px;min-width:0;background:var(--surface-2);border-radius:8px;padding:8px}
 .pcol label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .pcol input{min-height:38px;padding:6px 8px;font-family:var(--mono)}
@@ -996,7 +996,6 @@ function viewRec(id){
       ${locFields(r)}`}
     </div></section>
 
-  ${isPipeMat(r)&&PIPE_GROUPS[r.type]&&!PIPE_MAT[r.type]?`<section><div class="panel fields"><label class="field"><span>管種</span><select id="pipeSub">${PIPE_GROUPS[r.type].map(k=>`<option value="${k}" ${k===stdKey(r)?'selected':''}>${SUB_NAME[k]}　${PIPE_STD[k].label}</option>`).join('')}</select></label></div></section>`:''}
   ${isPipeMat(r)?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">管材量測　標準值／實際值</p>
     <button class="btn small" id="addPipe" type="button">＋ 新增一種管徑</button></div>
     <div id="pipeRows" class="prows"></div>
@@ -1601,12 +1600,12 @@ const PIPE_MAT={
   pvc:{names:{'PVC(A)':'pvcA','PVC(B)':'pvcB','PVC(E)':'pvcE'},def:'PVC(B)',brand:'南亞',specs:['1/2','3/4','1"','1-1/2','2"','2-1/2','3"','4"','5"','6"','8"']},
   gi:{names:{'鍍鋅鋼管CNS 4626':'gi4626','鍍鋅鋼管CNS 6445':'gi6445'},def:'鍍鋅鋼管CNS 6445',brand:'高興昌',specs:['1/2','3/4','1"','1-1/4','1-1/2','2"','2-1/2','3"','4"','5"','6"','8"','10"','12"','16"']}};
 const subName=(t,k)=>{const n=PIPE_MAT[t]&&Object.entries(PIPE_MAT[t].names).find(([,v])=>v===k);return n&&n[0]};
+const pipeSizes=r=>PIPE_MAT[r.type]?PIPE_MAT[r.type].specs.map(v=>v.replace('"','')):Object.keys(PIPE_STD[stdKey(r)].sizes);
+const pipeSpecText=r=>[...new Set((r.pipes||[]).map(x=>x.size).filter(Boolean))].map(v=>v.includes('/')?v:v+'"').join('、');
 function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
-  const o=(list,cur,ph)=>`<option value="" ${cur?'':'selected'} disabled>${ph}</option>`+list.map(v=>`<option ${v===cur?'selected':''}>${esc(v)}</option>`).join('');
   return `<label class="field"><span>材料名稱</span><select id="m_name">${Object.keys(C.names).map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
-      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>
-      <label class="field"><span>規格</span><select id="m_spec">${o(C.specs,r.mat.spec,'請選擇規格')}</select></label>`;
+      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>`;
 }
 /* 電線材料：名稱、廠牌固定，規格下拉 */
 const WIRE_SPECS=['2.0mm','3.5mm²','5.5mm²'];
@@ -1662,14 +1661,14 @@ function renderPipeRows(){
     const fa=(k,ph,q)=>`<input type="text" inputmode="decimal" class="${j[q]===false?'bad':''}" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     return `<div class="prow ${j.all===false?'ng':''}">
       <div class="prow-h"><b class="num">${n+1}</b>
-        <select data-pk="size" data-pn="${n}"><option value="">選管徑</option>${Object.keys(S.sizes).map(v=>`<option value="${v}" ${x.size===v?'selected':''}>${v} 吋</option>`).join('')}</select>
+        <select data-pk="size" data-pn="${n}"><option value="">選管徑</option>${pipeSizes(r).map(v=>`<option value="${v}" ${x.size===v?'selected':''}>${v} 吋</option>`).join('')}</select>
         ${S.pvc?`<select data-pk="color" data-pn="${n}"><option value="">管色</option>${['橘','灰'].map(v=>`<option ${x.color===v?'selected':''}>${v}</option>`).join('')}</select>`:''}
         <span class="grow"></span>
         <span data-pres="${n}">${j.all==null?'':j.all?'<span class="chip ok">合格</span>':'<span class="chip ng">不合格</span>'}</span>
         <button type="button" class="btn small danger" data-pdel="${n}">刪除</button>
       </div>
       <div class="pgrid2">
-        <div class="pcol"><span class="muted">標準值（${esc(S.label)}）</span>
+        <div class="pcol"><span class="muted">標準值</span>
           <label>外徑 mm<div class="pm">${f('stdOD','')}<i>±</i>${f('odTol','')}</div></label>
           <label>厚度 mm<div class="pm">${f('stdT','')}<i>+</i>${f('tPlus','不規定')}<i>−</i>${f('tMinus','0')}</div></label>
           <label>長度 M${f('stdL','4')}</label>
@@ -1710,8 +1709,8 @@ function renderPipeRows(){
   const nm=$('#m_name');if(nm&&nm.tagName==='SELECT')nm.addEventListener('change',e=>setPipeSub(r,PIPE_MAT[r.type].names[e.target.value]));
 }
 function setPipeSub(r,k){r.sub=k;if(PIPE_MAT[r.type]){r.mat=r.mat||{};r.mat.name=subName(r.type,k)}const st=r.items.find(i=>i.t==='標準');if(st)st.s=`CNS 編號及管種符合設計圖說：${PIPE_STD[r.sub].label}`;
-    r.pipes.forEach(x=>{if(x.size){if(PIPE_STD[r.sub].sizes[x.size])pipeApplyStd(r.sub,x);else{x.size='';['stdOD','odTol','stdT','tPlus','tMinus','stdL'].forEach(k=>x[k]='')}}});
-    dirty();const y=scrollY;render();scrollTo(0,y);toast(`管種：${PIPE_STD[r.sub].label}`);
+    r.pipes.forEach(x=>{if(x.size){if(PIPE_STD[r.sub].sizes[x.size])pipeApplyStd(r.sub,x);else{if(!pipeSizes(r).includes(x.size))x.size='';['stdOD','odTol','stdT','tPlus','tMinus','stdL'].forEach(k=>x[k]='')}}});
+    dirty();const y=scrollY;render();scrollTo(0,y);
 }
 function pipeTable(r){
   const rows=r.pipes||[];if(!rows.length)return '';
@@ -2402,7 +2401,7 @@ function sheetHTML(r){
       <tr><td class="k">承攬廠商</td><td>${esc(p.con)}</td><td class="k">查驗日期</td><td>${rocDate(r.date)}</td></tr>
       ${modeOf(r)==='mat'?`
       <tr><td class="k">材料名稱</td><td>${esc(r.mat?.name)}</td><td class="k">廠牌／型號</td><td>${esc(r.mat?.brand)}</td></tr>
-      <tr><td class="k">規格</td><td>${esc(r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
+      <tr><td class="k">規格</td><td>${esc(PIPE_MAT[r.type]?pipeSpecText(r):r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
       :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>`}
     </table>

@@ -2110,7 +2110,6 @@ function slabItemHTML(i,x){
       ${x.sys==='其他'?`<label class="field"><span>其他系統名稱</span>${inp(b+'.sysOther',x.sysOther,'系統名稱')}</label>`:''}
       <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"><option value="">請選擇</option>${[...EQUIP_OF[x.sys],'其他'].map(o=>`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&x.equip!=='其他'&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
       ${x.equip==='其他'&&EQUIP_OF[x.sys]?`<label class="field"><span>其他設備名稱</span>${inp(b+'.equipOther',x.equipOther,'請輸入設備名稱')}</label>`:''}
-      ${W?fl('部位',opts(b+'.face',C.faces,'one',x.face)):''}
       ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',C.fix,'one',x.screwOn))}
       ${fl('出線盒有貼合',opts(b+'.fitOn',C.fix,'one',x.fitOn))}
       ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']],'one',x.boxType),1)}
@@ -2156,7 +2155,8 @@ function viewSlab(r){
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="${C.partPh}"></label>
+      ${isWallBox(r)?`<label class="field" style="grid-column:1/-1"><span>部位</span><select data-path="part"><option value="">請選擇部位</option>${C.faces.map(x=>`<option ${x===f.part?'selected':''}>${x}</option>`).join('')}${f.part&&!C.faces.includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select></label>`
+        :`<label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="${C.partPh}"></label>`}
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(slabLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="sbCount">${f.items.length}</span> 處</p>
@@ -2217,7 +2217,7 @@ function slabSheet(r){
   const p=proj(r.projectId)||{},f=r.form,its=printSys?f.items.filter(x=>x.sys===printSys):f.items,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,P)=>`${cb(x[k+'D']!==''||x[k+'A']!=='',P.t.replace(/（.*）/,''))}：距${P.dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${P.refs.map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(equipName(x))}</div><div class="pp">
-    <div>${C.faces.map(s=>cb(x.face===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
+    <div>${C.faces.map(s=>cb((isWallBox(r)?f.part:x.face)===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
     <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${C.fix.map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${C.fix.map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
     <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')} ${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
     <div>${pos(x,'ew',C.pos1)}</div><div>${pos(x,'ns',C.pos2)}</div>

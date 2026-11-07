@@ -1742,7 +1742,7 @@ function pipeTable(r){
 /* ---------- 給排水・試水（試壓抽查紀錄表） ---------- */
 const TEST_CONTENTS=[
   {key:'press',name:'給水-持壓試驗',medium:'清水',std:'壓力管：≧10 kg/cm² 持壓≧1hr',short:'壓力管'},
-  {key:'drain',name:'排水-滿水試驗',medium:'清水',std:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧15 分鐘',short:'排水管'},
+  {key:'drain',name:'排水-滿水試驗',medium:'清水',std:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧1hr',short:'排水管'},
   {key:'fire', name:'消防-水壓試驗',medium:'清水',std:'消防管：水壓試驗需加壓至全閉揚程 1.5 倍以上，持續 2 小時無漏水為合格。',short:'消防管'},
   {key:'dry',  name:'乾式管系-空氣壓試驗',medium:'空氣',std:'密閉乾式管系應併行空氣壓試驗，試驗時，應使空氣壓力達到每平方公分二點八公斤或 0.28 MPa 之標準，其壓力持續二十四小時，漏氣減壓量應在每平方公分零點一公斤以下或 0.01MPa 以下為合格。',short:'密閉乾式管系'}
 ];
@@ -1766,7 +1766,7 @@ function testJudge(f,row){
   if(f.std==='press'){need=60;
     if(p0!=null)chk.push(p0>=10||(msg.push(`持壓壓力 ${p0} kg/cm² 未達 10 kg/cm²`),false));
     if(p0!=null&&p1!=null)chk.push(p1>=p0||(msg.push(`壓力由 ${p0} 降至 ${p1} kg/cm²，有壓降`),false));
-  }else if(f.std==='drain'){need=15;
+  }else if(f.std==='drain'){need=60;
     if(l0!=null||p0!=null)chk.push((l0!=null&&l0>=3.3)||(p0!=null&&p0>=0.33)||(msg.push(`滿水高度未達 3.3M，且壓力未達 0.33 kg/cm²`),false));
     if(l0!=null&&l1!=null)chk.push(l1>=l0||(msg.push(`水位由 ${l0} 降至 ${l1} M，有漏水`),false));
     if(p0!=null&&p1!=null)chk.push(p1>=p0||(msg.push(`壓力由 ${p0} 降至 ${p1} kg/cm²`),false));

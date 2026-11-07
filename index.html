@@ -1751,6 +1751,10 @@ const TEST_CONTENTS=[
 ];
 const LOC_PARTS=['柱','牆','樓板'];
 const locParts=r=>r.type==='box'&&!r.kind?['柱','牆']:LOC_PARTS;
+const STD_BRIEF={press:'壓力管：≧10 kg/cm² 持壓≧1hr',drain:'排水管：3.3M 滿水或≧0.33 kg/cm² 持水≧1hr',fire:'消防管：全閉揚程 1.5 倍以上 持壓≧2hr',dry:'乾式管系：空氣壓≧2.8 kg/cm² 持壓 24hr'};
+function stdSelHTML(f){const ks=stdsOf(f);
+  return ks.map((k,i)=>`<div class="tgrp-h" style="margin-bottom:6px"><select data-std="${i}">${TEST_CONTENTS.map(c=>`<option value="${c.key}" ${c.key===k?'selected':''} ${c.key!==k&&ks.includes(c.key)?'disabled':''}>${STD_BRIEF[c.key]}</option>`).join('')}</select>${ks.length>1?`<button type="button" class="btn small danger" data-stddel="${i}" aria-label="刪除">✕</button>`:''}</div>`).join('')
+    +(ks.length<TEST_CONTENTS.length?`<button type="button" class="btn small" data-stdadd="1">＋ 新增檢查標準</button>`:'')}
 const testC=k=>TEST_CONTENTS.find(c=>c.key===k)||TEST_CONTENTS[0];
 const newTestRow=()=>({id:uid(),sys:'',t0:'',t1:'',lv0:'',lv1:'',p0:'',p1:'',res:''});
 const newTestForm=()=>({std:'press',timing:'檢驗停留點',medium:'清水',head:'',sub:'',rows:[newTestRow()],fix:'',recheckDate:'',recheckBy:'',remark:''});
@@ -1824,7 +1828,7 @@ function viewTest(r){
       <label class="field" style="grid-column:1/-1"><span>檢查內容</span><input type="text" id="t_content" value="${esc(f.content||'')}" placeholder="${esc(contentOf({...f,content:''}))}"></label>
       ${fl('抽查時機',opts('timing',['檢驗停留點','隨機抽查'],'one',f.timing==='不定期抽驗'?'隨機抽查':f.timing))}
       ${fl('試壓媒介',opts('medium',['清水','氮氣','空氣'],'one',f.medium))}
-      ${fl('檢查標準（可複選）',opts('stds',TEST_CONTENTS.map(c=>[c.key,c.std]),'many',stdsOf(f)),1)}
+      <div class="fld wide"><span>檢查標準（可新增多項）</span><div id="t_stds">${stdSelHTML(f)}</div></div>
       <label class="field" id="t_headw" ${stdsOf(f).includes('fire')?'':'hidden'}><span>全閉揚程（kg/cm²）</span><input type="text" inputmode="decimal" data-path="head" value="${esc(f.head)}" placeholder="例：8"></label>
     </div></section>
   <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">試驗紀錄</p>
@@ -1856,6 +1860,11 @@ function viewTest(r){
       if(path==='stds'){f.std=arr[0];$('#t_headw').hidden=!arr.includes('fire');const c=$('#t_content');if(c)c.placeholder=contentOf({...f,content:''});renderTestRows()}
       dirty();return}const nv=getP(f,b.dataset.path)===b.dataset.val?'':b.dataset.val;setP(f,b.dataset.path,nv);
     b.parentNode.querySelectorAll('.opt').forEach(x=>{const on=x.dataset.val===nv;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});dirty()};
+  const stBox=$('#t_stds'),stApply=arr=>{f.stds=arr;f.std=arr[0];stBox.innerHTML=stdSelHTML(f);$('#t_headw').hidden=!arr.includes('fire');const c=$('#t_content');if(c)c.placeholder=contentOf({...f,content:''});const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}});renderTestRows();dirty()};
+  stBox.onchange=e=>{const i=e.target.dataset.std;if(i==null)return;const a=[...stdsOf(f)];a[+i]=e.target.value;stApply(a)};
+  stBox.onclick=e=>{const ad=e.target.closest('[data-stdadd]'),dl=e.target.closest('[data-stddel]');
+    if(ad){const a=[...stdsOf(f)],nx=TEST_CONTENTS.find(c=>!a.includes(c.key));if(nx){a.push(nx.key);stApply(a)}}
+    if(dl){const a=[...stdsOf(f)];a.splice(+dl.dataset.stddel,1);stApply(a)}};
   $('#addTRow').onclick=()=>{const last=f.rows[f.rows.length-1],nr=newTestRow();if(last){nr.p0=last.p0}f.rows.push(nr);renderTestRows();dirty()};
   saveBar(r);
 }

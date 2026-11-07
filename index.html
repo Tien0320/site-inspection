@@ -988,7 +988,7 @@ function viewRec(id){
     <div class="panel fields">
       <label class="field"><span>查驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${modeOf(r)==='mat'?`
-      ${r.type==='pvc'?pvcMatFields(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>
+      ${r.type==='pvc'?pvcMatFields(r):r.type==='wire'?wireMatFields(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>
       <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="例：南亞"></label>
       <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="例：4&quot; CNS1298"></label>`}
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
@@ -1606,6 +1606,14 @@ function pvcMatFields(r){
   return `<label class="field"><span>材料名稱</span><select id="m_name">${Object.keys(PVC_NAME_SUB).map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
       <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="南亞" readonly></label>
       <label class="field"><span>規格</span><select id="m_spec">${o(PVC_SPECS,r.mat.spec,'請選擇規格')}</select></label>`;
+}
+/* 電線材料：名稱、廠牌固定，規格下拉 */
+const WIRE_SPECS=['2.0mm','3.5mm²','5.5mm²'];
+function wireMatFields(r){
+  r.mat=r.mat||{};r.mat.name='PVC電線';r.mat.brand='華新麗華';
+  return `<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="PVC電線" readonly></label>
+      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="華新麗華" readonly></label>
+      <label class="field"><span>規格</span><select id="m_spec"><option value="" ${r.mat.spec?'':'selected'} disabled>請選擇規格</option>${WIRE_SPECS.map(v=>`<option ${v===r.mat.spec?'selected':''}>${v}</option>`).join('')}</select></label>`;
 }
 const stdKey=r=>r.sub||PIPE_DEFAULT[r.type]||r.type;
 const r2=x=>Math.round(x*100)/100;

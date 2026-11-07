@@ -1751,9 +1751,13 @@ const locParts=r=>r.type==='box'&&!r.kind?['柱','牆']:LOC_PARTS;
 const testC=k=>TEST_CONTENTS.find(c=>c.key===k)||TEST_CONTENTS[0];
 const newTestRow=()=>({id:uid(),sys:'',t0:'',t1:'',lv0:'',lv1:'',p0:'',p1:'',res:''});
 const newTestForm=()=>({std:'press',timing:'檢驗停留點',medium:'清水',head:'',sub:'',rows:[newTestRow()],fix:'',recheckDate:'',recheckBy:'',remark:''});
+/* 時間手動輸入：接受 9:30、09:30、9.30、0930、930 */
+function parseHM(v){v=String(v||'').trim().replace(/[：.．]/g,':');let m=/^(\d{1,2}):(\d{1,2})$/.exec(v)||/^(\d{1,2})(\d{2})$/.exec(v);
+  if(!m){m=/^(\d{1,2})$/.exec(v);if(m)m=[v,m[1],'0']}if(!m)return null;const h=+m[1],mi=+m[2];return h<24&&mi<60?[h,mi]:null}
+const fmtHM=v=>{const t=parseHM(v);return t?`${String(t[0]).padStart(2,'0')}:${String(t[1]).padStart(2,'0')}`:v};
 function testMinutes(row){
-  const m=/^(\d{1,2}):(\d{2})$/,a=m.exec(row.t0||''),b=m.exec(row.t1||'');if(!a||!b)return null;
-  let d=(+b[1]*60+ +b[2])-(+a[1]*60+ +a[2]);if(d<0)d+=1440;return d;
+  const a=parseHM(row.t0),b=parseHM(row.t1);if(!a||!b)return null;
+  let d=(b[0]*60+b[1])-(a[0]*60+a[1]);if(d<0)d+=1440;return d;
 }
 const durTxt=m=>m==null?'':m>=60?`${Math.floor(m/60)} 小時 ${m%60} 分`:`${m} 分`;
 const stdsOf=f=>Array.isArray(f.stds)&&f.stds.length?f.stds:[f.std||'press'];
@@ -1869,7 +1873,7 @@ function renderTestRows(){
       <div class="tgrid tloc"><label>空間${testSpaceInput(r,x,n)}</label><label>區域／軸線<input type="text" data-tk="area" data-tn="${n}" value="${esc(x.area||'')}" placeholder="例：C~D / 2~3"></label></div>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
-        <label>開始時間${inp('t0','','time')}</label><label>結束時間${inp('t1','','time')}</label>
+        <label>開始時間${inp('t0','例：09:00')}</label><label>結束時間${inp('t1','例：10:00')}</label>
         <label>持壓時間<div class="tdur" data-tdur="${n}">${durTxt(j.dur)||'—'}</div></label>
         ${showLv?`<label>開始滿水水位 M${inp('lv0','3.3')}</label><label>最終滿水水位 M${inp('lv1','3.3')}</label>`:''}
         <label>持壓壓力 kg/cm²${inp('p0',rs==='press'?'10':'')}</label><label>最終壓力 kg/cm²${inp('p1','')}</label>
@@ -1888,7 +1892,8 @@ function renderTestRows(){
     const w=box.querySelector(`[data-tw="${n}"]`);if(w){w.hidden=!j.msg.length;w.innerHTML=j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}
     const sel=box.querySelector(`select[data-tk="res"][data-tn="${n}"]`);if(sel)sel.options[0].text='自動判定'+(j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':'');
     el.closest('.prow').classList.toggle('ng',j.res==='ng');dirty()};
-  box.onchange=e=>{const el=e.target;if(!['p0','p1','t1','lv1'].includes(el.dataset.tk))return;const n=+el.dataset.tn,j=testJudge(f,f.rows[n]);
+  box.onchange=e=>{const el=e.target;if(['t0','t1'].includes(el.dataset.tk)&&el.value){const n=+el.dataset.tn,v=fmtHM(el.value);if(v!==el.value){el.value=v;f.rows[n][el.dataset.tk]=v;dirty()}}
+    if(!['p0','p1','t1','lv1'].includes(el.dataset.tk))return;const n=+el.dataset.tn,j=testJudge(f,f.rows[n]);
     if(j.auto==='ng')toast(`⚠ 第 ${n+1} 個系統不符檢查標準，請確認`)};
   box.onclick=e=>{const b=e.target.closest('[data-tdel]');if(!b)return;
     if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}

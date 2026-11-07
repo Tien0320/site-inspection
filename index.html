@@ -2331,6 +2331,7 @@ const DF_SPEC=['南亞','CNS 1298','PVC管','A管','B管','HDPE管'];
 const newDfItem=()=>({id:uid(),space:'',pos:'',face:'底版',name:'',spec:[],sizeD:'',sizeA:'',screw:false,tied:false,height:'',
   ewDir:'',ewRef:'',ewD:'',ewA:'',ewLine:'',nsDir:'',nsRef:'',nsD:'',nsA:'',nsLine:''});
 const newDfForm=()=>({floor:'',part:'底板 排水',items:[newDfItem()],result:'',fixType:'',deadline:'',method:'',recheck:'',remark:''});
+const dfFace=f=>/^頂/.test(f.part||'')?'頂版':'底版';
 const dfLoc=f=>[f.floor,f.part].filter(Boolean).join(' ');
 function dfItemHTML(i,x){
   const b=`items.${i}`,diff=k=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
@@ -2342,7 +2343,6 @@ function dfItemHTML(i,x){
       <label class="field grow"><span>空間名稱編號</span>${spaceInput(b,x,'例：5F-男廁')}</label>
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
-      ${fl('部位',opts(b+'.face',['頂版','底版'],'one',x.face))}
       ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
       ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec),1)}
       <div class="fld"><span>管徑尺寸 ø</span><div class="meas"><label>設計值<div class="pm"><i>ø</i>${inp(b+'.sizeD',x.sizeD,'例：4"')}</div></label><label>實測值<div class="pm"><i>ø</i>${inp(b+'.sizeA',x.sizeA,'')}</div></label></div></div>
@@ -2365,7 +2365,7 @@ function viewDf(r){
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：底板(教研棟)排水"></label>
+      <label class="field" style="grid-column:1/-1"><span>部位</span><select data-path="part">${['底板 排水','頂板 排水'].map(v=>`<option value="${v}" ${v===f.part?'selected':''}>${v.split(' ')[0]}</option>`).join('')}${f.part&&!['底板 排水','頂板 排水'].includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select></label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(dfLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="dfCount">${f.items.length}</span> 處</p>
@@ -2419,7 +2419,7 @@ function dfSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
-    <div>${['頂版','底版'].map(s=>cb(x.face===s,s)).join(' ')}</div>
+    <div>${['頂版','底版'].map(s=>cb(dfFace(f)===s,s)).join(' ')}</div>
     <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>
     <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管徑尺寸：設計值：ø${u(String(x.sizeD||'').replace(/^[øØ]\s*/,''))}　實測值：ø${u(String(x.sizeA||'').replace(/^[øØ]\s*/,''))}</div>
     <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')}</div>

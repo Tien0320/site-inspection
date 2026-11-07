@@ -991,8 +991,6 @@ function viewRec(id){
       ${r.type==='pvc'?pvcMatFields(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>
       <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="例：南亞"></label>
       <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="例：4&quot; CNS1298"></label>`}
-      ${r.type==='pvc'?'':`<label class="field"><span>進場數量</span><input type="text" id="m_qty" value="${esc(r.mat?.qty)}" placeholder="例：120 支"></label>
-      <label class="field"><span>送審核准文號</span><input type="text" id="m_ref" value="${esc(r.mat?.ref)}"></label>`}
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
       :`<label class="field"><span>檢查時機</span><select id="f_stage">${STAGES.map(s=>`<option ${s===r.stage?'selected':''}>${s}</option>`).join('')}</select></label>
       ${locFields(r)}`}
@@ -2393,9 +2391,7 @@ function sheetHTML(r){
       <tr><td class="k">承攬廠商</td><td>${esc(p.con)}</td><td class="k">查驗日期</td><td>${rocDate(r.date)}</td></tr>
       ${modeOf(r)==='mat'?`
       <tr><td class="k">材料名稱</td><td>${esc(r.mat?.name)}</td><td class="k">廠牌／型號</td><td>${esc(r.mat?.brand)}</td></tr>
-      ${r.type==='pvc'?`<tr><td class="k">規格</td><td>${esc(r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
-      :`<tr><td class="k">規格</td><td>${esc(r.mat?.spec)}</td><td class="k">進場數量</td><td>${esc(r.mat?.qty)}</td></tr>
-      <tr><td class="k">送審文號</td><td>${esc(r.mat?.ref)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`}`
+      <tr><td class="k">規格</td><td>${esc(r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
       :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s===r.stage?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>`}
     </table>

@@ -1629,7 +1629,7 @@ function stdFor(type,size){
 }
 const isPipeType=k=>!!PIPE_GROUPS[k]||PIPE_TYPES.includes(k);
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
-const newPipeRow=type=>({id:uid(),brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
+const newPipeRow=type=>({id:uid(),brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
 function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}
 function pipeMemSave(type,row){if(!row.size)return;const m=pipeMem();m[`${type}|${row.size}`]={brand:row.brand,print:row.print,color:row.color};LS.set('pipeMem',JSON.stringify(m))}
 const PIPE_PRINT_SEED={'pvcB|4':{brand:'南亞',print:'南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M'}};
@@ -1655,6 +1655,8 @@ const tolTxt=row=>{const p=row.tPlus,m=row.tMinus;return `${row.stdT||''}${p!=='
 function renderPipeRows(){
   const r=cur,box=$('#pipeRows');if(!box)return;
   const S=PIPE_STD[stdKey(r)];r.pipes=r.pipes||[];
+  const fb=PIPE_MAT[r.type]&&PIPE_MAT[r.type].brand;if(fb)r.pipes.forEach(x=>x.brand=fb);
+  const prEx=S.pvc?'例：南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M':`例：高興昌 ${S.steel==='4626'?'CNS4626 STPG370 SCH40':'CNS6445 SGP'} 鍍鋅 4" 6M`;
   box.innerHTML=r.pipes.length?r.pipes.map((x,n)=>{const j=pipeJudge(x);
     const f=(k,ph)=>`<input type="text" inputmode="decimal" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     const fa=(k,ph,q)=>`<input type="text" inputmode="decimal" class="${j[q]===false?'bad':''}" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
@@ -1681,8 +1683,8 @@ function renderPipeRows(){
       </div>
       <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
       <div class="pextra">
-        <label>廠牌<input type="text" data-pk="brand" data-pn="${n}" value="${esc(x.brand)}" placeholder="南亞"></label>
-        <label>外觀打印（管身印字，各管徑不同）<textarea data-pk="print" data-pn="${n}" rows="2" placeholder="例：南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M">${esc(x.print)}</textarea></label>
+        <label>廠牌<input type="text" data-pk="brand" data-pn="${n}" value="${esc(x.brand)}" placeholder="南亞" ${fb?'readonly':''}></label>
+        <label>外觀打印（管身印字，各管徑不同）<textarea data-pk="print" data-pn="${n}" rows="2" placeholder="${prEx}">${esc(x.print)}</textarea></label>
       </div></div>`}).join('')
     :'<div class="empty">尚無管材，按「新增一種管徑」。</div>';
   box.oninput=e=>{

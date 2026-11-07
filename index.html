@@ -1115,7 +1115,7 @@ function photoTarget(r,p){
   if(r.kind==='dfit'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].name?' '+r.form.items[n].name:''}`.trim():''}
   if(r.kind==='slab'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
   if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 編號${r.form.items[n].no||n+1}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
-  if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''}`.trim():''}
+  if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''} ${testRowWhere(r.form.rows[n])}`.trim():''}
   if(r.kind==='drain'){
     for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
       if(pi>=0){const pp=sp.pipes[pi],n=pipeNo(sp,pi),t=pp.kind==='vent'?`透氣管${n}`:`排水管${n}${pp.type?'（'+(pp.type==='其他'?pp.typeOther:pp.type)+'）':''}`;
@@ -1784,11 +1784,11 @@ function testJudge(f,row){
 }
 function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.space,l.note].filter(Boolean).join(' ')}
 function testSub(r){const k=stdsOf(r.form);return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${k.includes('press')&&k.includes('drain')?'給排水':k[0]==='drain'?'排水':k[0]==='fire'?'消防':'給水'}配管施工查驗`}
-function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
+function locFields(r,noSpace){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
   return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}${l.floor&&!floorsOf(r.projectId).includes(l.floor)?`<option selected>${esc(l.floor)}</option>`:''}</select></label>
     <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${locParts(r).map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!locParts(r).includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
-    ${spaceLocField(r)}
-    <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>
+    ${noSpace?'':`${spaceLocField(r)}
+    <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>`}
     <div class="field" style="grid-column:1/-1"><span>查驗位置（自動組合）</span><div class="locv" id="locView">${esc(testLoc(r))||'—'}</div></div>`}
 function spaceLocField(r){const l=r.loc||{},list=roomsFor(r.projectId,l.floor);
   if(!list){const known=['p-nycuh-med2','p-nycuh-dorm'].includes(r.projectId),ph=!known?'例：2F 男廁':!l.floor?'請先選樓層':'登入雲端後可下拉選擇空間';
@@ -1812,7 +1812,7 @@ function viewTest(r){
   <section><p class="label">基本資料</p>
     <div class="panel fields">
       <label class="field"><span>檢查日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
-      ${locFields(r)}
+      ${locFields(r,1)}
       <label class="field" style="grid-column:1/-1"><span>分項工程名稱</span><input type="text" id="t_sub" value="${esc(f.sub)}" placeholder="${esc(testSub({...r,form:{...f,sub:''}}))}"></label>
       <label class="field" style="grid-column:1/-1"><span>檢查內容</span><input type="text" id="t_content" value="${esc(f.content||'')}" placeholder="${esc(contentOf({...f,content:''}))}"></label>
       ${fl('抽查時機',opts('timing',['檢驗停留點','隨機抽查'],'one',f.timing==='不定期抽驗'?'隨機抽查':f.timing))}
@@ -1834,7 +1834,8 @@ function viewTest(r){
     <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
     <div class="photos" id="photos"></div></section>`;
   renderTestRows();renderPhotos();
-  bindLoc(r,()=>{const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}})});
+  let lastFl=(r.loc||{}).floor;
+  bindLoc(r,()=>{const s=$('#t_sub');if(s)s.placeholder=testSub({...r,form:{...f,sub:''}});if((r.loc||{}).floor!==lastFl){lastFl=r.loc.floor;renderTestRows()}});
   $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
   $('#t_sub').oninput=e=>{f.sub=e.target.value;dirty()};
   $('#t_content').oninput=e=>{f.content=e.target.value;dirty()};
@@ -1851,6 +1852,10 @@ function viewTest(r){
   $('#addTRow').onclick=()=>{const last=f.rows[f.rows.length-1],nr=newTestRow();if(last){nr.p0=last.p0}f.rows.push(nr);renderTestRows();dirty()};
   saveBar(r);
 }
+function testSpaceInput(r,x,n){const list=roomsFor(r.projectId,(r.loc||{}).floor);
+  if(!list)return `<input type="text" data-tk="space" data-tn="${n}" value="${esc(x.space||'')}" placeholder="${['p-nycuh-med2','p-nycuh-dorm'].includes(r.projectId)&&!(r.loc||{}).floor?'請先選樓層':'例：浴廁'}">`;
+  return `<select data-tk="space" data-tn="${n}"><option value="">請選擇空間</option>${list.map(q=>`<option value="${esc(q[0])}" ${q[0]===x.space?'selected':''}>${esc(q[0])}${q[1]&&!q[0].includes(q[1])?'　'+esc(q[1]):''}</option>`).join('')}${x.space&&!list.some(q=>q[0]===x.space)?`<option selected>${esc(x.space)}</option>`:''}</select>`}
+const testRowWhere=x=>[x.space,x.area].filter(Boolean).join(' ');
 function renderTestRows(){
   const r=cur,f=r.form,box=$('#testRows');if(!box)return;
   const multi=stdsOf(f).length>1;
@@ -1861,6 +1866,7 @@ function renderTestRows(){
         <input type="text" data-tk="sys" data-tn="${n}" value="${esc(x.sys)}" placeholder="系統別，例：冷水 1F~9F 立管" style="flex:1;min-width:160px">
         <span data-tres="${n}">${j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:''}</span>
         <button type="button" class="btn small danger" data-tdel="${n}">刪除</button></div>
+      <div class="tgrid tloc"><label>空間${testSpaceInput(r,x,n)}</label><label>區域／軸線<input type="text" data-tk="area" data-tn="${n}" value="${esc(x.area||'')}" placeholder="例：C~D / 2~3"></label></div>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${inp('t0','','time')}</label><label>結束時間${inp('t1','','time')}</label>
@@ -1873,6 +1879,8 @@ function renderTestRows(){
       <div class="fld"><span>此系統照片</span>${phStrip(x.id)}</div></div>`}).join('')
     :'<div class="empty">尚無試驗系統，按「新增系統」。</div>';
   box.oninput=e=>{const el=e.target,k=el.dataset.tk;if(!k)return;const n=+el.dataset.tn,row=f.rows[n];row[k]=el.value;
+    if(k==='space'){const q=(roomsFor(r.projectId,(r.loc||{}).floor)||[]).find(z=>z[0]===row.space);if(q&&q[2]){row.area=`${q[2]}~${q[3]} / ${q[4]}~${q[5]}`;const a=box.querySelector(`[data-tk="area"][data-tn="${n}"]`);if(a)a.value=row.area;toast(`${q[0]}：${row.area}`)}dirty();return}
+    if(k==='area'){dirty();return}
     if(k==='res'||k==='std'){renderTestRows();dirty();return}
     const j=testJudge(f,row);
     const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=durTxt(j.dur)||'—';
@@ -1922,7 +1930,7 @@ function testSheet(r){
       <tr><th rowspan="2">項<br>次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th rowspan="2">開始<br>滿水水<br>位高度</th><th rowspan="2">最終<br>滿水水<br>位高度</th><th rowspan="2">持壓<br>壓力<br>kg/cm²</th><th rowspan="2">最終<br>壓力<br>kg/cm²</th><th rowspan="2">檢<br>查<br>結<br>果</th></tr>
       <tr><th>開始</th><th>結束</th><th>持壓</th></tr>
       ${rows.map((x,n)=>{if(!x)return `<tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c">${v(x.sys).replace(/\s+/,'<br>')}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
+        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c">${v(x.sys).replace(/\s+/,'<br>')}${testRowWhere(x)?'<br><span class="small">'+v(testRowWhere(x))+'</span>':''}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
         <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym">${SYM[j.res]||''}</td></tr>`}).join('')}
     </table>
     <table class="sec">

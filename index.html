@@ -96,6 +96,7 @@ textarea{min-height:72px;resize:vertical}
 .proj-meta b{color:var(--ink-2);font-weight:400;margin-right:6px}
 
 /* 查驗大項 */
+.tile .nmsub{display:block;font-size:13px;font-weight:500;color:var(--ink-2);margin-top:2px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .tile{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 14px 12px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:118px;overflow:hidden}
 .tile::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:var(--c)}
@@ -850,7 +851,7 @@ function viewHome(){
       const rs=recs.filter(r=>inCat(r,c.key)&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
-        <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}</span>
+        <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}${c.key==='beam'?'<small class="nmsub">穿樑/穿牆</small>':''}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
     const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
     html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;

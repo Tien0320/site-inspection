@@ -79,7 +79,10 @@ textarea{min-height:72px;resize:vertical}
 .proj{display:flex;flex-direction:column;gap:10px}
 .pswitch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .pbtn{border:2px solid var(--line);background:var(--surface-2);border-radius:var(--r);padding:16px;min-height:84px;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:4px}
-.picon{width:40px;height:40px;margin-bottom:6px;flex:none}
+.picon{width:44px;height:44px;flex:none}
+.ipair{display:flex;align-items:center;gap:10px}.itxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pbtn .ipair,.pbtn .itxt,.pbtn.on .ipair,.pbtn.on .itxt,.mseg button .ipair,.mseg button .itxt,.mseg button.on .ipair,.mseg button.on .itxt{color:inherit;opacity:1;font-size:inherit}
+.pbtn.on .itxt .num,.mseg button.on .itxt .num{opacity:.8}
 .pbtn b{font-size:18px;line-height:1.3;word-break:break-all}
 @media (max-width:520px){.pbtn{padding:12px;min-height:96px}.pbtn b{font-size:15px}}
 .pbtn span{font-size:13px;color:var(--ink-2)}
@@ -823,7 +826,7 @@ function viewHome(){
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
-          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}">${PROJ_ICON[x.id]||''}<b>${esc(x.name).replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
+          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}">${PROJ_ICON[x.id]?`<span class="ipair">${PROJ_ICON[x.id]}<span class="itxt">`:''}<b>${esc(x.name).replace(/^(第二期)(醫療大樓)/,'$1<br>$2').replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span>${PROJ_ICON[x.id]?'</span></span>':''}</button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>
@@ -837,7 +840,7 @@ function viewHome(){
   if(p){
     const md=mode(LS.get('mode')||'work').key;
     html+=`<section><p class="label">查驗類別</p><div class="mseg big" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=recs.filter(r=>modeOf(r)===m.key).length;
-      return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}">${MODE_ICON[m.key]||''}<b>${m.name}</b><span class="num">${n} 筆</span></button>`}).join('')}</div></section>`;
+      return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}"><span class="ipair">${MODE_ICON[m.key]||''}<span class="itxt"><b>${m.name}</b><span class="num">${n} 筆</span></span></span></button>`}).join('')}</div></section>`;
     if(md==='mat')html+=[0].map(()=>`<section><p class="label">材料查驗・材料種類</p><div class="tiles">${MAT_TYPES.map(t=>{
       const rs=recs.filter(r=>modeOf(r)==='mat'&&r.type===t.key),ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--${t.color==='ink-2'?'ink-2':'c-'+t.color})" data-mat="${t.key}">

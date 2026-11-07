@@ -79,6 +79,7 @@ textarea{min-height:72px;resize:vertical}
 .proj{display:flex;flex-direction:column;gap:10px}
 .pswitch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .pbtn{border:2px solid var(--line);background:var(--surface-2);border-radius:var(--r);padding:16px;min-height:84px;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.picon{width:40px;height:40px;margin-bottom:6px;flex:none}
 .pbtn b{font-size:18px;line-height:1.3;word-break:break-all}
 @media (max-width:520px){.pbtn{padding:12px;min-height:96px}.pbtn b{font-size:15px}}
 .pbtn span{font-size:13px;color:var(--ink-2)}
@@ -799,6 +800,11 @@ function render(){
 
 /* ---------- 首頁 ---------- */
 // 標案排序：第二期醫療大樓排第一
+/* 標案 Q 版小圖示 */
+const PROJ_ICON={
+  'p-nycuh-med2':`<svg class="picon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="14" width="32" height="28" rx="6" fill="#fff" stroke="#3b82c4" stroke-width="2.5"/><path d="M14 14 Q24 4 34 14" fill="#e8f2fb" stroke="#3b82c4" stroke-width="2.5"/><rect x="20" y="7" width="8" height="8" rx="2" fill="#e5484d"/><rect x="22.6" y="8.2" width="2.8" height="5.6" fill="#fff"/><rect x="21.2" y="9.6" width="5.6" height="2.8" fill="#fff"/><circle cx="18" cy="25" r="2" fill="#2b3a4a"/><circle cx="30" cy="25" r="2" fill="#2b3a4a"/><circle cx="14.5" cy="29" r="2.2" fill="#f7a8b8"/><circle cx="33.5" cy="29" r="2.2" fill="#f7a8b8"/><path d="M20.5 29 Q24 32 27.5 29" fill="none" stroke="#2b3a4a" stroke-width="2" stroke-linecap="round"/><rect x="20" y="34" width="8" height="8" rx="2" fill="#9ccbf0" stroke="#3b82c4" stroke-width="2"/></svg>`,
+  'p-nycuh-dorm':`<svg class="picon" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 22 L24 7 L42 22" fill="#f6a35b" stroke="#c96a1d" stroke-width="2.5" stroke-linejoin="round"/><rect x="10" y="20" width="28" height="22" rx="5" fill="#fff6e8" stroke="#c96a1d" stroke-width="2.5"/><rect x="31" y="9" width="5" height="8" rx="1.5" fill="#c96a1d"/><circle cx="19" cy="27" r="2" fill="#2b3a4a"/><circle cx="29" cy="27" r="2" fill="#2b3a4a"/><circle cx="15.5" cy="31" r="2.2" fill="#f7a8b8"/><circle cx="32.5" cy="31" r="2.2" fill="#f7a8b8"/><path d="M21 31 Q24 34 27 31" fill="none" stroke="#2b3a4a" stroke-width="2" stroke-linecap="round"/><rect x="20.5" y="35" width="7" height="7" rx="2" fill="#f6a35b" stroke="#c96a1d" stroke-width="2"/><circle cx="25.5" cy="38.5" r=".9" fill="#c96a1d"/></svg>`
+};
 const PROJ_ORDER=['p-nycuh-med2','p-nycuh-dorm'];
 const projOrdered=()=>[...projects].sort((a,b)=>{const ia=PROJ_ORDER.indexOf(a.id),ib=PROJ_ORDER.indexOf(b.id);return (ia<0?99:ia)-(ib<0?99:ib)||(a.created||0)-(b.created||0)});
 function viewHome(){
@@ -812,7 +818,7 @@ function viewHome(){
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
-          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}"><b>${esc(x.name).replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
+          return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}">${PROJ_ICON[x.id]||''}<b>${esc(x.name).replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span></button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
           <div><b>標案編號</b>${esc(p.no)||'—'}</div>

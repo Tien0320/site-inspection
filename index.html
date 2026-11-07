@@ -1744,6 +1744,7 @@ const TEST_CONTENTS=[
   {key:'dry',  name:'乾式管系-空氣壓試驗',medium:'空氣',std:'密閉乾式管系應併行空氣壓試驗，試驗時，應使空氣壓力達到每平方公分二點八公斤或 0.28 MPa 之標準，其壓力持續二十四小時，漏氣減壓量應在每平方公分零點一公斤以下或 0.01MPa 以下為合格。',short:'密閉乾式管系'}
 ];
 const LOC_PARTS=['柱','牆','樓板'];
+const locParts=r=>r.type==='box'&&!r.kind?['柱','牆']:LOC_PARTS;
 const testC=k=>TEST_CONTENTS.find(c=>c.key===k)||TEST_CONTENTS[0];
 const newTestRow=()=>({id:uid(),sys:'',t0:'',t1:'',lv0:'',lv1:'',p0:'',p1:'',res:''});
 const newTestForm=()=>({std:'press',timing:'檢驗停留點',medium:'清水',head:'',sub:'',rows:[newTestRow()],fix:'',recheckDate:'',recheckBy:'',remark:''});
@@ -1782,12 +1783,13 @@ function testLoc(r){const l=r.loc||{};return [l.floor,l.part,l.space,l.note].fil
 function testSub(r){const k=stdsOf(r.form);return r.form.sub||`${(r.loc&&r.loc.floor)||''}${(r.loc&&r.loc.part)||''}${k.includes('press')&&k.includes('drain')?'給排水':k[0]==='drain'?'排水':k[0]==='fire'?'消防':'給水'}配管施工查驗`}
 function locFields(r){const l=r.loc=r.loc||{floor:'',part:'',note:r.location||''};
   return `<label class="field"><span>樓層</span><select id="l_floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===l.floor?'selected':''}>${x}</option>`).join('')}${l.floor&&!floorsOf(r.projectId).includes(l.floor)?`<option selected>${esc(l.floor)}</option>`:''}</select></label>
-    <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${LOC_PARTS.map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!LOC_PARTS.includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
+    <label class="field"><span>部位</span><select id="l_part"><option value="">請選擇部位</option>${locParts(r).map(x=>`<option ${x===l.part?'selected':''}>${x}</option>`).join('')}${l.part&&!locParts(r).includes(l.part)?`<option selected>${esc(l.part)}</option>`:''}</select></label>
     ${spaceLocField(r)}
     <label class="field" style="grid-column:1/-1"><span>區域／軸線</span><input type="text" id="l_note" value="${esc(l.note)}" placeholder="例：C~D／2~3 軸"></label>
     <div class="field" style="grid-column:1/-1"><span>查驗位置（自動組合）</span><div class="locv" id="locView">${esc(testLoc(r))||'—'}</div></div>`}
 function spaceLocField(r){const l=r.loc||{},list=roomsFor(r.projectId,l.floor);
-  if(!list)return `<span id="l_space_w" hidden></span>`;
+  if(!list){const known=['p-nycuh-med2','p-nycuh-dorm'].includes(r.projectId),ph=!known?'例：2F 男廁':!l.floor?'請先選樓層':'登入雲端後可下拉選擇空間';
+    return `<label class="field" id="l_space_w" style="grid-column:1/-1"><span>空間</span><input type="text" id="l_space" value="${esc(l.space||'')}" placeholder="${ph}"></label>`}
   return `<label class="field" id="l_space_w" style="grid-column:1/-1"><span>空間（依平面圖）</span><select id="l_space"><option value="">請選擇空間</option>${list.map(q=>`<option value="${esc(q[0])}" ${q[0]===l.space?'selected':''}>${esc(q[0])}${q[1]&&!q[0].includes(q[1])?'　'+esc(q[1]):''}</option>`).join('')}${l.space&&!list.some(q=>q[0]===l.space)?`<option selected>${esc(l.space)}</option>`:''}</select></label>`}
 function bindLoc(r,after){
   const v0=$('#view');

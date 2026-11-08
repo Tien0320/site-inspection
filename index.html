@@ -137,6 +137,7 @@ textarea{min-height:72px;resize:vertical}
 .hm{display:flex;align-items:center;gap:4px}.hm input{flex:1;min-width:0;text-align:center;font-family:var(--mono)}.hm b{font-size:18px;color:var(--ink)}
 .addgrp{width:100%;border:2px dashed var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:700}
 .trow{flex-wrap:wrap}.trow .tbtns{display:flex;gap:6px;width:100%;justify-content:flex-end}
+.bkwrap{display:inline-flex;flex-direction:column;align-items:center;gap:2px;margin-right:6px}.bkwrap .muted{font-size:11px}
 .tgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}.tgrp-h{display:flex;gap:6px;align-items:center}.tgrp-h select,.tgrp-h input{flex:1;min-width:0;min-height:40px}.tgrp-h .muted{font-size:12px;white-space:nowrap}
 .tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
@@ -833,7 +834,7 @@ function viewHome(){
   const recs=records.filter(r=>r.projectId===curProj);
   const tn=trash.filter(r=>r.projectId===curProj).length;
   let html=`<section>
-    <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<button class="btn small" id="toTrash" type="button">🗑 刪除暫存區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
+    <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<span class="bkwrap"><button class="btn small primary" id="oneBk" type="button">💾 一鍵備份</button><span class="muted" id="lastBk">${(d=>d?(d===today()?'上次備份：今天':'上次備份：'+d.slice(5).replace('-','/')):'尚未備份')(LS.get('lastBackup'))}</span></span><button class="btn small" id="toTrash" type="button">🗑 刪除暫存區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
@@ -868,6 +869,7 @@ function viewHome(){
   }
   $('#view').innerHTML=html;
   $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));
+  $('#oneBk')&&($('#oneBk').onclick=()=>doBackup());
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
   document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>go('zone-'+b.dataset.zone+'-'+ZONES[b.dataset.zone].systems[0][0]));
@@ -2610,13 +2612,15 @@ $('#setBtn').onclick=async()=>{
   try{const e=await navigator.storage?.estimate?.();$('#usage').textContent=e?`已使用約 ${(e.usage/1048576).toFixed(1)} MB／可用約 ${(e.quota/1048576).toFixed(0)} MB`:''}catch(_){}
   $('#ver').textContent=APP_VERSION;renderCloudBox();$('#setDlg').showModal()};
 $('#setClose').onclick=()=>$('#setDlg').close();
-$('#expBtn').onclick=async()=>{
-  await flush();
+$('#expBtn').onclick=()=>doBackup();
+async function doBackup(){
+  await flush();if(Cloud.on){Cloud.migrate();Cloud.pending()}
+  LS.set('lastBackup',today());const lb=$('#lastBk');if(lb)lb.textContent='上次備份：今天';
   const blob=new Blob([JSON.stringify({app:'site-inspection',v:1,exported:new Date().toISOString(),projects,records})],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`施工查驗備份_${today()}.json`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  toast('備份檔已下載');
-};
+  toast(Cloud.on?'備份檔已下載，雲端也已同步':'備份檔已下載（存在手機「下載」資料夾）');
+}
 $('#impFile').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{

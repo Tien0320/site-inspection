@@ -831,8 +831,9 @@ function viewHome(){
   if(!curProj && projects.length) curProj=projOrdered()[0].id;
   const p=proj(curProj);
   const recs=records.filter(r=>r.projectId===curProj);
+  const tn=trash.filter(r=>r.projectId===curProj).length;
   let html=`<section>
-    <p class="label">標案</p>
+    <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<button class="btn small" id="toTrash" type="button">🗑 刪除暫放區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
@@ -863,9 +864,7 @@ function viewHome(){
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}${c.key==='beam'?'<small class="nmsub">穿樑/穿牆</small>':''}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
     const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
-    const tn=trash.filter(r=>r.projectId===curProj).length;
     html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
-    html+=`<section><button class="btn" id="toTrash" style="width:100%">🗑 刪除暫放區${tn?`（${tn}）`:''}<span class="muted" style="font-weight:400;margin-left:6px">刪除的表單保留 ${TRASH_DAYS} 天</span></button></section>`;
   }
   $('#view').innerHTML=html;
   $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));

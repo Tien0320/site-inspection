@@ -220,7 +220,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .cloudchip[data-s=syncing] .dot{background:#f2b33d;animation:blink 1s infinite}
 .cloudchip[data-s=error] .dot,.cloudchip[data-s=signedout] .dot{background:#f07a72}
 @keyframes blink{50%{opacity:.3}}
-@media (max-width:420px){#setBtn span{display:none}}
+.bkbtn{flex-direction:column;justify-content:center;gap:0;line-height:1.15;padding:0 10px;height:44px}.bkbtn b{font-size:14px}.bkbtn small{font-size:11px;opacity:.8;font-family:var(--mono)}
 .cloudbox{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
 .cloudbox textarea{font-family:var(--mono);font-size:12px;min-height:120px}
 .ph .wait{aspect-ratio:4/3;display:grid;place-items:center;color:var(--ink-2);font-size:13px}
@@ -385,11 +385,9 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <h1 id="title">現場施工查驗</h1>
-    <button class="iconbtn cloudchip" id="cloudBtn" hidden aria-label="雲端同步狀態"><span class="dot" id="cloudDot"></span><span id="cloudTxt"></span></button>
-    <button class="iconbtn" id="setBtn" aria-label="雲端同步與備份">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>
-      <span>備份</span>
-    </button>
+    <button class="iconbtn cloudchip" id="cloudBtn" aria-label="雲端同步狀態"><span class="dot" id="cloudDot"></span><span id="cloudTxt">設定</span></button>
+    <button class="iconbtn bkbtn" id="bkBtn" aria-label="一鍵備份"><b>備份</b><small id="lastBk">尚未備份</small></button>
+    <button class="iconbtn" id="setBtn" hidden aria-label="雲端同步與備份"></button>
   </div>
   <div class="toptabs" id="topTabs" hidden><div class="stabs" role="tablist" aria-label="切換系統"></div></div>
 </header>
@@ -834,7 +832,7 @@ function viewHome(){
   const recs=records.filter(r=>r.projectId===curProj);
   const tn=trash.filter(r=>r.projectId===curProj).length;
   let html=`<section>
-    <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<span class="bkwrap"><button class="btn small primary" id="oneBk" type="button">💾 一鍵備份</button><span class="muted" id="lastBk">${(d=>d?(d===today()?'上次備份：今天':'上次備份：'+d.slice(5).replace('-','/')):'尚未備份')(LS.get('lastBackup'))}</span></span><button class="btn small" id="toTrash" type="button">🗑 刪除暫存區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
+    <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<button class="btn small" id="toTrash" type="button">🗑 刪除暫存區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
           const n=records.filter(r=>r.projectId===x.id).length;
@@ -869,7 +867,6 @@ function viewHome(){
   }
   $('#view').innerHTML=html;
   $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));
-  $('#oneBk')&&($('#oneBk').onclick=()=>doBackup());
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
   document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>go('zone-'+b.dataset.zone+'-'+ZONES[b.dataset.zone].systems[0][0]));
@@ -2613,9 +2610,12 @@ $('#setBtn').onclick=async()=>{
   $('#ver').textContent=APP_VERSION;renderCloudBox();$('#setDlg').showModal()};
 $('#setClose').onclick=()=>$('#setDlg').close();
 $('#expBtn').onclick=()=>doBackup();
+function showLastBk(){const v=LS.get('lastBackupAt'),el=$('#lastBk');if(!el)return;if(!v){el.textContent='尚未備份';return}
+  const d=new Date(v),z=n=>String(n).padStart(2,'0');el.textContent=`${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
+$('#bkBtn').onclick=()=>doBackup();showLastBk();
 async function doBackup(){
   await flush();if(Cloud.on){Cloud.migrate();Cloud.pending()}
-  LS.set('lastBackup',today());const lb=$('#lastBk');if(lb)lb.textContent='上次備份：今天';
+  LS.set('lastBackupAt',new Date().toISOString());showLastBk();
   const blob=new Blob([JSON.stringify({app:'site-inspection',v:1,exported:new Date().toISOString(),projects,records})],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`施工查驗備份_${today()}.json`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
@@ -2658,7 +2658,7 @@ const Cloud={
   get on(){return !!(this.fs&&this.user)},
   seen(k){try{return new Set(JSON.parse(LS.get('seen_'+k)||'[]'))}catch(e){return new Set()}},
   keep(k,set){LS.set('seen_'+k,JSON.stringify([...set]))},
-  set(st,msg){this.state=st;this.msg=msg||'';const b=$('#cloudBtn');b.hidden=st==='off';b.dataset.s=st;$('#cloudTxt').textContent=CLOUD_TXT[st]||'';if($('#setDlg').open)renderCloudBox()},
+  set(st,msg){this.state=st;this.msg=msg||'';const b=$('#cloudBtn');b.hidden=false;b.dataset.s=st;$('#cloudTxt').textContent=CLOUD_TXT[st]||'設定';if($('#setDlg').open)renderCloudBox()},
   async init(){
     const c=this.cfg();if(!c){this.set('off');return}
     if(this.fs)return;

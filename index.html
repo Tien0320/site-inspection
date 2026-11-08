@@ -136,6 +136,7 @@ textarea{min-height:72px;resize:vertical}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .hm{display:flex;align-items:center;gap:4px}.hm input{flex:1;min-width:0;text-align:center;font-family:var(--mono)}.hm b{font-size:18px;color:var(--ink)}
 .addgrp{width:100%;border:2px dashed var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:700}
+.trow{flex-wrap:wrap}.trow .tbtns{display:flex;gap:6px;width:100%;justify-content:flex-end}
 .tgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}.tgrp-h{display:flex;gap:6px;align-items:center}.tgrp-h select,.tgrp-h input{flex:1;min-width:0;min-height:40px}.tgrp-h .muted{font-size:12px;white-space:nowrap}
 .tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
@@ -731,7 +732,14 @@ const DB = {
 };
 const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
-let projects=[], records=[];
+let projects=[], records=[], trash=[];
+/* 刪除暫放區：刪除的表單先標記 deleted，保留 7 天可復原，之後自動永久刪除（雲端同步，其他裝置也看得到） */
+const TRASH_DAYS=7,DAY=864e5;
+function splitTrash(){const all=[...records,...trash];records=all.filter(r=>!r.deleted);trash=all.filter(r=>r.deleted)}
+async function purgeTrash(){const lim=Date.now()-TRASH_DAYS*DAY,old=trash.filter(r=>r.deleted<lim);trash=trash.filter(r=>r.deleted>=lim);for(const r of old)await DB.del('records',r.id,r)}
+async function trashRec(r){r.deleted=Date.now();r.updated=Date.now();if(cur===r)cur=null;records=records.filter(x=>x.id!==r.id);trash.push(r);await DB.put('records',r)}
+async function restoreRec(r){delete r.deleted;r.updated=Date.now();trash=trash.filter(x=>x.id!==r.id);records.push(r);await DB.put('records',r)}
+const trashLeft=r=>Math.max(0,Math.ceil((r.deleted+TRASH_DAYS*DAY-Date.now())/DAY));
 let curProj = LS.get('curProj');
 
 /* ---------- 工具 ---------- */
@@ -797,6 +805,7 @@ function render(){
   if(v==='mat') return viewMat(a||'pipe');
   if(v==='zone') return viewZone(a,b);
   if(v==='rec') return viewRec(a);
+  if(v==='trash') return viewTrash();
   if(v==='print') return viewPrint(a);
   if(v==='view') return viewPreview(a);
   if(v==='printall') return viewPrintAll(a,b,m||'work');
@@ -854,9 +863,12 @@ function viewHome(){
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}${c.key==='beam'?'<small class="nmsub">穿樑/穿牆</small>':''}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
     const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
+    const tn=trash.filter(r=>r.projectId===curProj).length;
     html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
+    html+=`<section><button class="btn" id="toTrash" style="width:100%">🗑 刪除暫放區${tn?`（${tn}）`:''}<span class="muted" style="font-weight:400;margin-left:6px">刪除的表單保留 ${TRASH_DAYS} 天</span></button></section>`;
   }
   $('#view').innerHTML=html;
+  $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));
   $('#projAdd')&&($('#projAdd').onclick=()=>openProj());
   $('#projEdit')&&($('#projEdit').onclick=()=>openProj(p));
   document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>go('zone-'+b.dataset.zone+'-'+ZONES[b.dataset.zone].systems[0][0]));
@@ -866,6 +878,21 @@ function viewHome(){
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+(b.dataset.cat==='beam'?'pick':typesOf(b.dataset.cat)[0].key)+'-work'));
   bindRecRows();
   document.querySelectorAll('#recentList [data-rec]').forEach(b=>b.onclick=()=>{printSys='';go('view-'+b.dataset.rec)});
+}
+function viewTrash(){
+  const p=proj(curProj);if(!p)return go('home');
+  setTop(`刪除暫放區<span class="sub">${esc(p.name)}</span>`,'home');
+  const list=trash.filter(r=>r.projectId===curProj).sort((a,b)=>b.deleted-a.deleted);
+  $('#view').innerHTML=`<section><p class="muted" style="margin:0 0 10px">刪除的表單會在這裡保留 ${TRASH_DAYS} 天，期間可以復原；超過 ${TRASH_DAYS} 天會自動永久刪除（含照片）。</p>
+    ${list.length?`<div class="list">${list.map(r=>{const c=cat(r.cat),t=typN(r.cat,r.type);return `<div class="rec trow" style="cursor:default">
+      <span class="d">${esc(r.date)}</span>
+      <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)}</span><span class="chip warn" style="align-self:flex-start;margin-top:4px">剩 ${trashLeft(r)} 天自動刪除</span></span>
+      <span class="tbtns"><button class="btn small primary" data-restore="${r.id}">復原</button><button class="btn small danger" data-purge="${r.id}">永久刪除</button></span></div>`}).join('')}</div>`
+      :'<div class="empty">刪除暫放區是空的。</div>'}</section>`;
+  $('#view').onclick=async e=>{
+    const rs=e.target.closest('[data-restore]');if(rs){const r=trash.find(x=>x.id===rs.dataset.restore);if(r){await restoreRec(r);toast('已復原');viewTrash()}return}
+    const pg=e.target.closest('[data-purge]');if(pg){if(!pg.dataset.arm){pg.dataset.arm='1';pg.textContent='確定？';setTimeout(()=>{if(pg.isConnected){pg.dataset.arm='';pg.textContent='永久刪除'}},2500);return}
+      const r=trash.find(x=>x.id===pg.dataset.purge);if(r){trash=trash.filter(x=>x.id!==r.id);await DB.del('records',r.id,r);toast('已永久刪除');viewTrash()}}};
 }
 function recRow(r){
   const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
@@ -1058,7 +1085,7 @@ function viewRec(id){
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
-    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
+    clearTimeout(saveTimer);await trashRec(r);toast(`已移到刪除暫放區（${TRASH_DAYS} 天內可復原）`);go(backOf(r))};
 }
 function renderItems(){
   const r=cur;
@@ -1508,7 +1535,7 @@ function viewDrain(r){
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
-    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
+    clearTimeout(saveTimer);await trashRec(r);toast(`已移到刪除暫放區（${TRASH_DAYS} 天內可復原）`);go(backOf(r))};
 }
 function pipeNo(sp,pi){const k=sp.pipes[pi].kind;return sp.pipes.slice(0,pi+1).filter(p=>p.kind===k).length}
 function renderSpaces(){
@@ -1972,7 +1999,7 @@ function saveBar(r){
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();printSys=(r.kind==='slab'&&slabTab!=='全部')?slabTab:'';go('print-'+r.id)};
   $('#delRec').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定刪除？';setTimeout(()=>{b.dataset.arm='';b.textContent='刪除'},3000);return}
-    clearTimeout(saveTimer);await DB.del('records',r.id);records=records.filter(x=>x.id!==r.id);toast('已刪除');go(backOf(r))};
+    clearTimeout(saveTimer);await trashRec(r);toast(`已移到刪除暫放區（${TRASH_DAYS} 天內可復原）`);go(backOf(r))};
 }
 function testStatus(r){
   const f=r.form,res=f.rows.map(x=>testJudge(f,x).res);
@@ -2599,7 +2626,7 @@ $('#impFile').onchange=async e=>{
     let np=0,nr=0;
     for(const p of d.projects||[]){const o=proj(p.id);if(!o||(p.updated||0)>(o.updated||0)){await DB.put('projects',p);np++}}
     for(const r of d.records||[]){const o=records.find(x=>x.id===r.id);if(!o||(r.updated||0)>(o.updated||0)){await DB.put('records',r);nr++}}
-    projects=await DB.all('projects');records=await DB.all('records');
+    projects=await DB.all('projects');records=await DB.all('records');trash=[];splitTrash();
     toast(`已匯入 ${np} 個標案、${nr} 筆查驗`);$('#setDlg').close();render();
   }catch(_){toast('這不是本 APP 的備份檔')}
   e.target.value='';
@@ -2620,7 +2647,7 @@ const clean=v=>JSON.parse(JSON.stringify(v));
 const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
 const _put=DB.put.bind(DB),_del=DB.del.bind(DB);
 DB.put=async(s,v)=>{if(s==='records')(v.photos||[]).forEach(p=>{if(!p.id)p.id=uid()});await _put(s,v);Cloud.push(s,v)};
-DB.del=async(s,id)=>{const old=s==='records'?records.find(x=>x.id===id):null;await _del(s,id);Cloud.remove(s,id,old)};
+DB.del=async(s,id,o)=>{const old=s==='records'?(o||records.find(x=>x.id===id)||trash.find(x=>x.id===id)):null;await _del(s,id);Cloud.remove(s,id,old)};
 const CLOUD_TXT={off:'',signedout:'未登入',syncing:'同步中',synced:'已同步',offline:'離線',error:'同步錯誤'};
 const Cloud={
   fs:null,user:null,unsub:[],state:'off',msg:'',pendT:null,
@@ -2660,7 +2687,7 @@ const Cloud={
   },
   apply(kind,s){
     const isR=kind==='records',k=isR?'r':'p',seen=this.seen(k),ids=new Set();
-    const list=isR?records:projects,map=new Map(list.map(x=>[x.id,x]));
+    const list=isR?[...records,...trash]:projects,map=new Map(list.map(x=>[x.id,x]));
     s.docs.forEach(d=>{const v=d.data(),o=map.get(d.id);ids.add(d.id);
       if(o&&(o.updated||0)>(v.updated||0))return;                                   // 本機較新，等待上傳
       if(isR&&o&&o===cur&&location.hash==='#rec-'+d.id&&(o.updated||0)>=(v.updated||0))return; // 正在編輯
@@ -2670,7 +2697,7 @@ const Cloud={
       for(const id of [...map.keys()])if(!ids.has(id)&&seen.has(id)){map.delete(id);_del(kind,id)} // 其他裝置已刪除
       ids.forEach(i=>seen.add(i));this.keep(k,seen);
     }
-    if(isR)records=[...map.values()];else projects=[...map.values()];
+    if(isR){records=[...map.values()];trash=[];splitTrash();purgeTrash()}else projects=[...map.values()];
     this.pending();softRender();
   },
   docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0}))}:v)},
@@ -2700,7 +2727,7 @@ const Cloud={
     if(!this.on)return 0;
     let n=0;
     try{
-      for(const [kind,list,k] of [['projects',projects,'p'],['records',records,'r']]){
+      for(const [kind,list,k] of [['projects',projects,'p'],['records',[...records,...trash],'r']]){
         const snap=await this.fs.collection(kind).get({source:'server'}),cloud=new Map(snap.docs.map(d=>[d.id,d.data()])),seen=this.seen(k);
         for(const v of list){const c=cloud.get(v.id);
           if(!c&&seen.has(v.id))continue;
@@ -2814,7 +2841,7 @@ function startUpdateCheck(){
 
 /* ---------- 啟動 ---------- */
 (async()=>{
-  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');
+  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');splitTrash();purgeTrash();
     // 首次開啟時預設建立標案（固定 id，手機與電腦匯入備份時會合併成同一個；刪除後不會再自動出現）
     if(!LS.get('seeded2')){
       const PRESET=[

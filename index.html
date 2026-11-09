@@ -1232,7 +1232,7 @@ function slabPhotoText(r,p){
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
-    desc.push(`${sys}${equipName(x)} PVC配管`);
+    desc.push(`${sys}${equipName(x)} PVC配管(編號${f.items.indexOf(x)+1})`);
     if(x.e1302)desc.push('南亞CNS 1302 PVC管 E管');
     if(x.size)desc.push(`管徑:ψ${x.size.replace('"','')}"`);
     if(x.joint)desc.push('PVC配管以盒接頭銜接出線盒');

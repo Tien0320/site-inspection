@@ -246,6 +246,8 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .mph{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:5mm}
 .mph td{border:1px solid #000;padding:3px 6px;font-size:10.5pt;vertical-align:middle}
 .mph .mimg{padding:3mm 2mm;height:68mm;text-align:center}
+.mimg,.dimg{position:relative}
+.phmv{position:absolute;right:4px;top:4px;display:flex;flex-direction:column;gap:4px;z-index:2}.phmv button{width:34px;height:30px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:15px;cursor:pointer}
 .mph .mimg img{max-width:100%;height:64mm;object-fit:contain;display:block;margin:0 auto}
 .mph .mk{text-align:center;font-weight:400;height:7mm;padding:1px 6px}
 .mph .mrow{height:8mm;padding:1px 6px;font-size:10pt;line-height:1.25}
@@ -365,7 +367,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 @page{size:A4 portrait;margin:10mm}
 @media print{
   body{background:#fff}
-  body::before,.topbar,main,.savebar,.toast,dialog,.print-toolbar{display:none!important}
+  body::before,.topbar,main,.savebar,.toast,dialog,.print-toolbar,.phmv{display:none!important}
   #printArea{display:block!important}
   .preview .sheet{box-shadow:none;margin:0;padding:0;width:auto}
   .sheet{page-break-after:always;break-after:page}
@@ -1181,7 +1183,7 @@ function dormPhotoPages(r){
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const where=photoWhere(r)||'職務宿舍工區',item=photoItemName(r);
   return pages.map(pg=>`<div class="sheet dphoto">${pg.map(p=>`<table class="dph"><colgroup><col style="width:70.3%"><col style="width:29.7%"></colgroup>
-    <tr><td rowspan="8" class="dimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
     <tr><td class="dv">${esc(item)}</td></tr>
     <tr><td class="dk">照片位置</td></tr>
     <tr><td class="dv">${esc(where)}</td></tr>
@@ -1265,7 +1267,7 @@ function slabPhotoPages(r){
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=mhdrHTML(r);
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
-    <tr><td rowspan="4" class="mimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
+    <tr><td rowspan="4" class="mimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
     <tr><td class="mrow">查驗項目:${esc(t.item)}</td></tr>
     <tr><td class="mrow">照片位置:${esc(t.where)}</td></tr>
     <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>`}).join('')}</table></div>`).join('');
@@ -1302,7 +1304,7 @@ function testPhotoPages(r){
   const list=bySeq(r).map(p=>[p,(r.form.rows||[]).findIndex(x=>x.id===p.ref)]).sort((a,b)=>(a[1]<0?999:a[1])-(b[1]<0?999:b[1])).map(a=>a[0]);
   if(!list.length)return '';const hdr=mhdrHTML(r),pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<div class="dphoto" style="margin-top:4mm">${pg.map(p=>{const t=testPhotoText(r,p);return `<table class="dph"><colgroup><col style="width:66%"><col style="width:34%"></colgroup>
-    <tr><td rowspan="8" class="dimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
     <tr><td class="dv">${esc(t.item)}</td></tr><tr><td class="dk">照片位置</td></tr><tr><td class="dv">${esc(t.where)}</td></tr>
     <tr><td class="dk">照片說明</td></tr><tr><td class="dv small" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>
     <tr><td class="dk">備註</td></tr><tr><td class="dv small">${esc(t.note).replace('，','，<br>').replace(/\n/g,'<br>')}</td></tr></table>`}).join('')}</div></div>`).join('');
@@ -1319,7 +1321,7 @@ function photoPages(r){
     <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
       <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typN(r.cat,r.type).name}</td></tr></table>
-    <div class="pgrid">${pg.map(p=>`<figure>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
+    <div class="pgrid">${pg.map(p=>`<figure data-imgph="${p.id}" style="position:relative"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
   </div>`).join('');
 }
 const SIGNERS=[['worker','施工人員'],['qc','品管人員'],['sup','監造人員']];
@@ -2693,6 +2695,28 @@ function sheetHTML(r){
     </table>
   </div>`;
 }
+async function swapPhotoImg(rec,aId,bId){
+  const a=rec.photos.find(x=>x.id===aId),b=rec.photos.find(x=>x.id===bId);if(!a||!b)return false;
+  for(const k of ['id','src','up','tried'])[a[k],b[k]]=[b[k],a[k]];
+  rec.updated=Date.now();await DB.put('records',rec);return true}
+document.addEventListener('click',async e=>{
+  const bt=e.target.closest&&e.target.closest('[data-mv]');if(!bt)return;e.preventDefault();e.stopPropagation();
+  const rid=bt.dataset.mvr,rec=records.find(x=>x.id===rid);if(!rec)return;
+  const cells=[...document.querySelectorAll(`[data-imgph] [data-mvr="${rid}"][data-mv="-1"]`)].map(x=>x.closest('[data-imgph]'));
+  const me=bt.closest('[data-imgph]'),i=cells.indexOf(me),j=i+(+bt.dataset.mv);
+  if(i<0||j<0||j>=cells.length){toast(+bt.dataset.mv<0?'已經是第一張':'已經是最後一張');return}
+  const other=cells[j],aId=me.dataset.imgph,bId=other.dataset.imgph;
+  if(!await swapPhotoImg(rec,aId,bId))return;
+  // swap pictures on screen; captions stay in place
+  const take=c=>[...c.childNodes].filter(n=>!(n.classList&&n.classList.contains('phmv')));
+  const na=take(me),nb=take(other);na.forEach(n=>other.appendChild(n));nb.forEach(n=>me.appendChild(n));
+  me.dataset.imgph=bId;other.dataset.imgph=aId;
+  me.querySelectorAll('[data-mvid]').forEach(x=>x.dataset.mvid=bId);other.querySelectorAll('[data-mvid]').forEach(x=>x.dataset.mvid=aId);
+  // caption cells referencing photo ids: keep position, so swap their data-phid too
+  document.querySelectorAll(`[data-phid][data-rid="${rid}"]`).forEach(d=>{if(d.dataset.phid===aId)d.dataset.phid=bId;else if(d.dataset.phid===bId)d.dataset.phid=aId});
+  if(cur&&cur.id===rid)refreshPhotos();
+  toast('照片已交換');
+},true);
 function showPrint(list,back,title,editId){
   setTop(title,back);
   $('#view').hidden=true;
@@ -2845,7 +2869,7 @@ const Cloud={
     if(isR){records=[...map.values()];trash=[];splitTrash();purgeTrash()}else projects=[...map.values()];
     this.pending();softRender();
   },
-  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0}))}:v)},
+  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0,...(p.tag?{tag:p.tag}:{})}))}:v)},
   push(kind,v){
     if(!this.on)return;
     try{

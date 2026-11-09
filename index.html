@@ -1195,7 +1195,8 @@ function dormPhotoPages(r){
     <tr><td class="dv">${esc(p.cap||'')}</td></tr></table>`).join('')}</div>`).join('');
 }
 /* 二期・樓板接線盒：施工查驗照片（比照 1150428-29-9F底版-消防出線盒放樣.docx） */
-const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程',no:'森10812',con:'崇偉營造工程(股)有限公司',con2:'崇偉科技工程有限公司',permit:'(113)(5)(21)建管建字第00174號'};
+const PERMIT_OF={'p-nycuh-med2':'(112)(4)(25)建管建字第00246號','p-nycuh-dorm':'(113)(5)(21)建管建字第000174號'};
+const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程',no:'森10812',con:'崇偉營造工程(股)有限公司',con2:'崇偉科技工程有限公司',permit:'(112)(4)(25)建管建字第00246號'};
 const rocSlash=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return `${+y-1911}/${m}/${dd}`};
 function slabPhotoText(r,p){
   const f=r.form,x=f.items.find(i=>i.id===p.ref);
@@ -1265,7 +1266,7 @@ function slabPhotoPages(r){
   if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
   if(!list.length)return '';
   const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
-  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(PERMIT_OF[r.projectId]?{permit:PERMIT_OF[r.projectId]}:pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=mhdrHTML(r);
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
@@ -1275,7 +1276,7 @@ function slabPhotoPages(r){
     <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>`}).join('')}</table></div>`).join('');
 }
 function mhdrHTML(r){
-  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(PERMIT_OF[r.projectId]?{permit:PERMIT_OF[r.projectId]}:pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   return `<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
     <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
     <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;

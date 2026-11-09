@@ -1323,7 +1323,39 @@ function dfPhotoText(r,p){
   }
   return {item,where,desc};
 }
+/* 排水吊管照片：照片位置帶出空間與軸線；說明帶入該管的查驗資料 */
+function drainPhotoText(r,p){
+  const f=r.form,item='污廢水管吊管施工查驗';let sp=null,pp=null,pn=0;
+  for(const s_ of f.spaces||[]){const i=(s_.pipes||[]).findIndex(x=>x.id===p.ref);if(i>=0){sp=s_;pp=s_.pipes[i];pn=pipeNo(s_,i);break}}
+  const where=[drainLoc(f),sp?spName(sp):'',sp&&sp.pos?sp.pos:''].filter(Boolean).join(' ');
+  if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};
+  if(!pp)return {item,where,desc:[]};
+  const sz=(d,a,brand)=>[d?`設計:Ø${inchOf(d)}`:'',a?`實測:${[...(brand||[]),'Ø'+inchOf(a)].join(' ')}`:''].filter(Boolean).join(' ');
+  const d=[];
+  if(pp.kind==='vent'){
+    d.push(`透氣管${pn}${pp.ventOf?'（'+pp.ventOf+'）':''}`);
+    if(pp.brDesign||pp.brSize)d.push('支管 '+sz(pp.brDesign,pp.brSize,pp.brBrand));
+    if(pp.mnDesign||pp.mnSize)d.push('幹管 '+sz(pp.mnDesign,pp.mnSize,pp.mnBrand));
+    if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
+    if(pp.hD||pp.hA)d.push(`管路高度 設計:${pp.hD||''}cm 實測:${pp.hA||''}cm`);
+    if(pp.stackH)d.push(`接通氣立管 實測:${pp.stackH}cm（1m線上）`);
+    if(pp.flow)d.push('方向標示：'+pp.flow);
+  }else{
+    const t=pp.type==='其他'?(pp.typeOther||'其他'):pp.type;
+    d.push(`排水管${pn}${t?'（'+t+'）':''}`);
+    if(pp.brDesign||pp.brSize)d.push('支管 '+sz(pp.brDesign,pp.brSize,pp.brBrand));
+    if(pp.mnDesign||pp.mnSize)d.push('幹管 '+sz(pp.mnDesign,pp.mnSize,pp.mnBrand));
+    if(pp.flex)d.push(`撓性吊架：熱浸鍍鋅螺桿${pp.flexRod?' '+pp.flexRod:''}＋管束`);
+    if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
+    if(pp.spacing||pp.spacing2)d.push(`吊架間距 實測:${[pp.spacing,pp.spacing2].filter(Boolean).map(v=>v+'cm').join('　')}`);
+    else if(pp.oneStep)d.push('吊架間距：僅一步（無間距）');
+    const s_=slopeOf(pp);if(s_)d.push(`洩水坡度：落差${s_.drop}cm÷長度${pp.len}cm＝${s_.pct.toFixed(2)}%${s_.need!=null?(s_.ok?`（≥${s_.need}% 符合）`:`（未達${s_.need}%）`):''}`);
+    if(pp.sweep)d.push('排水彎頭採順水型式');if(pp.elbow45)d.push('90°彎頭以45°×2銜接');if(pp.cap)d.push('管口有管帽封閉');
+  }
+  return {item,where,desc:d};
+}
 function genPhotoText(r,p){
+  if(r.kind==='drain')return drainPhotoText(r,p);
   const l=r.loc||{};
   const item=modeOf(r)==='mat'?`${typeName(r)}材料進場查驗`:r.kind==='wtest'?'給排水管壓力試驗':r.kind==='drain'?'污廢水管吊管施工查驗':`${cat(r.cat).name}設備配管施工查驗`;
   const where=r.kind==='drain'?drainLoc(r.form):r.loc?[l.floor,l.part,l.space].filter(Boolean).join(' ')+(l.note?' Line '+l.note:''):photoWhere(r);
@@ -1335,7 +1367,7 @@ function slabPhotoPages(r){
   if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
   if(r.form&&Array.isArray(r.form.items)){const ix=p=>{const i=r.form.items.findIndex(x=>x.id===p.ref);return i<0?1e9:i};list=list.map((p,k)=>[p,ix(p),k]).sort((a,b)=>a[1]-b[1]||a[2]-b[2]).map(a=>a[0])} // 依查驗（第幾處）排序
   if(!list.length)return '';
-  const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
+  const textOf=r.kind==='drain'?drainPhotoText:isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(permitOf(pr)?{permit:permitOf(pr)}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=mhdrHTML(r);

@@ -1217,7 +1217,7 @@ function dormPhotoPages(r){
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const where=photoWhere(r)||'職務宿舍工區',item=photoItemName(r);
   return pages.map(pg=>`<div class="sheet dphoto">${pg.map(p=>`<table class="dph"><colgroup><col style="width:70.3%"><col style="width:29.7%"></colgroup>
-    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button><button type="button" data-fit="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="縮小／填滿" title="完整顯示（縮小）／填滿">${p.fit==='contain'?'⤢':'⤡'}</button></div>${p.src?`<img src="${p.src}" alt="" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
     <tr><td class="dv">${esc(item)}</td></tr>
     <tr><td class="dk">照片位置</td></tr>
     <tr><td class="dv">${esc(where)}</td></tr>
@@ -1308,7 +1308,7 @@ function slabPhotoPages(r){
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=mhdrHTML(r);
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
-    <tr><td rowspan="4" class="mimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
+    <tr><td rowspan="4" class="mimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button><button type="button" data-fit="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="縮小／填滿" title="完整顯示（縮小）／填滿">${p.fit==='contain'?'⤢':'⤡'}</button></div>${p.src?`<img src="${p.src}" alt="" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
     <tr><td class="mrow">查驗項目:${esc(t.item)}</td></tr>
     <tr><td class="mrow">照片位置:${esc(t.where)}</td></tr>
     <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}"><div class="dls">${(t.desc.length?t.desc:['']).map(l=>`<div class="dl">${esc(l)||'&nbsp;'}</div>`).join('')}</div></td></tr>`}).join('')}</table></div>`).join('');
@@ -1345,7 +1345,7 @@ function testPhotoPages(r){
   const list=bySeq(r).map(p=>[p,(r.form.rows||[]).findIndex(x=>x.id===p.ref)]).sort((a,b)=>(a[1]<0?999:a[1])-(b[1]<0?999:b[1])).map(a=>a[0]);
   if(!list.length)return '';const hdr=mhdrHTML(r),pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<div class="dphoto" style="margin-top:4mm">${pg.map(p=>{const t=testPhotoText(r,p);return `<table class="dph"><colgroup><col style="width:66%"><col style="width:34%"></colgroup>
-    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td rowspan="8" class="dimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button><button type="button" data-fit="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="縮小／填滿" title="完整顯示（縮小）／填滿">${p.fit==='contain'?'⤢':'⤡'}</button></div>${p.src?`<img src="${p.src}" alt="" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
     <tr><td class="dv">${esc(t.item)}</td></tr><tr><td class="dk">照片位置</td></tr><tr><td class="dv">${esc(t.where)}</td></tr>
     <tr><td class="dk">照片說明</td></tr><tr><td class="dv small" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>
     <tr><td class="dk">備註</td></tr><tr><td class="dv small">${esc(t.note).replace('，','，<br>').replace(/\n/g,'<br>')}</td></tr></table>`}).join('')}</div></div>`).join('');
@@ -1362,7 +1362,7 @@ function photoPages(r){
     <table><colgroup><col style="width:14%"><col style="width:46%"><col style="width:14%"><col style="width:26%"></colgroup>
       <tr><td class="k">工程名稱</td><td>${esc(pr.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
       <tr><td class="k">查驗位置</td><td>${esc(photoWhere(r))}</td><td class="k">查驗項目</td><td>${modeOf(r)==='mat'?'材料・'+typeName(r):cat(r.cat).name+'・'+typN(r.cat,r.type).name}</td></tr></table>
-    <div class="pgrid">${pg.map(p=>`<figure data-imgph="${p.id}" style="position:relative"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button></div>${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
+    <div class="pgrid">${pg.map(p=>`<figure data-imgph="${p.id}" style="position:relative"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button><button type="button" data-fit="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="縮小／填滿" title="完整顯示（縮小）／填滿">${p.fit==='contain'?'⤢':'⤡'}</button></div>${p.src?`<img src="${p.src}" alt="" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="noimg">照片未載入</div>'}<figcaption><b>照片 ${phNo(r,p)}</b>　${esc(photoCaption(r,p))}</figcaption></figure>`).join('')}</div>
   </div>`).join('');
 }
 const SIGNERS=[['worker','施工人員'],['qc','品管人員'],['sup','監造人員']];
@@ -2765,9 +2765,13 @@ function sheetHTML(r){
 }
 async function swapPhotoImg(rec,aId,bId){
   const a=rec.photos.find(x=>x.id===aId),b=rec.photos.find(x=>x.id===bId);if(!a||!b)return false;
-  for(const k of ['id','src','up','tried'])[a[k],b[k]]=[b[k],a[k]];
+  for(const k of ['id','src','up','tried','fit'])[a[k],b[k]]=[b[k],a[k]];
   rec.updated=Date.now();await DB.put('records',rec);return true}
 document.addEventListener('click',async e=>{
+  const fb=e.target.closest&&e.target.closest('[data-fit]');if(fb){e.preventDefault();e.stopPropagation();
+    const rec=records.find(x=>x.id===fb.dataset.mvr),cell=fb.closest('[data-imgph]'),ph=rec&&rec.photos.find(q=>q.id===cell.dataset.imgph);if(!ph)return;
+    ph.fit=ph.fit==='contain'?'':'contain';const img=cell.querySelector('img');if(img)img.style.objectFit=ph.fit==='contain'?'contain':'cover';
+    fb.textContent=ph.fit==='contain'?'⤢':'⤡';rec.updated=Date.now();await DB.put('records',rec);toast(ph.fit==='contain'?'已縮小為完整照片':'已改為填滿');return}
   const bt=e.target.closest&&e.target.closest('[data-mv]');if(!bt)return;e.preventDefault();e.stopPropagation();
   const rid=bt.dataset.mvr,rec=records.find(x=>x.id===rid);if(!rec)return;
   const cells=[...document.querySelectorAll(`[data-imgph] [data-mvr="${rid}"][data-mv="-1"]`)].map(x=>x.closest('[data-imgph]'));
@@ -2782,6 +2786,7 @@ document.addEventListener('click',async e=>{
   me.querySelectorAll('[data-mvid]').forEach(x=>x.dataset.mvid=bId);other.querySelectorAll('[data-mvid]').forEach(x=>x.dataset.mvid=aId);
   // caption cells referencing photo ids: keep position, so swap their data-phid too
   document.querySelectorAll(`[data-phid][data-rid="${rid}"]`).forEach(d=>{if(d.dataset.phid===aId)d.dataset.phid=bId;else if(d.dataset.phid===bId)d.dataset.phid=aId});
+  [me,other].forEach(c=>{const ph=rec.photos.find(q=>q.id===c.dataset.imgph),fb=c.querySelector('[data-fit]');if(fb&&ph)fb.textContent=ph.fit==='contain'?'⤢':'⤡'});
   if(cur&&cur.id===rid)refreshPhotos();
   toast('照片已交換');
 },true);
@@ -2960,7 +2965,7 @@ const Cloud={
     if(isR){records=[...map.values()];trash=[];splitTrash();purgeTrash();splitSlabRecords().then(c=>{if(c)softRender()})}else projects=[...map.values()];
     this.pending();softRender();
   },
-  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0,...(p.tag?{tag:p.tag}:{})}))}:v)},
+  docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0,...(p.tag?{tag:p.tag}:{}),...(p.fit?{fit:p.fit}:{})}))}:v)},
   push(kind,v){
     if(!this.on)return;
     try{

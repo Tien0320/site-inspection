@@ -1273,7 +1273,7 @@ function dfPhotoText(r,p){
     if(x.nsD||x.nsA)desc.push(`距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
     if(x.screw)desc.push('以樓板接頭以螺絲鎖固定於鋼承鈑上');
     if(x.tied)desc.push('以鐵線綁紮固定');
-    if(x.rebar)desc.push('有加加強筋');
+    if(x.rebar)desc.push('有加補強筋');
     if(x.cap)desc.push('管口以管帽封口');
   }
   return {item,where,desc};
@@ -2542,7 +2542,7 @@ function dfItemHTML(i,x){
       ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
       ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec)+opts(b+'.color',[['橘','橘色'],['灰','灰色']],'one',x.color),1)}
       <div class="fld"><span>管徑尺寸 ø</span><div class="meas"><label>設計值<div class="pm"><i>ø</i>${inp(b+'.sizeD',x.sizeD,'例：4"')}</div></label><label>實測值<div class="pm"><i>ø</i>${inp(b+'.sizeA',x.sizeA,'')}</div></label></div></div>
-      <div class="fld wide"><span>配管銜接</span><div class="opts">${chk(b+'.screw','以螺絲鎖固定於鋼承鈑上',x.screw)}${chk(b+'.tied','鐵線綁紮固定',x.tied)}${chk(b+'.rebar','有加加強筋',x.rebar)}${chk(b+'.cap','管口以管帽封口',x.cap)}</div></div>
+      <div class="fld wide"><span>配管銜接</span><div class="opts">${chk(b+'.screw','以螺絲鎖固定於鋼承鈑上',x.screw)}${chk(b+'.tied','鐵線綁紮固定',x.tied)}${chk(b+'.rebar','有加補強筋',x.rebar)}${chk(b+'.cap','管口以管帽封口',x.cap)}</div></div>
       ${posBlock('ew',['東側','西側'],'安裝位置（東西向）')}
       ${posBlock('ns',['南側','北側'],'安裝位置（南北向）')}
       <div class="fld wide"><span>此處照片</span>${phStrip(x.id)}</div>
@@ -2618,7 +2618,7 @@ function dfSheet(r){
     <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>
     <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管色：${['橘','灰'].map(c=>cb(x.color===c,c)).join(' ')}</div>
     <div>管徑尺寸：設計值：ø${u(String(x.sizeD||'').replace(/^[øØ]\s*/,''))}　實測值：ø${u(String(x.sizeA||'').replace(/^[øØ]\s*/,''))}</div>
-    <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')} ${cb(x.rebar,'有加加強筋')} ${cb(x.cap,'管口以管帽封口')}</div>
+    <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')} ${cb(x.rebar,'有加補強筋')} ${cb(x.cap,'管口以管帽封口')}</div>
     <div>${pos(x,'ew',['東側','西側'],'安裝位置：')}</div>
     <div>${pos(x,'ns',['南側','北側'],'　　　　　')}</div>
   </div></div>`;

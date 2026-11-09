@@ -1657,7 +1657,7 @@ function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
   return `<label class="field"><span>材料名稱</span><select id="m_name">${Object.keys(C.names).map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
       <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>
-      <label class="field"><span>用途（照片查驗項目）</span><input type="text" id="m_use" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}"></label>`;
+      <label class="field"><span>${r.type==='gi'?'用途（消防／空調／給水）':'用途（照片查驗項目）'}</span><input type="text" id="m_use" list="useList" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}">${r.type==='gi'?'<datalist id="useList"><option>消防</option><option>空調</option><option>給水</option></datalist>':''}</label>`;
 }
 /* 電線材料：名稱、廠牌固定，規格下拉 */
 const WIRE_SPECS=['2.0mm','3.5mm²','5.5mm²'];
@@ -1674,7 +1674,7 @@ function stdFor(type,size){
   const S=PIPE_STD[type],v=S&&S.sizes[size];if(!v)return null;
   if(S.pvc){const big=['4','5','6','8','10','12'].includes(size);
     return {stdOD:v[0],odTol:v[1],stdT:v[2],tPlus:v[3],tMinus:0,stdL:v[4]||(big?5:4)}}
-  if(S.steel==='6445')return {stdOD:v[0],odTol:v[1],stdT:v[2],tPlus:'',tMinus:r2(v[2]*0.125),stdL:6};
+  if(S.steel==='6445')return {stdOD:v[0],odTol:['1/2','3/4','1','1-1/4','1-1/2'].includes(size)?0.5:r2(v[0]*0.01),stdT:v[2],tPlus:'',tMinus:Math.floor(v[2]*12.5+1e-9)/100,stdL:6.1};
   const od=v[0],t=v[1],small=['1/2','3/4','1'].includes(size);
   return {stdOD:od,odTol:small?0.3:r2(od*0.008),stdT:t,tPlus:t<3?0.3:r2(t*0.1),tMinus:t<3?0.3:r2(t*0.1),stdL:6};
 }
@@ -1692,11 +1692,15 @@ function pipeApplyStd(type,row){
 }
 /* PVC A／B 管外觀打印：依管徑自動帶入公稱 mm 與長度 */
 const NOM_MM={'3/8':10,'1/2':13,'3/4':20,'1':25,'1-1/4':32,'1-1/2':40,'2':50,'2-1/2':65,'3':80,'3-1/2':90,'4':100,'5':125,'6':150,'8':200,'10':250,'12':300};
+const GI_MM={'1/2':15,'3/4':20,'1':25,'1-1/4':32,'1-1/2':40,'2':50,'2-1/2':65,'3':80,'3-1/2':90,'4':100,'5':125,'6':150,'8':200,'10':250,'12':300,'16':400};
+const giSpec=v=>v&&GI_MM[v]?`${GI_MM[v]}mm (${v}")`:(v?v+'"':'');
 const E_MM={'1/2':16,'3/4':20,'1':28,'1-1/4':35,'1-1/2':41,'2':52,'2-1/2':65,'3':80,'4':100,'5':125,'6':150,'8':200};
-function pvcPrint(type,row){const mm=(type==='pvcE'?E_MM:NOM_MM)[row.size];if(!mm)return '';const L=row.stdL||(['4','5','6','8','10','12'].includes(row.size)?5:4);
+function pvcPrint(type,row){const mm=(type==='pvcE'?E_MM:/^gi/.test(type)?GI_MM:NOM_MM)[row.size];if(!mm)return '';const L=row.stdL||(['4','5','6','8','10','12'].includes(row.size)?5:4);
   if(type==='pvcB')return `南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 ${mm}mm×${L}M`;
   if(type==='pvcA')return `南亞 CNS1298 1052 一般流體用(非自來水)PVC-U薄管VU(A) 20℃ 使用壓力0.75MPa R73045 ${mm}mm×${L}M`;
   if(type==='pvcE')return `南亞 CNS1302 1051E 電線導管PVC管 R73045 ${mm}mm×${L}M`;
+  if(type==='gi6445')return `KHC高興昌 CNS6445 ${row.size}B*20 SGP-E-G 6538 R74826`;
+  if(type==='gi4626')return `KHC高興昌 CNS4626 ${row.size}BXSCH40X6MSTRG410-E-G 6644 R74826`;
   return ''}
 const num=v=>{const n=parseFloat(String(v).replace(/[^\d.\-]/g,''));return isNaN(n)?null:n};
 function pipeJudge(row){
@@ -1718,9 +1722,10 @@ const rowKey=(r,x)=>x&&x.sub&&PIPE_STD[x.sub]&&(!PIPE_GROUPS[r.type]||PIPE_GROUP
 const STD_NAME={pvcA:'CNS1298 A管',pvcB:'CNS1298 B管',pvcE:'CNS1302 E管',gi6445:'CNS6445',gi4626:'CNS4626'};
 const psi=v=>v?`ψ${v}〞`:'';
 const odTxt=x=>x.stdOD?`${x.stdOD}mm±${x.odTol||0}mm`:'';
-const thkTxt=x=>x.stdT?`${x.stdT}mm${x.tPlus!==''&&x.tPlus!=null?'+'+x.tPlus+'mm':''}${x.tMinus&&+x.tMinus?'−'+x.tMinus+'mm':''}`:'';
+const thkTxt=x=>x.stdT?`${x.stdT}mm${x.tPlus!==''&&x.tPlus!=null?'+'+x.tPlus+'mm':''}${x.tMinus&&+x.tMinus?'-'+x.tMinus+'mm':''}`:'';
 const lenTxt=x=>x.stdL?`${r2(num(x.stdL)*100)}cm`:'';
-const pipeUse=r=>(r.mat&&r.mat.use)||(r.type==='gi'?'給水系統用管':stdKey(r)==='pvcE'?'電線導管':'排水系統用管');
+const pipeUse=r=>(r.mat&&r.mat.use)||(r.type==='gi'?'消防':stdKey(r)==='pvcE'?'電線導管':'排水系統用管');
+const giItem=r=>`${pipeUse(r).replace(/用?鍍鋅鋼管$/,'')}用鍍鋅鋼管`;
 function phTag(r,p){if(p.tag)return p.tag;const row=(r.pipes||[]).find(x=>x.id===p.ref);if(!row)return '';
   const un=bySeq(r).filter(q=>q.ref===p.ref&&!q.tag),used=new Set(bySeq(r).filter(q=>q.ref===p.ref&&q.tag).map(q=>q.tag)),free=PIPE_TAGS.filter(t=>!used.has(t));
   return free[un.indexOf(p)]||''}
@@ -1728,9 +1733,16 @@ function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
 function pipePhotoText(r,p){
-  const x=(r.pipes||[]).find(q=>q.id===p.ref),item=pipeUse(r),where=r.location||'材料放置區';
+  const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=r.location||'材料放置區';
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
+  else if(x&&G){const t=phTag(r,p),k=rowKey(r,x);
+    if(t==='外徑')desc=[`設計值:外徑:${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
+    else if(t==='厚度')desc=[`設計值:壁厚:${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
+    else if(t==='長度')desc=[`設計值;長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
+    else if(t==='外觀打印')desc=['外觀打印:',x.print||'',`${giItem(r)} ${giSpec(x.size)}`,x.inQty?`共進場${x.inQty}`:''];
+    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,'外觀打印:',x.print||''];
+  }
   else if(x){const t=phTag(r,p),k=rowKey(r,x);
     if(t==='外徑')desc=[`設計值外徑: ${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
     else if(t==='厚度')desc=[`設計值厚度: ${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
@@ -1744,8 +1756,12 @@ function pipePhotoText(r,p){
 function pipeSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`,ul=(x,u)=>`<span class="ul">${x?v(x):'&emsp;&emsp;&emsp;'}</span>${u}`;
   const ks=[...new Set((r.pipes||[]).map(x=>rowKey(r,x)))];
-  const name=r.type==='gi'?'鍍鋅鋼管':`PVC ${pipeUse(r).replace(/系統用管$/,'')}管`;
+  const G=r.type==='gi',name=G?`鍍鋅鋼管${[...new Set((r.pipes||[]).map(x=>(STD_NAME[rowKey(r,x)]||'').replace('CNS','CNS ')))].join('、')||''} (${pipeUse(r)})`:`PVC ${pipeUse(r).replace(/系統用管$/,'')}管`;
   const rows=(r.pipes||[]).map(x=>{const k=rowKey(r,x),j=pipeJudge(x),S=PIPE_STD[k]||{};
+    if(!S.pvc){const sn=(STD_NAME[k]||'').replace('CNS','CNS ');
+      const std=[`廠牌:${v(x.brand)}`,`標準:${(STD_NAME[k]||'')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:<br>${v(x.print)}`].join('<br>');
+      const got=['廠牌:'+cb(!!x.brand,v(x.brand)),'標準:'+cb(!!k,sn),'規格:'+cb(!!x.size,giSpec(x.size)),`外徑:${ul(x.od,'mm')}${j.od===false?' ×':''}`,`壁厚:${ul(x.t,'mm')}${j.t===false?' ×':''}`,`長度:${ul(x.len,'cm')}${j.len===false?' ×':''}`,'外觀打印:<br>'+cb(!!x.print,v(x.print))].join('<br>');
+      return `<tr><td class="c">鍍鋅鋼管<br>${sn}<br>${x.size?v(x.size)+'” ('+(GI_MM[x.size]||'')+'mm)':''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${j.all==null?'':j.all?'合格':'不合格'}</td></tr>`}
     const kind=S.pvc?`PVC管 ${psi(x.size)}<br>${SUB_NAME[k]||''}${x.color?`<br>(${v(x.color)}色)`:''}`:`鍍鋅鋼管 ${psi(x.size)}<br>${STD_NAME[k]||''}`;
     const std=[`廠牌:${v(x.brand)}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:<br>${v(x.print)}`].join('<br>');
     const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.size,'管徑:'+psi(x.size)),cb(!!k,'標準:'+(STD_NAME[k]||'').replace(/ .*/,''))+(S.pvc?' '+cb(!!k,SUB_NAME[k]||''):''),
@@ -1754,7 +1770,7 @@ function pipeSheet(r){
   const isD=r.projectId==='p-nycuh-dorm';
   return `<div class="sheet psheet">
     <h3>表5-5材料/設備品質抽驗紀錄表</h3>
-    <div class="dsub">表單編號：${isD?'10812-SB-':''}</div>
+    <div class="dsub">表單編號：${isD||r.projectId==='p-nycuh-med2'?'10812-SB-':''}</div>
     <table><colgroup><col style="width:15%"><col style="width:33%"><col style="width:8%"><col style="width:30%"><col style="width:14%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="4">${v(p.name)}</td></tr>
       <tr><td class="k">材料/設備名稱</td><td colspan="2">${v(name)}</td><td class="k">檢查日期</td><td class="c">${rocDate(r.date)}</td></tr>
@@ -1795,6 +1811,7 @@ function renderPipeRows(){
           <label>厚度 mm <span data-pj="t${n}">${mark(j.t)}</span>${fa('t','實測厚度','t')}</label>
           <label>長度 cm <span data-pj="len${n}">${mark(j.len)}</span>${fa('len','實測長度','len')}</label>
           <label>抽驗數量<input type="text" inputmode="numeric" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="1"></label>
+          <label>進場數量（照片用）<input type="text" data-pk="inQty" data-pn="${n}" value="${esc(x.inQty||'')}" placeholder="例：42.7M"></label>
         </div>
       </div>
       <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>

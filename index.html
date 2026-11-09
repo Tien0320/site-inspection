@@ -1692,9 +1692,11 @@ function pipeApplyStd(type,row){
 }
 /* PVC A／B 管外觀打印：依管徑自動帶入公稱 mm 與長度 */
 const NOM_MM={'3/8':10,'1/2':13,'3/4':20,'1':25,'1-1/4':32,'1-1/2':40,'2':50,'2-1/2':65,'3':80,'3-1/2':90,'4':100,'5':125,'6':150,'8':200,'10':250,'12':300};
-function pvcPrint(type,row){const mm=NOM_MM[row.size];if(!mm)return '';const L=row.stdL||(['4','5','6','8','10','12'].includes(row.size)?5:4);
+const E_MM={'1/2':16,'3/4':20,'1':28,'1-1/4':35,'1-1/2':41,'2':52,'2-1/2':65,'3':80,'4':100,'5':125,'6':150,'8':200};
+function pvcPrint(type,row){const mm=(type==='pvcE'?E_MM:NOM_MM)[row.size];if(!mm)return '';const L=row.stdL||(['4','5','6','8','10','12'].includes(row.size)?5:4);
   if(type==='pvcB')return `南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 ${mm}mm×${L}M`;
   if(type==='pvcA')return `南亞 CNS1298 1052 一般流體用(非自來水)PVC-U薄管VU(A) 20℃ 使用壓力0.75MPa R73045 ${mm}mm×${L}M`;
+  if(type==='pvcE')return `南亞 CNS1302 1051E 電線導管PVC管 R73045 ${mm}mm×${L}M`;
   return ''}
 const num=v=>{const n=parseFloat(String(v).replace(/[^\d.\-]/g,''));return isNaN(n)?null:n};
 function pipeJudge(row){

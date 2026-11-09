@@ -2790,11 +2790,27 @@ document.addEventListener('click',async e=>{
   if(cur&&cur.id===rid)refreshPhotos();
   toast('照片已交換');
 },true);
+/* 存檔：電腦（Chrome／Edge）跳出「另存新檔」可選資料夾；手機用分享選單（可存到雲端硬碟、檔案）；都不支援時直接下載 */
+async function saveBlob(blob,name,mime,ext,desc){
+  if(window.showSaveFilePicker){
+    try{const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:{[mime]:[ext]}}]});const w=await h.createWritable();await w.write(blob);await w.close();return 'saved'}
+    catch(e){if(e&&e.name==='AbortError')return 'cancel'}}
+  try{const f=new File([blob],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[f]})&&/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){await navigator.share({files:[f],title:name});return 'shared'}}
+  catch(e){if(e&&e.name==='AbortError')return 'cancel'}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);return 'download'}
+const SAVE_MSG={saved:'已儲存到選擇的資料夾',shared:'已開啟分享，可選擇存放位置',download:'已下載（存在「下載」資料夾）',cancel:'已取消'};
 /* 下載 PDF：每張 A4 表單／照片頁各成一頁 */
 let pdfLibs=null;
 const loadPdfLibs=()=>pdfLibs||(pdfLibs=(async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')})().catch(e=>{pdfLibs=null;throw e}));
+let pdfReady=null;
 async function downloadPDF(btn){
   const pa=$('#printArea'),sheets=[...pa.querySelectorAll('.psheets .sheet')];if(!sheets.length)return;
+  const tl=($('#title').innerText||'').split('\n').map(x=>x.trim()).filter(Boolean),pdfName=((tl[0]==='列印預覽'&&tl[1]?tl[1]:tl[0])||'施工查驗').replace(/[\\/:*?"<>|\s]+/g,'_')+'_'+today()+'.pdf';
+  // 手機：PDF 已產生好，這次點擊直接開分享／儲存
+  if(pdfReady&&pdfReady.btn===btn){const r=await saveBlob(pdfReady.blob,pdfReady.name,'application/pdf','.pdf','PDF 檔');pdfReady=null;btn.textContent='⬇ 下載';toast(r==='cancel'?'已取消':'PDF '+SAVE_MSG[r]);return}
+  // 電腦：先選資料夾與檔名（必須在點擊當下開啟），再產生
+  let handle=null;
+  if(window.showSaveFilePicker){try{handle=await window.showSaveFilePicker({suggestedName:pdfName,types:[{description:'PDF 檔',accept:{'application/pdf':['.pdf']}}]})}catch(e){if(e&&e.name==='AbortError'){toast('已取消');return}}}
   const old=btn.textContent;btn.disabled=true;btn.textContent='產生中…';
   try{
     await loadPdfLibs();
@@ -2807,10 +2823,14 @@ async function downloadPDF(btn){
         const h=Math.min(pagePx,c.height-y),part=document.createElement('canvas');part.width=c.width;part.height=h;part.getContext('2d').drawImage(c,0,y,c.width,h,0,0,c.width,h);
         if(i||k)pdf.addPage();pdf.addImage(part.toDataURL('image/jpeg',0.9),'JPEG',0,0,W,h*W/c.width);
         if(ph<=H)break}}
-    const name=(($('#title').innerText||'').split('\n')[0]||'施工查驗').replace(/[\\/:*?"<>|\s]+/g,'_')+'_'+today()+'.pdf';
-    pdf.save(name);toast('PDF 已下載');
+    const name=pdfName;
+    const blob=pdf.output('blob');
+    if(handle){const w=await handle.createWritable();await w.write(blob);await w.close();toast('PDF '+SAVE_MSG.saved)}
+    else if(navigator.canShare&&/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)&&navigator.canShare({files:[new File([blob],name,{type:'application/pdf'})]})){
+      pdfReady={blob,name,btn};btn.disabled=false;btn.textContent='📤 儲存 PDF';toast('PDF 已產生，請再按「儲存 PDF」選擇存放位置');pa.classList.remove('pdfcap');return}
+    else{const r=await saveBlob(blob,name,'application/pdf','.pdf','PDF 檔');toast('PDF '+SAVE_MSG[r])}
   }catch(e){toast(navigator.onLine?'PDF 產生失敗，請改用「列印」→ 另存為 PDF':'需要網路才能產生 PDF，請改用「列印」→ 另存為 PDF')}
-  finally{pa.classList.remove('pdfcap');btn.disabled=false;btn.textContent=old}
+  finally{pa.classList.remove('pdfcap');btn.disabled=false;if(!pdfReady)btn.textContent=old}
 }
 function showPrint(list,back,title,editId){
   setTop(title,back);
@@ -2879,9 +2899,8 @@ async function doBackup(){
   await flush();if(Cloud.on){Cloud.migrate();Cloud.pending()}
   LS.set('lastBackupAt',new Date().toISOString());showLastBk();
   const blob=new Blob([JSON.stringify({app:'site-inspection',v:1,exported:new Date().toISOString(),projects,records})],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`施工查驗備份_${today()}.json`;
-  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  toast(Cloud.on?'備份檔已下載，雲端也已同步':'備份檔已下載（存在手機「下載」資料夾）');
+  const res=await saveBlob(blob,`施工查驗備份_${today()}.json`,'application/json','.json','備份檔');
+  toast(res==='cancel'?'已取消下載備份檔'+(Cloud.on?'（雲端已同步）':''):'備份檔'+SAVE_MSG[res]+(Cloud.on?'，雲端也已同步':''));
 }
 $('#impFile').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;

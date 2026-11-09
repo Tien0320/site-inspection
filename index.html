@@ -2562,7 +2562,7 @@ function slabSheet(r){
   const p=proj(r.projectId)||{},f=r.form,its=printSys?f.items.filter(x=>x.sys===printSys):f.items,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,P)=>`${cb(x[k+'D']!==''||x[k+'A']!=='',P.t.replace(/（.*）/,''))}：距${P.dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${P.refs.map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(equipName(x))}</div><div class="pp">
-    <div>${C.faces.map(s=>cb((isWallBox(r)?f.part:x.face)===s,s)).join(' ')}　位置：${u(posOf(x))}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
+    <div>位置：${u(posOf(x))}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
     <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${C.fix.map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${C.fix.map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
     <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${isWallBox(r)?'':cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')+' '}${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
     <div>${pos(x,'ew',C.pos1)}</div><div>${pos(x,'ns',C.pos2)}</div>

@@ -2428,15 +2428,18 @@ function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.fo
     tabs.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{slabTab=b.dataset.stab;renderSlab();const a=$('#addSlab');if(a)a.textContent=slabTab==='全部'?'＋ 新增一處':`＋ 新增一處（${slabTab}）`})}
   const shown=f.items.map((x,i)=>[x,i]).filter(([x])=>slabTab==='全部'||x.sys===slabTab);
   box.innerHTML=shown.length?shown.map(([x,i])=>slabItemHTML(i,x)).join(''):`<div class="empty">${slabTab==='全部'?'尚無資料':'尚無'+slabTab+'的接線盒'}，按下方「新增一處」。</div>`;
-  const c=$('#sbCount');if(c)c.textContent=f.items.length}
+  const c=$('#sbCount');if(c)c.textContent=f.items.length;if(cur&&cur.kind==='slab')$('#title').innerHTML=slabTitle(cur)}
 let slabTab='全部';
+/* 標題系統：依目前分頁；全部時依各處實際系統（全部同一系統就顯示該系統，混合則列出） */
+function slabTitle(r){const p=proj(r.projectId),C=slabCfg(r),ss=[...new Set(r.form.items.map(x=>x.sys==='其他'?(x.sysOther||'其他'):x.sys).filter(Boolean))];
+  const sys=slabTab!=='全部'?slabTab:ss.length?ss.join('／'):cat(r.cat).name;return `${esc(sys)}・${C.name}<span class="sub">${esc(p&&p.name)}</span>`}
 const SYS_KEY={'電氣':'elec','弱電':'low','消防':'fire','空調':'hvac','其他':'beam','給排水':'plumb'};
 let nextSlabTab='',printSys='';
 function viewSlab(r){
   slabTab=nextSlabTab||'全部';nextSlabTab='';
   const p=proj(r.projectId),f=r.form;
   const C=slabCfg(r);
-  setTop(`${cat(r.cat).name}・${C.name}<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  setTop(slabTitle(r),backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料</p>
     <div class="panel fields">

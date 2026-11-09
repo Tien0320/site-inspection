@@ -1247,7 +1247,7 @@ function dfPhotoText(r,p){
   else if(x){
     desc.push(`排水系統 ${x.name||''}樓板接頭安裝(編號${i+1})`);
     if(x.sizeD||x.sizeA)desc.push(`設計管徑:∅${strip(x.sizeD)} 實際管徑:∅${strip(x.sizeA)}`);
-    if((x.spec||[]).length)desc.push(`採用${x.spec.join(' ')}`);
+    if((x.spec||[]).length||x.color)desc.push(`採用${(x.spec||[]).join(' ')}${x.color?` (${x.color}色)`:''}`);
     if(x.space)desc.push(x.space);
     if(x.ewD||x.ewA)desc.push(`距離${x.ewDir||''}${x.ewRef||''} 設計${x.ewD||''}cm 實測${x.ewA||''}cm`);
     if(x.nsD||x.nsA)desc.push(`距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
@@ -2518,7 +2518,7 @@ function dfItemHTML(i,x){
       ${axisHTML(b,x)}</div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${fl('排水名稱',opts(b+'.name',DF_NAMES,'one',x.name),1)}
-      ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec),1)}
+      ${fl('配管規格',opts(b+'.spec',DF_SPEC,'many',x.spec)+opts(b+'.color',[['橘','橘色'],['灰','灰色']],'one',x.color),1)}
       <div class="fld"><span>管徑尺寸 ø</span><div class="meas"><label>設計值<div class="pm"><i>ø</i>${inp(b+'.sizeD',x.sizeD,'例：4"')}</div></label><label>實測值<div class="pm"><i>ø</i>${inp(b+'.sizeA',x.sizeA,'')}</div></label></div></div>
       <div class="fld wide"><span>配管銜接</span><div class="opts">${chk(b+'.screw','以螺絲鎖固定於鋼承鈑上',x.screw)}${chk(b+'.tied','鐵線綁紮固定',x.tied)}</div></div>
       ${posBlock('ew',['東側','西側'],'安裝位置（東西向）')}
@@ -2595,7 +2595,7 @@ function dfSheet(r){
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
     <div>${['頂版','底版'].map(s=>cb(dfFace(f)===s,s)).join(' ')}</div>
     <div>排水名稱：${DF_NAMES.map(s=>cb(x.name===s,s)).join(' ')}</div>
-    <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管徑尺寸：設計值：ø${u(String(x.sizeD||'').replace(/^[øØ]\s*/,''))}　實測值：ø${u(String(x.sizeA||'').replace(/^[øØ]\s*/,''))}</div>
+    <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管色：${['橘','灰'].map(c=>cb(x.color===c,c)).join(' ')}　管徑尺寸：設計值：ø${u(String(x.sizeD||'').replace(/^[øØ]\s*/,''))}　實測值：ø${u(String(x.sizeA||'').replace(/^[øØ]\s*/,''))}</div>
     <div>配管銜接：${cb(x.screw,'以螺絲鎖固定於鋼承鈑上')} ${cb(x.tied,'鐵線綁紮固定')}</div>
     <div>${pos(x,'ew',['東側','西側'],'安裝位置：')}</div>
     <div>${pos(x,'ns',['南側','北側'],'　　　　　')}</div>

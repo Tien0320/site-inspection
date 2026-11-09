@@ -2385,11 +2385,11 @@ const slabCfg=r=>isWallBox(r)?{name:'柱/牆接線盒',faces:['柱','牆'],fix:[
     pos1:{t:'出線盒安裝位置（東西向）',dirs:['東側','西側'],refs:['梁','柱','牆','出線盒']},
     pos2:{t:'出線盒安裝位置（南北向）',dirs:['南側','北側'],refs:['梁','柱','牆','出線盒']},
     lay:[['deck','配置於鋼承鈑及鋼絲網之中'],['rebar','配置於雙層鋼筋之中']],joint:'樓版配管以盒接頭銜接出線盒',in:'樓版',partPh:'例：頂板(R1F底板)預埋管-教研棟'};
-function slabItemHTML(i,x){
+function slabItemHTML(i,x,no){
   const C=slabCfg(cur),W=isWallBox(cur);
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
-    <div class="sphead"><span class="spno num">${i+1}</span><select class="syssel" data-path="${b}.sys" aria-label="系統" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${['電氣','弱電','消防','空調','其他'].map(t=>`<option ${t===x.sys?'selected':''}>${t}</option>`).join('')}</select>
+    <div class="sphead"><span class="spno num">${no||i+1}</span><select class="syssel" data-path="${b}.sys" aria-label="系統" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${['電氣','弱電','消防','空調','其他'].map(t=>`<option ${t===x.sys?'selected':''}>${t}</option>`).join('')}</select>
       ${axisHTML(b,x)}
       <label class="field grow"><span>空間編號名稱</span>${spaceInput(b,x,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
@@ -2427,7 +2427,7 @@ function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.fo
       return `<button type="button" class="${slabTab===t?'on':''}" data-stab="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}<span class="num">${n}</span></button>`}).join('');
     tabs.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{slabTab=b.dataset.stab;renderSlab();const a=$('#addSlab');if(a)a.textContent=slabTab==='全部'?'＋ 新增一處':`＋ 新增一處（${slabTab}）`})}
   const shown=f.items.map((x,i)=>[x,i]).filter(([x])=>slabTab==='全部'||x.sys===slabTab);
-  box.innerHTML=shown.length?shown.map(([x,i])=>slabItemHTML(i,x)).join(''):`<div class="empty">${slabTab==='全部'?'尚無資料':'尚無'+slabTab+'的接線盒'}，按下方「新增一處」。</div>`;
+  box.innerHTML=shown.length?shown.map(([x,i],k)=>slabItemHTML(i,x,k+1)).join(''):`<div class="empty">${slabTab==='全部'?'尚無資料':'尚無'+slabTab+'的接線盒'}，按下方「新增一處」。</div>`;
   const c=$('#sbCount');if(c)c.textContent=f.items.length;if(cur&&cur.kind==='slab')$('#title').innerHTML=slabTitle(cur)}
 let slabTab='全部';
 /* 標題系統：依目前分頁；全部時依各處實際系統（全部同一系統就顯示該系統，混合則列出） */

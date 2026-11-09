@@ -1334,8 +1334,7 @@ function drainPhotoText(r,p){
   const d=[];
   if(pp.kind==='vent'){
     d.push(`透氣管${pn}${pp.ventOf?'（'+pp.ventOf+'）':''}`);
-    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);
-      if(a&&a===b)d.push('支管、幹管 '+a);else{if(a)d.push('支管 '+a);if(b)d.push('幹管 '+b)}}
+    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);if(a)d.push('支管'+a);if(b)d.push('幹管'+b)}
     if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
     if(pp.hD||pp.hA)d.push(`管路高度 設計:${pp.hD||''}cm 實測:${pp.hA||''}cm`);
     if(pp.stackH)d.push(`接通氣立管 實測:${pp.stackH}cm（1m線上）`);
@@ -1343,14 +1342,15 @@ function drainPhotoText(r,p){
   }else{
     const t=pp.type==='其他'?(pp.typeOther||'其他'):pp.type;
     d.push(`排水管${pn}${t?'（'+t+'）':''}`);
-    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);
-      if(a&&a===b)d.push('支管、幹管 '+a);else{if(a)d.push('支管 '+a);if(b)d.push('幹管 '+b)}}
+    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);if(a)d.push('支管'+a);if(b)d.push('幹管'+b)}
     if(pp.flex)d.push(`撓性吊架：熱浸鍍鋅螺桿${pp.flexRod?' '+pp.flexRod:''}＋管束`);
     if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
     if(pp.spacing||pp.spacing2)d.push(`吊架間距 實測:${[pp.spacing,pp.spacing2].filter(Boolean).map(v=>v+'cm').join('　')}`);
     else if(pp.oneStep)d.push('吊架間距：僅一步（無間距）');
-    const s_=slopeOf(pp);if(s_)d.push(`洩水坡度：落差${s_.drop}cm÷長度${pp.len}cm＝${s_.pct.toFixed(2)}%${s_.need!=null?(s_.ok?`（≥${s_.need}% 符合）`:`（未達${s_.need}%）`):''}`);
-    if(pp.sweep)d.push('排水彎頭採順水型式');if(pp.elbow45)d.push('90°彎頭以45°×2銜接');if(pp.cap)d.push('管口有管帽封閉');
+    {const v=(x,u)=>x!==''&&x!=null?x+(u||'cm'):'';
+      if(pp.hiD||pp.hiA||pp.loD||pp.loA){d.push(`洩水坡度(1m線上) 高點 設計:${v(pp.hiD)} 實測:${v(pp.hiA)}`);d.push(`低點 設計:${v(pp.loD)} 實測:${v(pp.loA)}`)}
+      const s_=slopeOf(pp);if(s_)d.push(`管長${pp.len}cm 落差${s_.drop}cm 坡度${s_.pct.toFixed(2)}%${s_.need!=null?(s_.ok?`（≥${s_.need}% 符合）`:`（未達${s_.need}%）`):''}`);}
+    {const el=[pp.sweep?'排水彎頭採順水型式':'',pp.elbow45?'90°彎頭以45°×2銜接':''].filter(Boolean);if(el.length)d.push(el.join('/'))}if(pp.cap)d.push('管口有管帽封閉');
   }
   return {item,where,desc:d};
 }

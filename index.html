@@ -503,7 +503,10 @@ const MODES = [
 const modeOf = r => r.mode || 'work';
 const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name+(r.sub&&typeof SUB_NAME!=='undefined'?' '+SUB_NAME[r.sub]:'') : typN(r.cat,r.type).name;
 /* 樓板接線盒可含多系統：在各系統頁也列出含該系統接線盒的紀錄 */
-const inCat=(r,ck)=>r.cat===ck||(r.kind==='slab'&&typeof SYS_OF!=='undefined'&&!!SYS_OF[ck]&&(r.form?.items||[]).some(x=>x.sys===SYS_OF[ck]));
+/* 樓板／柱牆接線盒可含多系統：依各處實際選的系統歸類（沒選系統時才用建立時的類別） */
+const recUnits=list=>list.reduce((n,r)=>n+(modeOf(r)==='work'?Math.max(1,slabSyss(r).length):1),0); // 一張含多系統的接線盒算多筆（依系統各一張表）
+const slabSyss=r=>r.kind==='slab'?[...new Set((r.form?.items||[]).map(x=>x.sys).filter(Boolean))]:[];
+const inCat=(r,ck)=>{const ss=slabSyss(r);if(ss.length&&typeof SYS_OF!=='undefined')return ss.some(s=>s===SYS_OF[ck]||(ck==='beam'&&s==='其他'));return r.cat===ck};
 const backOf = r => (typeof zoneBack!=='undefined'&&zoneBack&&zoneBackId===r.id) ? zoneBack : modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
 /* 材料查驗：依材料種類分（不分大項） */
@@ -846,7 +849,7 @@ function viewHome(){
     <div class="row" style="margin-bottom:8px;align-items:center"><p class="label grow" style="margin:0">標案</p>${p?`<button class="btn small" id="toTrash" type="button">🗑 刪除暫存區${tn?`<span class="chip warn" style="margin-left:4px">${tn}</span>`:''}</button>`:''}</div>
     <div class="panel proj">
       ${projects.length?`<div class="pswitch" role="tablist" aria-label="切換標案">${projOrdered().map(x=>{
-          const n=records.filter(r=>r.projectId===x.id).length;
+          const n=recUnits(records.filter(r=>r.projectId===x.id));
           return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}">${PROJ_ICON[x.id]?`<span class="ipair">${PROJ_ICON[x.id]}<span class="itxt">`:''}<b>${esc(x.name).replace(/^(第二期)(醫療大樓)/,'$1<br>$2').replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span>${PROJ_ICON[x.id]?'</span></span>':''}</button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
@@ -860,14 +863,14 @@ function viewHome(){
     </div></section>`;
   if(p){
     const md=mode(LS.get('mode')||'work').key;
-    html+=`<section><p class="label">查驗類別</p><div class="mseg big" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=recs.filter(r=>modeOf(r)===m.key).length;
+    html+=`<section><p class="label">查驗類別</p><div class="mseg big" role="tablist" aria-label="查驗類別">${MODES.map(m=>{const n=recUnits(recs.filter(r=>modeOf(r)===m.key));
       return `<button role="tab" aria-selected="${m.key===md}" class="${m.key===md?'on':''}" data-m="${m.key}"><span class="ipair">${MODE_ICON[m.key]||''}<span class="itxt"><b>${m.name}</b><span class="num">${n} 筆</span></span></span></button>`}).join('')}</div></section>`;
     if(md==='mat')html+=[0].map(()=>`<section><p class="label">材料查驗・材料種類</p><div class="tiles">${MAT_TYPES.map(t=>{
       const rs=recs.filter(r=>modeOf(r)==='mat'&&r.type===t.key),ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--${t.color==='ink-2'?'ink-2':'c-'+t.color})" data-mat="${t.key}">
         <span class="ic">${MAT_ICON[t.key]}</span><span class="nm">${t.name}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`).join('');
-    else html+=`<section><p class="label">施工查驗・依部位</p><div class="pswitch">${Object.entries(ZONES).map(([k,Z])=>{const n=recs.filter(r=>Z.systems.some(([sk])=>zoneMatch(k,sk,r))).length;return `<button type="button" class="pbtn bigpick" data-zone="${k}"><b>${Z.name}</b><span>${Z.hint}</span><span class="num">${n} 筆</span></button>`}).join('')}</div></section><section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
+    else html+=`<section><p class="label">施工查驗・依部位</p><div class="pswitch">${Object.entries(ZONES).map(([k,Z])=>{const n=recUnits(recs.filter(r=>Z.systems.some(([sk])=>zoneMatch(k,sk,r))));return `<button type="button" class="pbtn bigpick" data-zone="${k}"><b>${Z.name}</b><span>${Z.hint}</span><span class="num">${n} 筆</span></button>`}).join('')}</div></section><section><p class="label">施工查驗・查驗大項</p><div class="tiles">${CATS.map(c=>{
       const rs=recs.filter(r=>inCat(r,c.key)&&modeOf(r)===md);
       const ng=rs.filter(r=>status(r).k==='ng').length;
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
@@ -895,7 +898,7 @@ function viewTrash(){
   $('#view').innerHTML=`<section><p class="muted" style="margin:0 0 10px">刪除的表單會在這裡保留 ${TRASH_DAYS} 天，期間可以復原；超過 ${TRASH_DAYS} 天會自動永久刪除（含照片）。</p>
     ${list.length?`<div class="list">${list.map(r=>{const c=cat(r.cat),t=typN(r.cat,r.type);return `<div class="rec trow" style="cursor:default">
       <span class="d">${esc(r.date)}</span>
-      <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)}</span><span class="chip warn" style="align-self:flex-start;margin-top:4px">剩 ${trashLeft(r)} 天自動刪除</span></span>
+      <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):(slabSyss(r).join('／')||c.name)+' · '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)}</span><span class="chip warn" style="align-self:flex-start;margin-top:4px">剩 ${trashLeft(r)} 天自動刪除</span></span>
       <span class="tbtns"><button class="btn small primary" data-restore="${r.id}">復原</button><button class="btn small danger" data-purge="${r.id}">永久刪除</button></span></div>`}).join('')}</div>`
       :'<div class="empty">刪除暫存區是空的。</div>'}</section>`;
   $('#view').onclick=async e=>{
@@ -907,7 +910,7 @@ function recRow(r){
   const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
   return `<button class="rec" data-rec="${r.id}">
     <span class="d">${esc(r.date)}</span>
-    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):c.name+' · '+(r.kind==='dfit'?'排水樓板接頭':t.name)+' · 施工'}</span></span>
+    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):(slabSyss(r).join('／')||c.name)+' · '+(r.kind==='dfit'?'排水樓板接頭':t.name)+' · 施工'}</span></span>
     <span class="chip ${s.k}">${s.t}</span></button>`;
 }
 function bindRecRows(){document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>go('rec-'+b.dataset.rec))}

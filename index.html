@@ -1280,7 +1280,7 @@ function mhdrHTML(r){
 const TEST_TAGS=['總覽','開始','結束'],TEST_SEQ=['總覽','開始','總覽','結束'];
 function testPhTag(r,p){if(p.tag)return p.tag;const row=(r.form.rows||[]).find(x=>x.id===p.ref);if(!row)return '';
   const un=bySeq(r).filter(q=>q.ref===p.ref&&!q.tag);return TEST_SEQ[un.indexOf(p)%4]||''}
-const STD_NOTE={press:'試驗壓力≧10kg/cm2，並保持壓力60分鐘無滲漏現象',drain:'3.3M滿水或≧0.33 kg/cm² 持水≧60分鐘',fire:'試驗壓力≧全閉揚程1.5倍，並保持壓力120分鐘無滲漏現象',dry:'空氣壓力≧2.8kg/cm2，持壓24小時減壓量≦0.1kg/cm2'};
+const STD_NOTE={press:'試驗壓力≧10kg/cm2，並保持壓力60分鐘無滲漏現象',drain:'3.3M滿水或≧0.33 kg/cm²\n持水≧60分鐘',fire:'試驗壓力≧全閉揚程1.5倍，並保持壓力120分鐘無滲漏現象',dry:'空氣壓力≧2.8kg/cm2，持壓24小時減壓量≦0.1kg/cm2'};
 const drVal=(pv,lv)=>[pv?`持壓壓力${pv} kg/cm²`:'',lv?`滿水水位${lv} M`:''].filter(Boolean).join(' ')||'持壓壓力 kg/cm²';
 function testPhotoText(r,p){
   const f=r.form,l=r.loc||{},row=(f.rows||[]).find(x=>x.id===p.ref),pn=(proj(r.projectId)||{}).name||'';
@@ -1305,7 +1305,7 @@ function testPhotoPages(r){
     <tr><td rowspan="8" class="dimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
     <tr><td class="dv">${esc(t.item)}</td></tr><tr><td class="dk">照片位置</td></tr><tr><td class="dv">${esc(t.where)}</td></tr>
     <tr><td class="dk">照片說明</td></tr><tr><td class="dv small" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>
-    <tr><td class="dk">備註</td></tr><tr><td class="dv small">${esc(t.note).replace('，','，<br>')}</td></tr></table>`}).join('')}</div></div>`).join('');
+    <tr><td class="dk">備註</td></tr><tr><td class="dv small">${esc(t.note).replace('，','，<br>').replace(/\n/g,'<br>')}</td></tr></table>`}).join('')}</div></div>`).join('');
 }
 function photoPages(r){
   if(r.kind==='wtest'&&(r.projectId==='p-nycuh-dorm'||r.projectId==='p-nycuh-med2'))return testPhotoPages(r);

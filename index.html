@@ -235,6 +235,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .pht button{position:absolute;right:3px;top:3px;border:0;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1.5;padding:0 5px;cursor:pointer}
 .phadd{width:76px;height:76px;border:1.5px dashed var(--ink-2);border-radius:6px;display:grid;place-items:center;font-size:13px;color:var(--ink-2);cursor:pointer;background:var(--surface)}
 .phadd:hover{border-color:var(--accent);color:var(--accent)}
+.dropon{outline:3px dashed var(--accent)!important;outline-offset:2px;background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
 .phsheet .pgrid{margin-top:6px}
 .dphoto{display:flex;flex-direction:column;gap:0}.dphoto .dph+.dph{margin-top:-1px}
@@ -1128,7 +1129,7 @@ const phNo=(r,p)=>sortedPhotos(r).indexOf(p)+1;
 function phStrip(ref){
   const r=cur,list=sortedPhotos(r).filter(p=>p.ref===ref);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片 ${phNo(r,p)}">✕</button></div>`).join('')}
-    <label class="phadd">＋照片<input type="file" accept="image/*" multiple hidden data-phref="${ref}"></label></div>`;
+    <label class="phadd" title="點選或把照片拖曳到這裡">＋照片<input type="file" accept="image/*" multiple hidden data-phref="${ref}"></label></div>`;
 }
 function refreshPhotos(){
   if(!cur)return;
@@ -1138,12 +1139,31 @@ function refreshPhotos(){
 function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
 document.addEventListener('change',async e=>{
   const inp=e.target;if(!inp.matches||!inp.matches('input[type=file][data-phref]')||!cur)return;
-  const r=cur,ref=inp.dataset.phref,tag=inp.dataset.phtag||'',files=[...inp.files];inp.value='';
+  const files=[...inp.files];inp.value='';
+  await addPhotos(inp.dataset.phref,inp.dataset.phtag||'',files);
+});
+async function addPhotos(ref,tag,files){
+  const r=cur;if(!r)return;files=files.filter(f=>/^image\//.test(f.type));if(!files.length){toast('請拖曳照片檔');return}
   let seq=Math.max(0,...(r.photos||[]).map(p=>p.seq||0));
   toast(`處理 ${files.length} 張照片…`);
   for(const f of files){try{r.photos.push({id:uid(),src:await shrink(f),cap:'',ref,seq:++seq,...(tag?{tag}:{})})}catch(err){toast('照片讀取失敗')}}
   refreshPhotos();dirty();
-});
+}
+/* 電腦版：把照片檔拖曳到「＋照片」或各項目的照片區即可加入 */
+function dropZone(t){
+  if(!t||!t.closest)return null;
+  const lab=t.closest('label');if(lab){const i=lab.querySelector('input[type=file][data-phref]');if(i)return {el:lab,inp:i}}
+  const box=t.closest('.fld,.phstrip,section,.prow,.space');
+  if(box){const i=box.querySelector('input[type=file][data-phref]:not([data-phtag])')||box.querySelector('input[type=file][data-phref]');if(i)return {el:box,inp:i}}
+  return null;
+}
+let dzEl=null;const dzOff=()=>{if(dzEl){dzEl.classList.remove('dropon');dzEl=null}};
+document.addEventListener('dragover',e=>{if(!cur||!e.dataTransfer||![...e.dataTransfer.types].includes('Files'))return;const z=dropZone(e.target);
+  e.preventDefault();e.dataTransfer.dropEffect=z?'copy':'none';if(z&&z.el!==dzEl){dzOff();dzEl=z.el;dzEl.classList.add('dropon')}else if(!z)dzOff()});
+document.addEventListener('dragleave',e=>{if(!e.relatedTarget)dzOff()});
+document.addEventListener('drop',async e=>{if(!e.dataTransfer||![...e.dataTransfer.types].includes('Files'))return;e.preventDefault();const z=dropZone(e.target);dzOff();
+  if(!z||!cur){toast('請把照片拖到「＋照片」或項目的照片區');return}
+  await addPhotos(z.inp.dataset.phref,z.inp.dataset.phtag||'',[...e.dataTransfer.files]);});
 document.addEventListener('click',e=>{
   const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(['p-nycuh-med2','p-nycuh-dorm'].includes(cur.projectId)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
   const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;

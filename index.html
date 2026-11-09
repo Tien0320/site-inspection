@@ -2395,7 +2395,7 @@ function slabItemHTML(i,x,no){
   const C=slabCfg(cur),W=isWallBox(cur);
   const b=`items.${i}`,diff=(k)=>`<span class="muted" data-sd="${k}${i}">${sleeveDiff(x[k+'D'],x[k+'A'])}</span>`;
   return `<div class="space">
-    <div class="sphead"><span class="spno num">${no||i+1}</span><select class="syssel" data-path="${b}.sys" aria-label="系統" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${['電氣','弱電','消防','空調','其他'].map(t=>`<option ${t===x.sys?'selected':''}>${t}</option>`).join('')}</select>
+    <div class="sphead"><span class="spno num">${no||i+1}</span><span class="syspill" style="--c:var(--c-${SYS_KEY[x.sys]||'beam'})">${esc(x.sys)}</span>
       ${axisHTML(b,x)}
       <label class="field grow"><span>空間編號名稱</span>${spaceInput(b,x,'例：4F-診間3')}</label>
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
@@ -2428,7 +2428,7 @@ function slabItemHTML(i,x,no){
 }
 const layArr=x=>Array.isArray(x.layIn)?x.layIn:(x.layIn?[x.layIn]:[]);
 function renderSlab(){const f=cur.form,box=$('#slabs');if(!box)return;f.items.forEach(x=>{x.layIn=layArr(x);if(typeof x.over30==='boolean')x.over30=x.over30?'是':'';if(typeof x.bends3==='boolean')x.bends3=x.bends3?'是':''});
-  const tabs=$('#topTabs .stabs');if(tabs)$('#topTabs').hidden=false;
+  slabTab='全部';f.items.forEach(x=>{x.sys=recSys(cur)});const tabs=null;
   if(tabs){tabs.innerHTML=['全部','電氣','弱電','消防','空調','其他'].map(t=>{const n=t==='全部'?f.items.length:f.items.filter(x=>x.sys===t).length;
       return `<button type="button" class="${slabTab===t?'on':''}" data-stab="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}<span class="num">${n}</span></button>`}).join('');
     tabs.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{slabTab=b.dataset.stab;renderSlab();const a=$('#addSlab');if(a)a.textContent=slabTab==='全部'?'＋ 新增一處':`＋ 新增一處（${slabTab}）`})}
@@ -2440,6 +2440,23 @@ let slabTab='全部';
 function slabTitle(r){const p=proj(r.projectId),C=slabCfg(r),ss=[...new Set(r.form.items.map(x=>x.sys==='其他'?(x.sysOther||'其他'):x.sys).filter(Boolean))];
   const sys=slabTab!=='全部'?slabTab:ss.length?ss.join('／'):cat(r.cat).name;return `${esc(sys)}・${C.name}<span class="sub">${esc(p&&p.name)}</span>`}
 const SYS_KEY={'電氣':'elec','弱電':'low','消防':'fire','空調':'hvac','其他':'beam','給排水':'plumb'};
+/* 一張樓板／柱牆接線盒只放一個系統：系統依建立時的類別 */
+const recSys=r=>(typeof SYS_OF!=='undefined'&&SYS_OF[r.cat])||'其他';
+/* 舊資料：同一張含多個系統時，依系統拆成各自一張（id 固定，多台裝置拆出來的會是同一張） */
+async function splitSlabRecords(){
+  let changed=false;
+  for(const r of [...records]){if(r.kind!=='slab'||!r.form||!Array.isArray(r.form.items))continue;
+    const ss=[...new Set(r.form.items.map(x=>x.sys||recSys(r)))];if(ss.length<2)continue;
+    const keep=ss.includes(recSys(r))?recSys(r):ss[0];
+    for(const sy of ss){if(sy===keep)continue;const key=SYS_KEY[sy]||'beam',nid=r.id+'_'+key;
+      const its=r.form.items.filter(x=>(x.sys||recSys(r))===sy),ids=new Set(its.map(x=>x.id));
+      if(!records.some(x=>x.id===nid)&&!trash.some(x=>x.id===nid)){
+        const n=JSON.parse(JSON.stringify({...r,photos:[]}));n.id=nid;n.cat=key;n.form.items=JSON.parse(JSON.stringify(its));
+        n.photos=(r.photos||[]).filter(p=>ids.has(p.ref)).map(p=>({...p}));n.updated=Date.now();delete n.isNew;
+        records.push(n);await DB.put('records',n)}
+      r.form.items=r.form.items.filter(x=>!ids.has(x.id));r.photos=(r.photos||[]).filter(p=>!ids.has(p.ref))}
+    r.cat=SYS_KEY[keep]&&SYS_KEY[keep]!=='plumb'?SYS_KEY[keep]:r.cat;r.updated=Date.now();await _put('records',r);Cloud.push('records',r);changed=true}
+  return changed}
 let nextSlabTab='',printSys='';
 function viewSlab(r){
   slabTab=nextSlabTab||'全部';nextSlabTab='';
@@ -2504,7 +2521,7 @@ function viewSlab(r){
   };
   $('#addSlab').onclick=()=>{const last=f.items[f.items.length-1];let n;
     if(last){n=JSON.parse(JSON.stringify(last));n.id=uid();n.pos='';n.space='';n.qty='';n.ewA='';n.nsA='';n.ewD='';n.nsD='';n.px1='';n.px2='';n.py1='';n.py2=''}else n=newSlabItem(SYS_OF[r.cat]);
-    if(slabTab!=='全部'&&n.sys!==slabTab){n.sys=slabTab;if(n.equip&&n.equip!=='其他'&&!(EQUIP_OF[n.sys]||[]).includes(n.equip))n.equip=''}
+    n.sys=recSys(r);if(false){n.sys=slabTab;if(n.equip&&n.equip!=='其他'&&!(EQUIP_OF[n.sys]||[]).includes(n.equip))n.equip=''}
     f.items.push(n);renderSlab();dirty();const all=document.querySelectorAll('#slabs .space');all[all.length-1]?.scrollIntoView({behavior:'smooth',block:'start'})};
   saveBar(r);
 }
@@ -2916,7 +2933,7 @@ const Cloud={
       for(const id of [...map.keys()])if(!ids.has(id)&&seen.has(id)){map.delete(id);_del(kind,id)} // 其他裝置已刪除
       ids.forEach(i=>seen.add(i));this.keep(k,seen);
     }
-    if(isR){records=[...map.values()];trash=[];splitTrash();purgeTrash()}else projects=[...map.values()];
+    if(isR){records=[...map.values()];trash=[];splitTrash();purgeTrash();splitSlabRecords().then(c=>{if(c)softRender()})}else projects=[...map.values()];
     this.pending();softRender();
   },
   docOf(kind,v){return clean(kind==='records'?{...v,photos:(v.photos||[]).map(p=>({id:p.id,cap:p.cap||'',ref:p.ref||'',seq:p.seq||0,...(p.tag?{tag:p.tag}:{})}))}:v)},
@@ -3060,7 +3077,7 @@ function startUpdateCheck(){
 
 /* ---------- 啟動 ---------- */
 (async()=>{
-  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');splitTrash();purgeTrash();
+  try{await DB.open();projects=await DB.all('projects');records=await DB.all('records');splitTrash();purgeTrash();await splitSlabRecords();
     // 首次開啟時預設建立標案（固定 id，手機與電腦匯入備份時會合併成同一個；刪除後不會再自動出現）
     if(!LS.get('seeded2')){
       const PRESET=[

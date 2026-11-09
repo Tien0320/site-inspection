@@ -257,9 +257,9 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .phmv{position:absolute;right:4px;top:4px;display:flex;flex-direction:column;gap:4px;z-index:2}.phmv button{width:34px;height:30px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:15px;cursor:pointer}
 .mph .mimg img{width:100%;height:74mm;object-fit:cover;display:block;margin:0 auto}
 .mph .mk{text-align:center;font-weight:400;height:7mm;padding:1px 6px}
-.mph .mrow{height:8mm;padding:1px 6px;font-size:10pt;line-height:1.25}
-.mph .mdesc{vertical-align:top;line-height:1.3;height:53mm;font-size:10pt;padding:0}
-.mph .dls{display:flex;flex-direction:column;justify-content:center;height:53mm;padding:2px 6px}.mph .dl{line-height:1.45}
+.mph .mrow{height:8mm;max-height:8mm;padding:1px 6px;font-size:10pt;line-height:1.2;overflow:hidden}
+.mph .mdesc{vertical-align:top;line-height:1.3;height:53mm;font-size:10pt;padding:0;overflow:hidden}
+.mph .dls{display:flex;flex-direction:column;justify-content:center;height:53mm;padding:2px 6px;overflow:hidden}.mph .dl{line-height:1.3}
 .dph{width:100%;border-collapse:collapse;table-layout:fixed;break-inside:avoid}
 .dph td{border:1px solid #000;padding:1px 5px;font-size:10pt;vertical-align:middle;line-height:1.2}
 .dph .dimg{padding:1px;text-align:center;height:74mm}
@@ -1334,8 +1334,8 @@ function drainPhotoText(r,p){
   const d=[];
   if(pp.kind==='vent'){
     d.push(`透氣管${pn}${pp.ventOf?'（'+pp.ventOf+'）':''}`);
-    if(pp.brDesign||pp.brSize)d.push('支管 '+sz(pp.brDesign,pp.brSize,pp.brBrand));
-    if(pp.mnDesign||pp.mnSize)d.push('幹管 '+sz(pp.mnDesign,pp.mnSize,pp.mnBrand));
+    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);
+      if(a&&a===b)d.push('支管、幹管 '+a);else{if(a)d.push('支管 '+a);if(b)d.push('幹管 '+b)}}
     if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
     if(pp.hD||pp.hA)d.push(`管路高度 設計:${pp.hD||''}cm 實測:${pp.hA||''}cm`);
     if(pp.stackH)d.push(`接通氣立管 實測:${pp.stackH}cm（1m線上）`);
@@ -1343,8 +1343,8 @@ function drainPhotoText(r,p){
   }else{
     const t=pp.type==='其他'?(pp.typeOther||'其他'):pp.type;
     d.push(`排水管${pn}${t?'（'+t+'）':''}`);
-    if(pp.brDesign||pp.brSize)d.push('支管 '+sz(pp.brDesign,pp.brSize,pp.brBrand));
-    if(pp.mnDesign||pp.mnSize)d.push('幹管 '+sz(pp.mnDesign,pp.mnSize,pp.mnBrand));
+    {const a=sz(pp.brDesign,pp.brSize,pp.brBrand),b=sz(pp.mnDesign,pp.mnSize,pp.mnBrand);
+      if(a&&a===b)d.push('支管、幹管 '+a);else{if(a)d.push('支管 '+a);if(b)d.push('幹管 '+b)}}
     if(pp.flex)d.push(`撓性吊架：熱浸鍍鋅螺桿${pp.flexRod?' '+pp.flexRod:''}＋管束`);
     if(pp.rigid)d.push('剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓');
     if(pp.spacing||pp.spacing2)d.push(`吊架間距 實測:${[pp.spacing,pp.spacing2].filter(Boolean).map(v=>v+'cm').join('　')}`);
@@ -1374,9 +1374,15 @@ function slabPhotoPages(r){
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
     <tr><td rowspan="4" class="mimg" data-imgph="${p.id}"><div class="phmv"><button type="button" data-mv="-1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往上移">▲</button><button type="button" data-mv="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="往下移">▼</button><button type="button" data-fit="1" data-mvid="${p.id}" data-mvr="${r.id}" aria-label="縮小／填滿" title="完整顯示（縮小）／填滿">${p.fit==='contain'?'⤢':'⤡'}</button></div>${p.src?`<img src="${p.src}" alt="" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
     <tr><td class="mrow">查驗項目:${esc(t.item)}</td></tr>
-    <tr><td class="mrow">照片位置:${esc(t.where)}</td></tr>
-    <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}"><div class="dls">${(t.desc.length?t.desc:['']).map(l=>`<div class="dl">${esc(l)||'&nbsp;'}</div>`).join('')}</div></td></tr>`}).join('')}</table></div>`).join('');
+    <tr><td class="mrow" style="font-size:${fitPt(['照片位置:'+t.where],72,7,10,7)}pt">照片位置:${esc(t.where)}</td></tr>
+    <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}" style="font-size:${fitPt(t.desc,72,51,10,6.5)}pt"><div class="dls">${(t.desc.length?t.desc:['']).map(l=>`<div class="dl">${esc(l)||'&nbsp;'}</div>`).join('')}</div></td></tr>`}).join('')}</table></div>`).join('');
 }
+/* 文字自動縮小，塞進固定大小的格子：w=格寬(mm)、h=格高(mm) */
+function fitPt(lines,w,h,max,min){max=max||10;min=min||6.5;
+  for(let f=max;f>=min;f-=0.5){const per=Math.max(4,Math.floor(w/(f*0.3528*1.02)));let n=0;
+    for(const l of lines){const len=[...String(l||'')].reduce((a,c)=>a+(/[\x00-\xff]/.test(c)?0.55:1),0);n+=Math.max(1,Math.ceil(len/per))}
+    if(n*f*0.3528*1.3<=h)return f}
+  return min}
 function mhdrHTML(r){
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(permitOf(pr)?{permit:permitOf(pr)}:{}),...(pr.no?{no:pr.no}:{})};
   return `<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>

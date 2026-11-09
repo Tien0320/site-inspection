@@ -234,6 +234,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .pht b{position:absolute;left:3px;top:3px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1.4;padding:0 5px;border-radius:4px;font-family:var(--mono)}
 .pht button{position:absolute;right:3px;top:3px;border:0;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1.5;padding:0 5px;cursor:pointer}
 .phadd{width:76px;height:76px;border:1.5px dashed var(--ink-2);border-radius:6px;display:grid;place-items:center;font-size:13px;color:var(--ink-2);cursor:pointer;background:var(--surface)}
+.okbtn{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
 .phadd:hover{border-color:var(--accent);color:var(--accent)}
 .dropon{outline:3px dashed var(--accent)!important;outline-offset:2px;background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
@@ -759,7 +760,8 @@ const cat=k=>k==='mat'?MAT_CAT:CATS.find(c=>c.key===k);
 const typ=k=>TYPES.find(t=>t.key===k)||MAT_TYPES.find(t=>t.key===k)||{key:k,name:k,code:''};
 const proj=id=>projects.find(p=>p.id===id);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1800)}
-function status(r){
+function status(r){const b=baseStatus(r);return r.done&&b.k!=='ng'?{k:'ok',t:'完成'}:b}
+function baseStatus(r){
   if(r.kind==='wtest') return testStatus(r);
   if(r.kind==='sleeve'||r.kind==='slab'||r.kind==='dfit') return sleeveStatus(r);
   if(r.kind==='drain'){
@@ -1087,7 +1089,7 @@ function viewRec(id){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn" id="doneRec">完成</button>
+    <button class="btn okbtn" id="doneRec">完成</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
@@ -1372,7 +1374,7 @@ function dirty(){
   document.querySelectorAll('#items .item').forEach(el=>el.classList.toggle('ng',cur.items[+el.dataset.i]?.result==='ng'));
 }
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('#doneRec');if(!b||!cur)return;const r=cur;
-  await flush();if(r.isNew){delete r.isNew;await DB.put('records',r)}toast('已完成並儲存');go(backOf(r))});
+  r.done=true;delete r.isNew;r.updated=Date.now();await flush();await DB.put('records',r);toast('已完成並儲存');go(backOf(r))});
 async function flush(){
   clearTimeout(saveTimer); if(!cur)return;
   if(!records.includes(cur)){cur=null;return} // 已刪除的紀錄不再存回
@@ -1602,7 +1604,7 @@ function viewDrain(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn" id="doneRec">完成</button>
+    <button class="btn okbtn" id="doneRec">完成</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
@@ -2168,7 +2170,7 @@ function saveBar(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn" id="doneRec">完成</button>
+    <button class="btn okbtn" id="doneRec">完成</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();printSys=(r.kind==='slab'&&slabTab!=='全部')?slabTab:'';go('print-'+r.id)};

@@ -344,6 +344,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .pbody{padding:4px 12px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 8px 8px}
 .sptools{gap:6px}
 .dsheet{font-size:10pt}
+.psheet{font-size:10pt}.psheet h3{margin-bottom:6px}.psheet .dsub{font-size:11pt;margin:2px 0 4px}.psheet .ul{display:inline-block;min-width:3.5em;border-bottom:1px solid #000;text-align:center}.psheet .pfoot{text-align:right;margin-top:8mm;font-size:10pt}
 .dsheet .dsub{font-size:11pt;padding-left:3em;margin:2px 0}
 .dsheet .dsub+table{margin-top:4px}
 .dsheet .dtop{display:flex;justify-content:space-between;font-size:9.5pt;margin-bottom:2px}
@@ -1071,7 +1072,7 @@ function viewRec(id){
   const bind=(sel,key)=>{if($(sel))$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
   bind('#f_date','date');if($('#f_stage'))bind('#f_stage','stage');
   if(modeOf(r)!=='mat')bindLoc(r);
-  r.mat=r.mat||{};['name','brand','spec','qty','ref'].forEach(k=>{const el=$('#m_'+k);if(el)el.addEventListener('input',e=>{r.mat[k]=e.target.value;dirty()})});bind('#f_loc','location');bind('#f_insp','inspector');
+  r.mat=r.mat||{};['name','brand','spec','qty','ref','use'].forEach(k=>{const el=$('#m_'+k);if(el)el.addEventListener('input',e=>{r.mat[k]=e.target.value;dirty()})});bind('#f_loc','location');bind('#f_insp','inspector');
   bind('#f_defect','defect');bind('#f_fix','fix');bind('#f_rdate','recheckDate');bind('#f_recheck','recheck');bind('#f_remark','remark');
   $('#allOk').onclick=()=>{r.items.forEach(i=>{if(!i.result)i.result='ok'});renderItems();dirty()};
   $('#addItem').onclick=()=>{const t=$('#newItem').value.trim();if(!t)return;r.items.push({id:uid(),t,s:'',result:'',note:'',custom:true});$('#newItem').value='';renderItems();dirty()};
@@ -1113,7 +1114,10 @@ function renderPhotos(){
   if(r.photos.some(p=>!p.src&&!p.tried))ensurePhotos(r).then(n=>{if(n&&cur===r)refreshPhotos()});
 }
 /* ---- 照片：依附項目、依上傳順序 ---- */
-const sortedPhotos=r=>[...(r.photos||[])].sort((a,b)=>(a.seq||0)-(b.seq||0));
+const bySeq=r=>[...(r.photos||[])].sort((a,b)=>(a.seq||0)-(b.seq||0));
+const sortedPhotos=r=>{const l=bySeq(r);if(!(typeof isPipeMat==='function'&&isPipeMat(r)))return l;
+  const ri=p=>{const i=(r.pipes||[]).findIndex(x=>x.id===p.ref);return i<0?999:i},ti=p=>{const t=phTag(r,p);return t?PIPE_TAGS.indexOf(t):9};
+  return l.map((p,i)=>[p,ri(p),ti(p),i]).sort((a,b)=>a[1]-b[1]||a[2]-b[2]||a[3]-b[3]).map(a=>a[0])};
 const phNo=(r,p)=>sortedPhotos(r).indexOf(p)+1;
 function phStrip(ref){
   const r=cur,list=sortedPhotos(r).filter(p=>p.ref===ref);
@@ -1122,16 +1126,16 @@ function phStrip(ref){
 }
 function refreshPhotos(){
   if(!cur)return;
-  if(cur.kind==='dfit'){if($('#dfits'))renderDf()}else if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else if($('#items'))renderItems();
+  if(cur.kind==='dfit'){if($('#dfits'))renderDf()}else if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else{if($('#items'))renderItems();if($('#pipeRows'))renderPipeRows()}
   renderPhotos();
 }
 function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
 document.addEventListener('change',async e=>{
   const inp=e.target;if(!inp.matches||!inp.matches('input[type=file][data-phref]')||!cur)return;
-  const r=cur,ref=inp.dataset.phref,files=[...inp.files];inp.value='';
+  const r=cur,ref=inp.dataset.phref,tag=inp.dataset.phtag||'',files=[...inp.files];inp.value='';
   let seq=Math.max(0,...(r.photos||[]).map(p=>p.seq||0));
   toast(`處理 ${files.length} 張照片…`);
-  for(const f of files){try{r.photos.push({id:uid(),src:await shrink(f),cap:'',ref,seq:++seq})}catch(err){toast('照片讀取失敗')}}
+  for(const f of files){try{r.photos.push({id:uid(),src:await shrink(f),cap:'',ref,seq:++seq,...(tag?{tag}:{})})}catch(err){toast('照片讀取失敗')}}
   refreshPhotos();dirty();
 });
 document.addEventListener('click',e=>{
@@ -1255,7 +1259,7 @@ function slabPhotoPages(r){
   let list=sortedPhotos(r);
   if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
   if(!list.length)return '';
-  const textOf=r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
+  const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=`<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
@@ -1652,7 +1656,8 @@ const pipeSpecText=r=>[...new Set((r.pipes||[]).map(x=>x.size).filter(Boolean))]
 function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
   return `<label class="field"><span>材料名稱</span><select id="m_name">${Object.keys(C.names).map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
-      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>`;
+      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>
+      <label class="field"><span>用途（照片查驗項目）</span><input type="text" id="m_use" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}"></label>`;
 }
 /* 電線材料：名稱、廠牌固定，規格下拉 */
 const WIRE_SPECS=['2.0mm','3.5mm²','5.5mm²'];
@@ -1675,7 +1680,7 @@ function stdFor(type,size){
 }
 const isPipeType=k=>!!PIPE_GROUPS[k]||PIPE_TYPES.includes(k);
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
-const newPipeRow=type=>({id:uid(),brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
+const newPipeRow=type=>({id:uid(),sub:type,brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
 function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}
 function pipeMemSave(type,row){if(!row.size)return;const m=pipeMem();m[`${type}|${row.size}`]={brand:row.brand,print:row.print,color:row.color};LS.set('pipeMem',JSON.stringify(m))}
 const PIPE_PRINT_SEED={'pvcB|4':{brand:'南亞',print:'南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M'}};
@@ -1698,17 +1703,73 @@ function pipeJudge(row){
 }
 const mark=v=>v==null?'':v?'<b class="good">✓</b>':'<b class="bad">✗</b>';
 const tolTxt=row=>{const p=row.tPlus,m=row.tMinus;return `${row.stdT||''}${p!==''&&p!=null?' +'+p:''}${m&&+m?' −'+m:''}${(p===''||p==null)&&row.stdT?'（上限不規定）':''}`};
+/* 管材：每列可各自選管種；照片分 總覽／外徑／厚度／長度／外觀打印 */
+const PIPE_TAGS=['總覽','外徑','厚度','長度','外觀打印'];
+const rowKey=(r,x)=>x&&x.sub&&PIPE_STD[x.sub]&&(!PIPE_GROUPS[r.type]||PIPE_GROUPS[r.type].includes(x.sub))?x.sub:stdKey(r);
+const STD_NAME={pvcA:'CNS1298 A管',pvcB:'CNS1298 B管',pvcE:'CNS1302 E管',gi6445:'CNS6445',gi4626:'CNS4626'};
+const psi=v=>v?`ψ${v}〞`:'';
+const odTxt=x=>x.stdOD?`${x.stdOD}mm±${x.odTol||0}mm`:'';
+const thkTxt=x=>x.stdT?`${x.stdT}mm${x.tPlus!==''&&x.tPlus!=null?'+'+x.tPlus+'mm':''}${x.tMinus&&+x.tMinus?'−'+x.tMinus+'mm':''}`:'';
+const lenTxt=x=>x.stdL?`${r2(num(x.stdL)*100)}cm`:'';
+const pipeUse=r=>(r.mat&&r.mat.use)||(r.type==='gi'?'給水系統用管':stdKey(r)==='pvcE'?'電線導管':'排水系統用管');
+function phTag(r,p){if(p.tag)return p.tag;const row=(r.pipes||[]).find(x=>x.id===p.ref);if(!row)return '';
+  const un=bySeq(r).filter(q=>q.ref===p.ref&&!q.tag),used=new Set(bySeq(r).filter(q=>q.ref===p.ref&&q.tag).map(q=>q.tag)),free=PIPE_TAGS.filter(t=>!used.has(t));
+  return free[un.indexOf(p)]||''}
+function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
+  return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
+    <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
+function pipePhotoText(r,p){
+  const x=(r.pipes||[]).find(q=>q.id===p.ref),item=pipeUse(r),where=r.location||'材料放置區';
+  let desc=[];
+  if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
+  else if(x){const t=phTag(r,p),k=rowKey(r,x);
+    if(t==='外徑')desc=[`設計值外徑: ${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
+    else if(t==='厚度')desc=[`設計值厚度: ${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
+    else if(t==='長度')desc=[`設計值長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
+    else if(t==='外觀打印')desc=['外觀打印:',x.print||''];
+    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,'外觀打印:',x.print||''];
+  }
+  return {item,where,desc:desc.filter(v=>v!=='')};
+}
+/* 表5-5 材料／設備品質抽驗紀錄表（比照 表5-5 PVC 管） */
+function pipeSheet(r){
+  const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`,ul=(x,u)=>`<span class="ul">${x?v(x):'&emsp;&emsp;&emsp;'}</span>${u}`;
+  const ks=[...new Set((r.pipes||[]).map(x=>rowKey(r,x)))];
+  const name=r.type==='gi'?'鍍鋅鋼管':`PVC ${pipeUse(r).replace(/系統用管$/,'')}管`;
+  const rows=(r.pipes||[]).map(x=>{const k=rowKey(r,x),j=pipeJudge(x),S=PIPE_STD[k]||{};
+    const kind=S.pvc?`PVC管 ${psi(x.size)}<br>${SUB_NAME[k]||''}${x.color?`<br>(${v(x.color)}色)`:''}`:`鍍鋅鋼管 ${psi(x.size)}<br>${STD_NAME[k]||''}`;
+    const std=[`廠牌:${v(x.brand)}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:<br>${v(x.print)}`].join('<br>');
+    const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.size,'管徑:'+psi(x.size)),cb(!!k,'標準:'+(STD_NAME[k]||'').replace(/ .*/,''))+(S.pvc?' '+cb(!!k,SUB_NAME[k]||''):''),
+      `外徑:${ul(x.od,'mm')}${j.od===false?' ×':''}`,`厚度:${ul(x.t,'mm')}${j.t===false?' ×':''}`,`長度:${ul(x.len,'cm')}${j.len===false?' ×':''}`,cb(!!x.print,'外觀打印:')+`<br>${v(x.print)}`].join('<br>');
+    return `<tr><td class="c">${kind}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${j.all==null?'':j.all?'合格':'不合格'}</td></tr>`}).join('');
+  const isD=r.projectId==='p-nycuh-dorm';
+  return `<div class="sheet psheet">
+    <h3>表5-5材料/設備品質抽驗紀錄表</h3>
+    <div class="dsub">表單編號：${isD?'10812-SB-':''}</div>
+    <table><colgroup><col style="width:15%"><col style="width:33%"><col style="width:8%"><col style="width:30%"><col style="width:14%"></colgroup>
+      <tr><td class="k">工程名稱</td><td colspan="4">${v(p.name)}</td></tr>
+      <tr><td class="k">材料/設備名稱</td><td colspan="2">${v(name)}</td><td class="k">檢查日期</td><td class="c">${rocDate(r.date)}</td></tr>
+      <tr><th>抽驗項目</th><th>抽驗標準</th><th>抽驗<br>數量</th><th>抽驗值</th><th>抽驗結果</th></tr>
+      ${rows}
+      <tr><td></td><td class="c">以下空白</td><td></td><td></td><td></td></tr>
+      <tr><td class="k">說明</td><td colspan="4" class="small">1.『抽驗結果』為抽驗值與抽驗標準之比較，填寫『合格』、『不合格』。<br>2.抽驗不合格則登錄至「材料設備檢（試）驗管制總表」第○項進行追蹤改善</td></tr>
+    </table>
+    <div class="dsign"><div>監造主任：</div><div>監造人員簽名：</div></div>
+    <div class="pfoot">${v(p.sup||'')}${/劉培森/.test(p.sup||'')?'<br>Ricky Liu &amp; Associates':''}</div>
+  </div>`;
+}
 function renderPipeRows(){
   const r=cur,box=$('#pipeRows');if(!box)return;
   const S=PIPE_STD[stdKey(r)];r.pipes=r.pipes||[];
   const fb=PIPE_MAT[r.type]&&PIPE_MAT[r.type].brand;if(fb)r.pipes.forEach(x=>x.brand=fb);
   const prEx=S.pvc?'例：南亞 CNS1298 1052 一般流體用(非自來水)PVC-U厚管VP(B) 20℃ 使用壓力0.75MPa R73045 100mm×5M':`例：高興昌 ${S.steel==='4626'?'CNS4626 STPG370 SCH40':'CNS6445 SGP'} 鍍鋅 4" 6M`;
-  box.innerHTML=r.pipes.length?r.pipes.map((x,n)=>{const j=pipeJudge(x);
+  box.innerHTML=r.pipes.length?r.pipes.map((x,n)=>{const j=pipeJudge(x),S=PIPE_STD[rowKey(r,x)];
     const f=(k,ph)=>`<input type="text" inputmode="decimal" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     const fa=(k,ph,q)=>`<input type="text" inputmode="decimal" class="${j[q]===false?'bad':''}" data-pk="${k}" data-pn="${n}" value="${esc(x[k])}" placeholder="${ph}">`;
     return `<div class="prow ${j.all===false?'ng':''}">
       <div class="prow-h"><b class="num">${n+1}</b>
         <select data-pk="size" data-pn="${n}"><option value="">選管徑</option>${pipeSizes(r).map(v=>`<option value="${v}" ${x.size===v?'selected':''}>${v} 吋</option>`).join('')}</select>
+        ${PIPE_GROUPS[r.type]?`<select data-pk="sub" data-pn="${n}" aria-label="管種">${PIPE_GROUPS[r.type].map(k=>`<option value="${k}" ${k===rowKey(r,x)?'selected':''}>${SUB_NAME[k]}</option>`).join('')}</select>`:''}
         ${S.pvc?`<select data-pk="color" data-pn="${n}"><option value="">管色</option>${['橘','灰'].map(v=>`<option ${x.color===v?'selected':''}>${v}</option>`).join('')}</select>`:''}
         <span class="grow"></span>
         <span data-pres="${n}">${j.all==null?'':j.all?'<span class="chip ok">合格</span>':'<span class="chip ng">不合格</span>'}</span>
@@ -1724,20 +1785,21 @@ function renderPipeRows(){
           <label>外徑 mm <span data-pj="od${n}">${mark(j.od)}</span>${fa('od','實測外徑','od')}</label>
           <label>厚度 mm <span data-pj="t${n}">${mark(j.t)}</span>${fa('t','實測厚度','t')}</label>
           <label>長度 cm <span data-pj="len${n}">${mark(j.len)}</span>${fa('len','實測長度','len')}</label>
-          <label>進場數量<input type="text" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="40M"></label>
+          <label>抽驗數量<input type="text" inputmode="numeric" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="1"></label>
         </div>
       </div>
       <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
       <div class="pextra">
         <label>廠牌<input type="text" data-pk="brand" data-pn="${n}" value="${esc(x.brand)}" placeholder="南亞" ${fb?'readonly':''}></label>
         <label>外觀打印（管身印字，各管徑不同）<textarea data-pk="print" data-pn="${n}" rows="2" placeholder="${prEx}">${esc(x.print)}</textarea></label>
-      </div></div>`}).join('')
+      </div>
+      <div class="fld"><span>此管材照片（依序：總覽、外徑、厚度、長度、外觀打印）</span>${pipePhStrip(r,x)}</div></div>`}).join('')
     :'<div class="empty">尚無管材，按「新增一種管徑」。</div>';
   box.oninput=e=>{
     const el=e.target,k=el.dataset.pk;if(!k)return;const n=+el.dataset.pn,row=r.pipes[n];if(!row)return;
     row[k]=el.value;
-    if(k==='size'){pipeApplyStd(stdKey(r),row);renderPipeRows();dirty();return}
-    if(['brand','print','color'].includes(k))pipeMemSave(stdKey(r),row);
+    if(k==='size'||k==='sub'){pipeApplyStd(rowKey(r,row),row);if(k==='sub')refreshPhotos();else renderPipeRows();dirty();return}
+    if(['brand','print','color'].includes(k))pipeMemSave(rowKey(r,row),row);
     const j=pipeJudge(row);
     ['od','t','len'].forEach(q=>{const s_=box.querySelector(`[data-pj="${q}${n}"]`);if(s_)s_.innerHTML=mark(j[q]);
       const inp=box.querySelector(`[data-pk="${q}"][data-pn="${n}"]`);if(inp)inp.classList.toggle('bad',j[q]===false)});
@@ -1751,12 +1813,12 @@ function renderPipeRows(){
   box.onclick=e=>{const b=e.target.closest('[data-pdel]');if(!b)return;
     if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}
     r.pipes.splice(+b.dataset.pdel,1);renderPipeRows();dirty()};
-  const add=$('#addPipe');if(add)add.onclick=()=>{r.pipes.push(newPipeRow(stdKey(r)));renderPipeRows();dirty()};
+  const add=$('#addPipe');if(add)add.onclick=()=>{const last=r.pipes[r.pipes.length-1];r.pipes.push(newPipeRow(last?rowKey(r,last):stdKey(r)));renderPipeRows();dirty()};
   const sub=$('#pipeSub');if(sub)sub.onchange=e=>setPipeSub(r,e.target.value);
   const nm=$('#m_name');if(nm&&nm.tagName==='SELECT')nm.addEventListener('change',e=>setPipeSub(r,PIPE_MAT[r.type].names[e.target.value]));
 }
 function setPipeSub(r,k){r.sub=k;if(PIPE_MAT[r.type]){r.mat=r.mat||{};r.mat.name=subName(r.type,k)}const st=r.items.find(i=>i.t==='標準');if(st)st.s=`CNS 編號及管種符合設計圖說：${PIPE_STD[r.sub].label}`;
-    r.pipes.forEach(x=>{if(x.size){if(PIPE_STD[r.sub].sizes[x.size])pipeApplyStd(r.sub,x);else{if(!pipeSizes(r).includes(x.size))x.size='';['stdOD','odTol','stdT','tPlus','tMinus','stdL'].forEach(k=>x[k]='')}}});
+    r.pipes.forEach(x=>{x.sub=r.sub;if(x.size){if(PIPE_STD[r.sub].sizes[x.size])pipeApplyStd(r.sub,x);else{if(!pipeSizes(r).includes(x.size))x.size='';['stdOD','odTol','stdT','tPlus','tMinus','stdL'].forEach(k=>x[k]='')}}});
     dirty();const y=scrollY;render();scrollTo(0,y);
 }
 function pipeTable(r){
@@ -2562,7 +2624,7 @@ function showPrint(list,back,title,editId){
       ${editId?`<button class="btn primary" id="doEdit">編輯</button>`:''}
       <button class="btn ${editId?'':'primary'}" id="doPrint">列印</button></div>
     ${list.length===1&&list[0].kind==='slab'&&list[0].form.items.some(x=>x.sys)?`<div class="stabs psys" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 10px">${['全部','電氣','弱電','消防','空調','其他'].filter(t=>t==='全部'||list[0].form.items.some(x=>x.sys===t)).map(t=>`<button type="button" class="${(printSys||'全部')===t?'on':''}" data-psys="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}</button>`).join('')}</div>`:''}
-    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
+    <div style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):isPipeMat(r)?pipeSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
   const bar=document.createElement('div');bar.className='printbar';
   bar.innerHTML=`<div class="savebar-in">${editId?`<button class="btn" id="doEdit2" type="button">編輯</button>`:''}<span class="grow"></span><button class="btn primary" id="doPrint2" type="button">列印</button></div>`;

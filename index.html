@@ -1263,16 +1263,51 @@ function slabPhotoPages(r){
   const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
-  const hdr=`<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
-    <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
-    <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;
+  const hdr=mhdrHTML(r);
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
     <tr><td rowspan="4" class="mimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="mk">照片說明</td></tr>
     <tr><td class="mrow">查驗項目:${esc(t.item)}</td></tr>
     <tr><td class="mrow">照片位置:${esc(t.where)}</td></tr>
     <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>`}).join('')}</table></div>`).join('');
 }
+function mhdrHTML(r){
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  return `<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
+    <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
+    <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;
+}
+/* 試水：施工查驗照片（比照 1150806 9F 給水／排水持壓照片）：右欄 查驗項目／照片位置／照片說明／備註，每頁 3 張 */
+const TEST_TAGS=['總覽','開始','結束'],TEST_SEQ=['總覽','開始','總覽','結束'];
+function testPhTag(r,p){if(p.tag)return p.tag;const row=(r.form.rows||[]).find(x=>x.id===p.ref);if(!row)return '';
+  const un=bySeq(r).filter(q=>q.ref===p.ref&&!q.tag);return TEST_SEQ[un.indexOf(p)%4]||''}
+const STD_NOTE={press:'試驗壓力≧10kg/cm2，並保持壓力60分鐘無滲漏現象',drain:'持壓試驗0.33 kg/cm2，持壓≧60分鐘壓力無降',fire:'試驗壓力≧全閉揚程1.5倍，並保持壓力120分鐘無滲漏現象',dry:'空氣壓力≧2.8kg/cm2，持壓24小時減壓量≦0.1kg/cm2'};
+function testPhotoText(r,p){
+  const f=r.form,l=r.loc||{},row=(f.rows||[]).find(x=>x.id===p.ref),pn=(proj(r.projectId)||{}).name||'';
+  const item=`${pn.replace(/興建工程$/,'')}施工配管查驗`;
+  let ar=[];if(row){testRowFix(row);ar=uniq(row.gs.map(g=>(g.area||'').replace(/\s*\/\s*/,' Line ')))}
+  const where=[l.floor,ar.join('、'),l.part].filter(Boolean).join(' ');
+  const k=row?rowStd(f,row):stdsOf(f)[0],note=STD_NOTE[k]||'';
+  if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/),note};
+  if(!row)return {item,where,desc:[],note};
+  const t=testPhTag(r,p),j=testJudge(f,row),title=k==='drain'?`${testSysName(row)}排水滿水持壓試驗`:k==='press'?'給水管持壓試驗':testC(k).name;
+  const list=row.gs.map(g=>[g.space,gName(g)].filter(Boolean).join(' ')).filter(Boolean);
+  let desc;
+  if(t==='開始')desc=k==='drain'?[title,`開始時間：${row.t0||''}`,`持壓壓力${row.p0||''} kg/cm2`]:[`開始時間: ${row.t0||''}`,`壓力${row.p0||''} kg`];
+  else if(t==='結束')desc=k==='drain'?[title,`結束時間：${row.t1||''}`,`持壓壓力${row.p1||''} kg/cm2 /持壓${j.dur==null?'':j.dur}分鐘`]:[`結束時間: ${row.t1||''}`,`持壓${j.dur==null?'':j.dur}分鐘 ; 壓力${row.p1||''} kg`];
+  else desc=[title,...(k==='drain'?[]:list)];
+  return {item,where,desc,note};
+}
+function testPhotoPages(r){
+  const list=bySeq(r).map(p=>[p,(r.form.rows||[]).findIndex(x=>x.id===p.ref)]).sort((a,b)=>(a[1]<0?999:a[1])-(b[1]<0?999:b[1])).map(a=>a[0]);
+  if(!list.length)return '';const hdr=mhdrHTML(r),pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
+  return pages.map(pg=>`<div class="sheet mphoto">${hdr}<div class="dphoto" style="margin-top:4mm">${pg.map(p=>{const t=testPhotoText(r,p);return `<table class="dph"><colgroup><col style="width:66%"><col style="width:34%"></colgroup>
+    <tr><td rowspan="8" class="dimg">${p.src?`<img src="${p.src}" alt="">`:'<div class="noimg">照片未載入</div>'}</td><td class="dk">查驗項目</td></tr>
+    <tr><td class="dv">${esc(t.item)}</td></tr><tr><td class="dk">照片位置</td></tr><tr><td class="dv">${esc(t.where)}</td></tr>
+    <tr><td class="dk">照片說明</td></tr><tr><td class="dv small" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>
+    <tr><td class="dk">備註</td></tr><tr><td class="dv small">${esc(t.note).replace('，','，<br>')}</td></tr></table>`}).join('')}</div></div>`).join('');
+}
 function photoPages(r){
+  if(r.kind==='wtest'&&(r.projectId==='p-nycuh-dorm'||r.projectId==='p-nycuh-med2'))return testPhotoPages(r);
   if(r.projectId==='p-nycuh-dorm'||r.projectId==='p-nycuh-med2')return slabPhotoPages(r);
   const list=sortedPhotos(r);if(!list.length)return '';
   const pr=proj(r.projectId)||{},per=6,pages=[];
@@ -1920,7 +1955,7 @@ function testJudge(f,row){
     if(p0!=null)chk.push(p0>=2.8||(msg.push(`空氣壓 ${p0} kg/cm² 未達 2.8 kg/cm²`),false));
     if(p0!=null&&p1!=null)chk.push(p0-p1<=0.1+1e-9||(msg.push(`減壓量 ${r2(p0-p1)} kg/cm² 超過 0.1 kg/cm²`),false));
   }
-  if(dur!=null)chk.push(dur>=need||(msg.push(`持壓時間 ${durTxt(dur)}，未達 ${durTxt(need)}`),false));
+  if(dur!=null)chk.push(dur>=need||(msg.push(`持壓時間 ${dur}分鐘，未達 ${need}分鐘`),false));
   const auto=chk.length?(chk.every(Boolean)?'ok':'ng'):'';
   return {dur,auto,res:row.res||auto,msg};
 }
@@ -2020,6 +2055,9 @@ function drNorm(x){const out=[];for(const g of x.gs){g.water='';if(!Array.isArra
 const uniq=a=>[...new Set(a.filter(Boolean))];
 const testSysName=x=>{testRowFix(x);return uniq(x.gs.flatMap(g=>Array.isArray(g.fxs)&&g.fxs.length?g.fxs.map(v=>v==='其他'?(g.fxOther||'其他'):v):[gName(g)])).join('、')};
 const testRowWhere=x=>{testRowFix(x);return uniq(x.gs.map(g=>[g.space,g.area].filter(Boolean).join(' '))).join('；')};
+function testPhStrip(r,x){const list=bySeq(r).filter(p=>p.ref===x.id);
+  return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(testPhTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
+    <div class="opts" style="margin-top:6px">${TEST_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}<label class="opt">＋照片（自動）<input type="file" accept="image/*" multiple hidden data-phref="${x.id}"></label></div>`}
 function renderTestRows(){
   const r=cur,f=r.form,box=$('#testRows');if(!box)return;
   const multi=stdsOf(f).length>1;
@@ -2052,7 +2090,7 @@ function renderTestRows(){
         <label>檢查結果<select data-tk="res" data-tn="${n}"><option value="">自動判定${j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':''}</option><option value="ok" ${x.res==='ok'?'selected':''}>○ 合格</option><option value="ng" ${x.res==='ng'?'selected':''}>× 不合格</option><option value="na" ${x.res==='na'?'selected':''}>／ 無此項目</option></select></label>
       </div>
       <div class="pwarn" data-tw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>
-      <div class="fld"><span>此系統照片</span>${phStrip(x.id)}</div></div>`}).join('')
+      <div class="fld"><span>此系統照片（依序：總覽、開始、總覽、結束）</span>${testPhStrip(r,x)}</div></div>`}).join('')
     :'<div class="empty">尚無試驗紀錄，按下方「新增下一組壓力錶」。</div>';
   box.oninput=e=>{const el=e.target;
     if(el.dataset.hm){const n=+el.dataset.tn,k=el.dataset.hm,row=f.rows[n];el.value=el.value.replace(/\D/g,'').slice(0,2);
@@ -2673,18 +2711,18 @@ function showPrint(list,back,title,editId){
   $('#doPrint2').onclick=()=>window.print();
   if(editId){const ed=()=>go('rec-'+editId);$('#doEdit2').onclick=ed;if($('#doEdit'))$('#doEdit').onclick=ed}
   // 照片說明可直接點選修改
-  pa.querySelectorAll('.mdesc[data-phid]').forEach(td=>{
+  pa.querySelectorAll('.mdesc[data-phid],.dv[data-phid]').forEach(td=>{
     td.contentEditable='true';td.title='點選即可修改照片說明';
     td.addEventListener('blur',async()=>{
       const rec=records.find(x=>x.id===td.dataset.rid),ph=rec&&rec.photos.find(q=>q.id===td.dataset.phid);if(!ph)return;
       const txt=td.innerText.split(/\n/).map(x=>x.trim()).filter(Boolean).join(' / ');
       const prev=ph.cap||'';ph.cap=txt;
-      const auto=(rec.kind==='sleeve'?sleevePhotoText:rec.kind==='dfit'?dfPhotoText:rec.kind==='slab'?slabPhotoText:genPhotoText)(rec,{...ph,cap:''}).desc.join(' / ');
+      const auto=(rec.kind==='wtest'&&/^p-nycuh/.test(rec.projectId)?testPhotoText:isPipeMat(rec)?pipePhotoText:rec.kind==='sleeve'?sleevePhotoText:rec.kind==='dfit'?dfPhotoText:rec.kind==='slab'?slabPhotoText:genPhotoText)(rec,{...ph,cap:''}).desc.join(' / ');
       if(txt===auto)ph.cap='';
       if(ph.cap!==prev){rec.updated=Date.now();await DB.put('records',rec);toast('照片說明已儲存')}
     });
   });
-  if(pa.querySelector('.mdesc[data-phid]')){const tip=pa.querySelector('.print-toolbar .muted');if(tip)tip.textContent+='　照片說明可直接點選修改。'}
+  if(pa.querySelector('.mdesc[data-phid],.dv[data-phid]')){const tip=pa.querySelector('.print-toolbar .muted');if(tip)tip.textContent+='　照片說明可直接點選修改。'}
   document.querySelectorAll('[data-psys]').forEach(b=>b.onclick=()=>{printSys=b.dataset.psys==='全部'?'':b.dataset.psys;const y=scrollY;showPrint(list,back,title,editId);scrollTo(0,y)});
 }
 async function viewPreview(id){

@@ -290,6 +290,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .updbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));z-index:60;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;padding:10px 18px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;max-width:calc(100vw - 32px)}
 .printbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 @media print{.printbar,.psys{display:none!important}}
+.pdfcap .phmv{display:none!important}.pdfcap .sheet{width:210mm!important;max-width:none!important;padding:10mm!important;box-shadow:none!important;overflow:visible!important}.pdfcap [contenteditable]{outline:0!important;background:none!important}
 .preview .mdesc[contenteditable=true]{cursor:text;outline:1px dashed #9ab;outline-offset:-3px}
 .preview .mdesc[contenteditable=true]:focus{outline:2px solid #e8792a;background:#fff8f0}
 @media print{.preview .mdesc{outline:0!important;background:none!important}}
@@ -2784,6 +2785,28 @@ document.addEventListener('click',async e=>{
   if(cur&&cur.id===rid)refreshPhotos();
   toast('照片已交換');
 },true);
+/* 下載 PDF：每張 A4 表單／照片頁各成一頁 */
+let pdfLibs=null;
+const loadPdfLibs=()=>pdfLibs||(pdfLibs=(async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')})().catch(e=>{pdfLibs=null;throw e}));
+async function downloadPDF(btn){
+  const pa=$('#printArea'),sheets=[...pa.querySelectorAll('.psheets .sheet')];if(!sheets.length)return;
+  const old=btn.textContent;btn.disabled=true;btn.textContent='產生中…';
+  try{
+    await loadPdfLibs();
+    pa.classList.add('pdfcap');if(document.activeElement)document.activeElement.blur();
+    const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});const W=210,H=297;
+    for(let i=0;i<sheets.length;i++){btn.textContent=`產生中 ${i+1}/${sheets.length}`;
+      const c=await html2canvas(sheets[i],{scale:2,backgroundColor:'#fff',useCORS:true,windowWidth:1000});
+      const ph=c.height*W/c.width,pagePx=Math.floor(c.width*H/W);
+      for(let y=0,k=0;y<c.height-2;y+=pagePx,k++){
+        const h=Math.min(pagePx,c.height-y),part=document.createElement('canvas');part.width=c.width;part.height=h;part.getContext('2d').drawImage(c,0,y,c.width,h,0,0,c.width,h);
+        if(i||k)pdf.addPage();pdf.addImage(part.toDataURL('image/jpeg',0.9),'JPEG',0,0,W,h*W/c.width);
+        if(ph<=H)break}}
+    const name=(($('#title').innerText||'').split('\n')[0]||'施工查驗').replace(/[\\/:*?"<>|\s]+/g,'_')+'_'+today()+'.pdf';
+    pdf.save(name);toast('PDF 已下載');
+  }catch(e){toast(navigator.onLine?'PDF 產生失敗，請改用「列印」→ 另存為 PDF':'需要網路才能產生 PDF，請改用「列印」→ 另存為 PDF')}
+  finally{pa.classList.remove('pdfcap');btn.disabled=false;btn.textContent=old}
+}
 function showPrint(list,back,title,editId){
   setTop(title,back);
   $('#view').hidden=true;
@@ -2798,9 +2821,10 @@ function showPrint(list,back,title,editId){
     <div class="psheets" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):isPipeMat(r)?pipeSheet(r):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
   const bar=document.createElement('div');bar.className='printbar';
-  bar.innerHTML=`<div class="savebar-in">${editId?`<button class="btn" id="doEdit2" type="button">編輯</button>`:''}<span class="grow"></span><button class="btn primary" id="doPrint2" type="button">列印</button></div>`;
+  bar.innerHTML=`<div class="savebar-in">${editId?`<button class="btn" id="doEdit2" type="button">編輯</button>`:''}<span class="grow"></span><button class="btn" id="doPdf2" type="button">⬇ 下載</button><button class="btn primary" id="doPrint2" type="button">列印</button></div>`;
   pa.appendChild(bar);
   $('#doPrint2').onclick=()=>window.print();
+  $('#doPdf2').onclick=e=>downloadPDF(e.currentTarget);
   if(editId){const ed=()=>go('rec-'+editId);$('#doEdit2').onclick=ed;if($('#doEdit'))$('#doEdit').onclick=ed}
   // 照片說明可直接點選修改
   pa.querySelectorAll('.mdesc[data-phid],.dv[data-phid]').forEach(td=>{

@@ -141,6 +141,7 @@ textarea{min-height:72px;resize:vertical}
 .bkwrap{display:inline-flex;flex-direction:column;align-items:center;gap:2px;margin-right:6px}.bkwrap .muted{font-size:11px}
 .chipx{border:0;background:transparent;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:12px}
 .tsheet hr.tsep{border:0;border-top:1px dashed #000;margin:2px 0}
+.fld.dm2{display:grid!important;grid-template-columns:1fr 1fr;gap:10px 14px;align-items:start}.dm2>.fld{min-width:0}
 .tgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}.tgrp-h{display:flex;gap:6px;align-items:center}.tgrp-h select,.tgrp-h input{flex:1;min-width:0;min-height:40px}.tgrp-h .muted{font-size:12px;white-space:nowrap}
 .tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
@@ -1509,10 +1510,11 @@ function pipeHTML(si,pi,p,n){
     const s=slopeOf(p);
     body=`
     ${fl('管別',opts(b+'.type',['污水管','廢水管','除濕機+電熱水管','其他'],'one',p.type)+(p.type==='其他'?inp(b+'.typeOther',p.typeOther,'請填管別'):''),1)}
+    <div class="fld wide dm2">
     ${fl('支管 設計值 Ø',opts(b+'.brDesign',D_BR,'one',p.brDesign))}
-    ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',D_BR,'one',p.brSize))}
+    ${fl('支管 實測值（實際規格）',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',D_BR,'one',p.brSize))}
     ${fl('幹管 設計值 Ø',opts(b+'.mnDesign',D_MN,'one',p.mnDesign))}
-    ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',D_MN,'one',p.mnSize))}
+    ${fl('幹管 實測值（實際規格）',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',D_MN,'one',p.mnSize))}</div>
     ${fl('吊架型式',`<div class="opts">${chk(b+'.flex','撓性吊架：熱浸鍍鋅螺桿＋管束',p.flex)}</div>${p.flex?opts(b+'.flexRod',['3/8"','1/2"'],'one',p.flexRod):''}<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}</div>`,1)}
     ${fl('吊架、支撐間距規定',opts(b+'.spacingRule',[['1.5','1½" 以下每 1.5M 內一處'],['2.0','2" 以上每 2.0M 內一處，轉折處加強固定']],'many',p.spacingRule),1)}
     ${fl('吊架間距（cm）',`<div class="sp2"><label>⑴${inp(b+'.spacing',p.spacing,'cm',1)}</label><label>⑵${inp(b+'.spacing2',p.spacing2||'',' cm',1)}</label></div><div class="opts">${chk(b+'.oneStep','僅一步（無間距）',p.oneStep)}</div>`)}
@@ -1531,10 +1533,11 @@ function pipeHTML(si,pi,p,n){
     body=`
     ${fl('透氣管',opts(b+'.ventOf',['污水','廢水'],'one',p.ventOf))}
     ${fl('方向標示',opts(b+'.flow',['正確','不正確'],'one',p.flow))}
+    <div class="fld wide dm2">
     ${fl('支管 設計值 Ø',opts(b+'.brDesign',V_BR,'one',p.brDesign))}
-    ${fl('支管 實際規格',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',V_BR,'one',p.brSize))}
+    ${fl('支管 實測值（實際規格）',opts(b+'.brBrand',BRANDS,'many',p.brBrand)+opts(b+'.brSize',V_BR,'one',p.brSize))}
     ${fl('幹管 設計值 Ø',opts(b+'.mnDesign',V_MN,'one',p.mnDesign))}
-    ${fl('幹管 實際規格',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',V_MN,'one',p.mnSize))}
+    ${fl('幹管 實測值（實際規格）',opts(b+'.mnBrand',BRANDS,'many',p.mnBrand)+opts(b+'.mnSize',V_MN,'one',p.mnSize))}</div>
     ${fl('吊架',`<div class="opts">${chk(b+'.rigid','剛性吊架：50×50×5mm 熱浸鍍鋅角鋼＋U型螺栓',p.rigid)}${chk(b+'.oneStep','吊架間距：僅一步（無間距）',p.oneStep)}</div>`,1)}
     <div class="fld wide"><span>管路高度及通氣立管（cm）</span>
       <div class="meas">

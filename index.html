@@ -237,6 +237,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .phadd{width:76px;height:76px;border:1.5px dashed var(--ink-2);border-radius:6px;display:grid;place-items:center;font-size:13px;color:var(--ink-2);cursor:pointer;background:var(--surface)}
 .okbtn{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
 .phadd:hover{border-color:var(--accent);color:var(--accent)}
+.pht{touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}.pht img{-webkit-user-drag:none;pointer-events:none}.phdragsrc{opacity:.35}.phghost{position:fixed;z-index:50;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.4);transform:scale(1.08)}.phdropon{outline:3px solid var(--accent)!important;outline-offset:2px}body.phdragging{cursor:grabbing;user-select:none}
 .dropon{outline:3px dashed var(--accent)!important;outline-offset:2px;background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
 .ph .phn{font-weight:700;color:var(--ink-2);align-self:center;padding:0 4px}
 .phsheet .pgrid{margin-top:6px}
@@ -1160,6 +1161,35 @@ async function addPhotos(ref,tag,files){
   for(const f of files){try{r.photos.push({id:uid(),src:await shrink(f),cap:'',ref,seq:++seq,...(tag?{tag}:{})})}catch(err){toast('照片讀取失敗')}}
   refreshPhotos();dirty();
 }
+/* 表單內照片縮圖可拖曳調整順序，也可拖到另一處（滑鼠或手指按住拖曳） */
+let phDrag=null;
+const phIdOf=el=>{const b=el&&el.querySelector('[data-phdel]');return b&&b.dataset.phdel};
+function phDropTarget(x,y){const el=document.elementFromPoint(x,y);if(!el)return null;
+  const t=el.closest('.pht');if(t&&phIdOf(t)&&phIdOf(t)!==phDrag.id)return {thumb:t};
+  const z=el.closest('.phstrip,.fld,.phadd');if(z){const i=(z.closest('.fld')||z).querySelector('input[type=file][data-phref]');if(i)return {ref:i.dataset.phref,zone:z}}
+  return null}
+document.addEventListener('pointerdown',e=>{const t=e.target.closest&&e.target.closest('.pht');if(!t||!cur||e.target.closest('button')||e.button>0)return;
+  const id=phIdOf(t);if(!id)return;phDrag={id,t,x:e.clientX,y:e.clientY,on:false,pid:e.pointerId,timer:null};
+  if(e.pointerType!=='mouse')phDrag.timer=setTimeout(()=>{if(phDrag&&!phDrag.on)startPhDrag(e.clientX,e.clientY)},350)});
+function startPhDrag(x,y){const d=phDrag;d.on=true;d.t.classList.add('phdragsrc');const g=d.t.cloneNode(true);g.className='pht phghost';document.body.appendChild(g);d.g=g;movePhGhost(x,y);document.body.classList.add('phdragging')}
+function movePhGhost(x,y){const d=phDrag;if(!d.g)return;d.g.style.left=(x-38)+'px';d.g.style.top=(y-38)+'px';
+  document.querySelectorAll('.phdropon').forEach(n=>n.classList.remove('phdropon'));const tg=phDropTarget(x,y);if(tg)(tg.thumb||tg.zone).classList.add('phdropon')}
+document.addEventListener('pointermove',e=>{const d=phDrag;if(!d||e.pointerId!==d.pid)return;
+  if(!d.on){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>8){if(e.pointerType==='mouse')startPhDrag(e.clientX,e.clientY);else{clearTimeout(d.timer);phDrag=null}}return}
+  e.preventDefault();movePhGhost(e.clientX,e.clientY)},{passive:false});
+document.addEventListener('touchmove',e=>{if(phDrag&&phDrag.on)e.preventDefault()},{passive:false});
+const endPhDrag=async e=>{const d=phDrag;if(!d)return;clearTimeout(d.timer);phDrag=null;if(!d.on)return;
+  d.t.classList.remove('phdragsrc');d.g&&d.g.remove();document.body.classList.remove('phdragging');document.querySelectorAll('.phdropon').forEach(n=>n.classList.remove('phdropon'));
+  window.__phJustDragged=Date.now();
+  phDrag={id:d.id};const tg=e&&e.clientX!=null?phDropTarget(e.clientX,e.clientY):null;phDrag=null;if(!tg||!cur)return;
+  const r=cur,ph=r.photos.find(q=>q.id===d.id);if(!ph)return;
+  const order=bySeq(r);
+  if(tg.thumb){const other=r.photos.find(q=>q.id===phIdOf(tg.thumb));if(!other)return;
+    const fromRef=ph.ref;ph.ref=other.ref;if(ph.ref!==fromRef&&ph.tag)delete ph.tag;
+    const a=order.indexOf(ph),b=order.indexOf(other);order.splice(a,1);order.splice(order.indexOf(other)+(a<b&&fromRef===other.ref?1:0),0,ph)}
+  else{if(ph.ref!==tg.ref&&ph.tag)delete ph.tag;ph.ref=tg.ref;order.splice(order.indexOf(ph),1);order.push(ph)}
+  order.forEach((q,i)=>q.seq=i+1);refreshPhotos();dirty();toast('照片已移動')};
+document.addEventListener('pointerup',endPhDrag);document.addEventListener('pointercancel',()=>{const d=phDrag;if(d){clearTimeout(d.timer);if(d.on){d.t.classList.remove('phdragsrc');d.g&&d.g.remove();document.body.classList.remove('phdragging')}phDrag=null}});
 /* 電腦版：把照片檔拖曳到「＋照片」或各項目的照片區即可加入 */
 function dropZone(t){
   if(!t||!t.closest)return null;
@@ -1176,7 +1206,8 @@ document.addEventListener('drop',async e=>{if(!e.dataTransfer||![...e.dataTransf
   if(!z||!cur){toast('請把照片拖到「＋照片」或項目的照片區');return}
   await addPhotos(z.inp.dataset.phref,z.inp.dataset.phtag||'',[...e.dataTransfer.files]);});
 document.addEventListener('click',e=>{
-  const t=e.target.closest&&e.target.closest('.pht img');if(t&&cur){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(['p-nycuh-med2','p-nycuh-dorm'].includes(cur.projectId)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
+  if(window.__phJustDragged&&Date.now()-window.__phJustDragged<400)return;
+  const t=e.target.closest&&!e.target.closest('button')&&e.target.closest('.pht');if(t&&cur&&t.querySelector('img')){const id=t.closest('.pht').querySelector('[data-phdel]').dataset.phdel,ph=cur.photos.find(q=>q.id===id);if(ph){const v=prompt(['p-nycuh-med2','p-nycuh-dorm'].includes(cur.projectId)?'照片說明（用 / 分行；留空則自動產生）':'照片備註（列印在照片表「備註」欄）',ph.cap||'');if(v!=null){ph.cap=v.trim();dirty();toast('已加入備註')}}return}
   const b=e.target.closest&&e.target.closest('[data-phdel]');if(!b||!cur)return;
   e.preventDefault();
   if(!b.dataset.arm){b.dataset.arm='1';b.textContent=b.textContent==='✕'?'刪?':'確定刪除';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent=b.closest('.pht')?'✕':'刪除'}},2500);return}

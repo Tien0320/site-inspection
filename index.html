@@ -2057,6 +2057,7 @@ function renderTestRows(){
     if(el.dataset.hm){const n=+el.dataset.tn,k=el.dataset.hm,row=f.rows[n];el.value=el.value.replace(/\D/g,'').slice(0,2);
       const h=box.querySelector(`[data-hm="${k}"][data-part="h"][data-tn="${n}"]`),m=box.querySelector(`[data-hm="${k}"][data-part="m"][data-tn="${n}"]`);
       if(el===h&&(el.value.length===2||+el.value>2)&&e.inputType!=='deleteContentBackward')m.focus();
+      else if(el===m&&el.value.length===2&&e.inputType!=='deleteContentBackward'){const all=[...el.closest('.prow').querySelectorAll('input:not([type=file]):not([readonly]),select')],nx=all[all.indexOf(el)+1];if(nx)nx.focus()}
       row[k]=h.value!==''&&m.value!==''?`${h.value.padStart(2,'0')}:${m.value.padStart(2,'0')}`:'';
       updTestRow(n,el);return}
     if(el.dataset.tgfx){const row=f.rows[+el.dataset.tn],g=row.gs[+el.dataset.si];if(el.value&&!g.fxs.includes(el.value))g.fxs.push(el.value);row.sys=testSysName(row);renderTestRows();

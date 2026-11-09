@@ -2009,6 +2009,8 @@ function testRowFix(x){
   const n=Math.max(fx.length,wa.length,sp.length,1);
   x.gs=Array.from({length:n},(_,i)=>({fx:fx[i]||(fx.length===1?fx[0]:''),fxOther:(fx[i]||(fx.length===1?fx[0]:''))==='其他'?(x.fxOther||''):'',water:wa[i]||wa[0]||'',space:(sp[i]||{}).space||'',area:(sp[i]||{}).area||''}));
 }
+let isDr=false;
+const DRAIN_FX=['廢水管','汙水管','除濕機+熱水器管','透氣管','其他'];
 const gName=g=>[g.fx==='其他'?(g.fxOther||'其他'):g.fx,g.water].filter(Boolean).join(' ');
 const uniq=a=>[...new Set(a.filter(Boolean))];
 const testSysName=x=>{testRowFix(x);return uniq(x.gs.map(gName)).join('、')};
@@ -2026,12 +2028,12 @@ function renderTestRows(){
         <span class="grow" data-tsys="${n}" style="font-size:14px;font-weight:700">${esc(testSysName(x))||'<span class="muted">請選器具及冷熱水</span>'}</span>
         <span data-tres="${n}">${j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:''}</span>
         <button type="button" class="btn small danger" data-tdel="${n}">刪除</button></div>
-      ${x.gs.map((g,si)=>{const at=`data-tn="${n}" data-si="${si}"`,sel=(k,list,ph)=>`<select data-tg="${k}" ${at}><option value="">${ph}</option>${list.map(o=>`<option ${o===g[k]?'selected':''}>${o}</option>`).join('')}</select>`;
-        return `<div class="tgrp"><div class="tgrp-h"><span class="muted">第 ${si+1} 組</span>${sel('fx',TEST_FX,'器具')}${sel('water',['冷水','熱水'],'冷／熱水')}${x.gs.length>1?`<button type="button" class="btn small danger" data-tgdel="${si}" data-tn="${n}" aria-label="刪除此組">✕</button>`:''}</div>
+      ${(isDr=rowStd(f,x)==='drain',x.gs.forEach(g=>{if(isDr&&g.water)g.water='';if(isDr&&g.fx&&!DRAIN_FX.includes(g.fx))g.fx='';if(!isDr&&g.fx&&!TEST_FX.includes(g.fx))g.fx=''}),'')}${x.gs.map((g,si)=>{const at=`data-tn="${n}" data-si="${si}"`,sel=(k,list,ph)=>`<select data-tg="${k}" ${at}><option value="">${ph}</option>${list.map(o=>`<option ${o===g[k]?'selected':''}>${o}</option>`).join('')}</select>`;
+        return `<div class="tgrp"><div class="tgrp-h"><span class="muted">第 ${si+1} 組</span>${isDr?sel('fx',DRAIN_FX,'排水管別'):sel('fx',TEST_FX,'器具')+sel('water',['冷水','熱水'],'冷／熱水')}${x.gs.length>1?`<button type="button" class="btn small danger" data-tgdel="${si}" data-tn="${n}" aria-label="刪除此組">✕</button>`:''}</div>
           ${g.fx==='其他'?`<input type="text" data-tg="fxOther" ${at} value="${esc(g.fxOther||'')}" placeholder="其他器具名稱">`:''}
           <div class="tgrp-h">${testSpaceInput(r,g.space,n,si)}<input type="text" data-tg="area" ${at} value="${esc(g.area||'')}" placeholder="區域／軸線"></div></div>`}).join('')}
       ${x.sys&&!x.gs.some(g=>g.fx||g.water)?`<div class="muted small">原系統別：${esc(x.sys)}</div>`:''}
-      <button type="button" class="btn addgrp" data-tgadd="${n}">＋ 新增一組（器具／冷熱水／空間）</button>
+      <button type="button" class="btn addgrp" data-tgadd="${n}">＋ 新增一組（${isDr?'排水管別':'器具／冷熱水'}／空間）</button>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${hm('t0')}</label><label>結束時間${hm('t1')}</label>
@@ -2071,7 +2073,7 @@ function renderTestRows(){
     if(!['p0','p1','lv1'].includes(el.dataset.tk)&&el.dataset.hm!=='t1')return;const n=+el.dataset.tn,j=testJudge(f,f.rows[n]);
     if(j.auto==='ng')toast(`⚠ 第 ${n+1} 個系統不符檢查標準，請確認`)};
   box.onclick=e=>{
-    const ad=e.target.closest('[data-tgadd]');if(ad){const row=f.rows[+ad.dataset.tgadd],last=row.gs[row.gs.length-1]||{};row.gs.push({fx:'',fxOther:'',water:last.water||'',space:'',area:''});renderTestRows();dirty();return}
+    const ad=e.target.closest('[data-tgadd]');if(ad){const row=f.rows[+ad.dataset.tgadd],last=row.gs[row.gs.length-1]||{};row.gs.push({fx:'',fxOther:'',water:rowStd(f,row)==='drain'?'':(last.water||''),space:'',area:''});renderTestRows();dirty();return}
     const sd=e.target.closest('[data-tgdel]');if(sd){const row=f.rows[+sd.dataset.tn];row.gs.splice(+sd.dataset.tgdel,1);row.sys=testSysName(row);renderTestRows();dirty();return}
     const b=e.target.closest('[data-tdel]');if(!b)return;
     if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}

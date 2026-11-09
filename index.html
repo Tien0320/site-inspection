@@ -2904,6 +2904,14 @@ async function downloadPDF(btn){
   }catch(e){toast(navigator.onLine?'PDF 產生失敗，請改用「列印」→ 另存為 PDF':'需要網路才能產生 PDF，請改用「列印」→ 另存為 PDF')}
   finally{pa.classList.remove('pdfcap');btn.disabled=false;if(!pdfReady)btn.textContent=old}
 }
+/* 照片說明：在 A4 實際寬度下量測，字盡量放大但不超出格子 */
+function fitPhotoText(pa){
+  if(!pa)return;const had=pa.classList.contains('pdfcap');pa.classList.add('pdfcap');
+  const fit=(el,box,max,min)=>{let f=max;el.style.fontSize=f+'pt';while(f>min&&(box.scrollHeight>box.clientHeight+1||box.scrollWidth>box.clientWidth+1)){f-=0.5;el.style.fontSize=f+'pt'}};
+  pa.querySelectorAll('.mph .mdesc').forEach(td=>{const dl=td.querySelector('.dls');if(dl)fit(td,dl,12,6.5)});
+  pa.querySelectorAll('.mph .mrow').forEach(td=>fit(td,td,11,7));
+  if(!had)pa.classList.remove('pdfcap')}
+addEventListener('beforeprint',()=>fitPhotoText($('#printArea')));
 function showPrint(list,back,title,editId){
   setTop(title,back);
   $('#view').hidden=true;
@@ -2923,6 +2931,7 @@ function showPrint(list,back,title,editId){
   $('#doPrint2').onclick=()=>window.print();
   $('#doPdf2').onclick=e=>downloadPDF(e.currentTarget);
   if(editId){const ed=()=>go('rec-'+editId);$('#doEdit2').onclick=ed;if($('#doEdit'))$('#doEdit').onclick=ed}
+  fitPhotoText(pa);
   // 照片說明可直接點選修改
   pa.querySelectorAll('.mdesc[data-phid],.dv[data-phid]').forEach(td=>{
     td.contentEditable='true';td.title='點選即可修改照片說明';
@@ -2933,6 +2942,7 @@ function showPrint(list,back,title,editId){
       const auto=(rec.kind==='wtest'&&/^p-nycuh/.test(rec.projectId)?testPhotoText:isPipeMat(rec)?pipePhotoText:rec.kind==='sleeve'?sleevePhotoText:rec.kind==='dfit'?dfPhotoText:rec.kind==='slab'?slabPhotoText:genPhotoText)(rec,{...ph,cap:''}).desc.join(' / ');
       if(txt===auto)ph.cap='';
       if(ph.cap!==prev){rec.updated=Date.now();await DB.put('records',rec);toast('照片說明已儲存')}
+      fitPhotoText(pa);
     });
   });
   if(pa.querySelector('.mdesc[data-phid],.dv[data-phid]')){const tip=pa.querySelector('.print-toolbar .muted');if(tip)tip.textContent+='　照片說明可直接點選修改。'}

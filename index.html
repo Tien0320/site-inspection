@@ -122,6 +122,7 @@ textarea{min-height:72px;resize:vertical}
 .syssel{align-self:center;width:auto;min-height:32px;padding:2px 8px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);font-weight:700;background:var(--surface)}
 .stabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .toptabs .stabs button{background:rgba(255,255,255,.12);border-color:transparent;color:var(--brand-ink)}
+.syspill{display:inline-block;border:1.5px solid var(--c);color:var(--c);border-radius:999px;padding:0 9px;font-size:12px;font-weight:700;line-height:20px;margin-right:4px;vertical-align:middle}
 .toptabs .stabs button .num{color:var(--brand-ink);opacity:.75}
 .toptabs .stabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .stabs button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;gap:6px}
@@ -877,7 +878,7 @@ function viewHome(){
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}${c.key==='beam'?'<small class="nmsub">穿樑/穿牆</small>':''}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
     const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
-    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.map(recRow).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
+    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.flatMap(r=>{const ss=slabSyss(r);return ss.length>1?ss.map(x=>recRow(r,x)):[recRow(r)]}).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
   }
   $('#view').innerHTML=html;
   $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));
@@ -889,7 +890,7 @@ function viewHome(){
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+(b.dataset.cat==='beam'?'pick':typesOf(b.dataset.cat)[0].key)+'-work'));
   bindRecRows();
-  document.querySelectorAll('#recentList [data-rec]').forEach(b=>b.onclick=()=>{printSys='';go('view-'+b.dataset.rec)});
+  document.querySelectorAll('#recentList [data-rec]').forEach(b=>b.onclick=()=>{printSys=b.dataset.sys||'';go('view-'+b.dataset.rec)});
 }
 function viewTrash(){
   const p=proj(curProj);if(!p)return go('home');
@@ -898,7 +899,7 @@ function viewTrash(){
   $('#view').innerHTML=`<section><p class="muted" style="margin:0 0 10px">刪除的表單會在這裡保留 ${TRASH_DAYS} 天，期間可以復原；超過 ${TRASH_DAYS} 天會自動永久刪除（含照片）。</p>
     ${list.length?`<div class="list">${list.map(r=>{const c=cat(r.cat),t=typN(r.cat,r.type);return `<div class="rec trow" style="cursor:default">
       <span class="d">${esc(r.date)}</span>
-      <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):(slabSyss(r).join('／')||c.name)+' · '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)}</span><span class="chip warn" style="align-self:flex-start;margin-top:4px">剩 ${trashLeft(r)} 天自動刪除</span></span>
+      <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):(sys||slabSyss(r).join('／')||c.name)+' · '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)}</span><span class="chip warn" style="align-self:flex-start;margin-top:4px">剩 ${trashLeft(r)} 天自動刪除</span></span>
       <span class="tbtns"><button class="btn small primary" data-restore="${r.id}">復原</button><button class="btn small danger" data-purge="${r.id}">永久刪除</button></span></div>`}).join('')}</div>`
       :'<div class="empty">刪除暫存區是空的。</div>'}</section>`;
   $('#view').onclick=async e=>{
@@ -906,11 +907,13 @@ function viewTrash(){
     const pg=e.target.closest('[data-purge]');if(pg){if(!pg.dataset.arm){pg.dataset.arm='1';pg.textContent='確定？';setTimeout(()=>{if(pg.isConnected){pg.dataset.arm='';pg.textContent='永久刪除'}},2500);return}
       const r=trash.find(x=>x.id===pg.dataset.purge);if(r){trash=trash.filter(x=>x.id!==r.id);await DB.del('records',r.id,r);toast('已永久刪除');viewTrash()}}};
 }
-function recRow(r){
+const CAT_KEY_OF={'電氣':'elec','弱電':'low','消防':'fire','空調':'hvac','給排水':'plumb','排水':'plumb','給水':'plumb','其他':'beam'};
+const sysPills=list=>list.map(n=>`<span class="syspill" style="--c:var(--c-${CAT_KEY_OF[n]||'beam'})">${esc(n)}</span>`).join('');
+function recRow(r,sys){if(typeof sys!=='string')sys='';
   const s=status(r), c=cat(r.cat), t=typN(r.cat,r.type);
-  return `<button class="rec" data-rec="${r.id}">
+  return `<button class="rec" data-rec="${r.id}"${sys?` data-sys="${esc(sys)}"`:''}>
     <span class="d">${esc(r.date)}</span>
-    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):(slabSyss(r).join('／')||c.name)+' · '+(r.kind==='dfit'?'排水樓板接頭':t.name)+' · 施工'}</span></span>
+    <span class="t"><b>${esc(r.location)||'（未填位置）'}</b><span class="muted">${modeOf(r)==='mat'?'材料查驗 · '+typeName(r):sysPills(sys?[sys]:slabSyss(r).length?slabSyss(r):[c.name])+' '+(r.kind==='dfit'?'排水樓板接頭':r.kind==='slab'?slabCfg(r).name:t.name)+' · 施工'}</span></span>
     <span class="chip ${s.k}">${s.t}</span></button>`;
 }
 function bindRecRows(){document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>go('rec-'+b.dataset.rec))}
@@ -973,7 +976,7 @@ function viewCat(ck,tk,md){
       ${md==='work'&&ck==='plumb'&&tk==='box'?`<button class="btn primary grow" id="newDf">＋ 新增排水樓板接頭</button>`:''}
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
-    ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`
+    ${list.length?`<div class="list">${list.map(r=>recRow(r,r.kind==='slab'&&typeof SYS_OF!=='undefined'&&SYS_OF[ck]?SYS_OF[ck]:'')).join('')}</div>`
       :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tk==='box'&&md==='work'&&SYS_OF[ck]?'柱/牆接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
@@ -2695,7 +2698,7 @@ function viewZone(z,s){
     <div class="stabs zonetabs" role="tablist" aria-label="系統">${Z.systems.map(([k,n])=>`<button type="button" class="${k===s?'on':''}" data-zs="${k}" style="--c:var(--c-${k==='wallsl'?'beam':k})">${n}<span class="num">${mine.filter(r=>zoneMatch(z,k,r)).length}</span></button>`).join('')}</div>
     <div class="row"><button class="btn primary grow" id="zNew">＋ ${fname}</button>
       ${list.length?`<button class="btn" id="zPrint">列印全部（${list.length}）</button>`:''}</div>
-    ${list.length?`<div class="list">${list.map(recRow).join('')}</div>`:`<div class="empty">還沒有${Z.name}・${sname}的查驗紀錄。按「新增」開始。</div>`}`;
+    ${list.length?`<div class="list">${list.map(r=>recRow(r,r.kind==='slab'&&SYS_OF[s]?SYS_OF[s]:'')).join('')}</div>`:`<div class="empty">還沒有${Z.name}・${sname}的查驗紀錄。按「新增」開始。</div>`}`;
   document.querySelectorAll('[data-zs]').forEach(b=>b.onclick=()=>go(`zone-${z}-${b.dataset.zs}`));
   $('#zNew').onclick=()=>zoneNew(z,s);
   document.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>{zoneBack=`zone-${z}-${s}`;zoneBackId=b.dataset.rec;if(z==='slab'&&SYS_OF[s])nextSlabTab=SYS_OF[s];go('rec-'+b.dataset.rec)});

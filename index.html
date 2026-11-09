@@ -411,7 +411,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
     <h2 id="projDlgTitle">新增標案</h2>
     <div class="fields">
       <label class="field" style="grid-column:1/-1"><span>工程名稱（標案名稱）＊</span><input type="text" id="pf_name" required></label>
-      <label class="field"><span>標案編號</span><input type="text" id="pf_no"></label>
+      <label class="field"><span>建照字號</span><input type="text" id="pf_no" placeholder="例：(112)(4)(25)建管建字第00246號"></label>
       <label class="field"><span>主辦機關</span><input type="text" id="pf_owner"></label>
       <label class="field"><span>專管單位</span><input type="text" id="pf_pm"></label>
       <label class="field"><span>監造單位</span><input type="text" id="pf_sup"></label>
@@ -845,7 +845,7 @@ function viewHome(){
           return `<button type="button" role="tab" class="pbtn ${x.id===curProj?'on':''}" aria-selected="${x.id===curProj}" data-proj="${x.id}">${PROJ_ICON[x.id]?`<span class="ipair">${PROJ_ICON[x.id]}<span class="itxt">`:''}<b>${esc(x.name).replace(/^(第二期)(醫療大樓)/,'$1<br>$2').replace(/(興建工程)$/,'<br>$1')}</b><span class="num">${n} 筆查驗</span>${PROJ_ICON[x.id]?'</span></span>':''}</button>`}).join('')}</div>
         <div class="row"><span class="grow muted">目前標案：<b style="color:var(--ink)">${esc(p.name)}</b></span><button class="btn small" id="projEdit">編輯資料</button></div>
         <div class="proj-meta">
-          <div><b>標案編號</b>${esc(p.no)||'—'}</div>
+          <div><b>建照字號</b>${esc(permitOf(p))||'—'}</div>
           <div><b>主辦機關</b>${esc(p.owner)||'—'}</div>
           <div><b>專管單位</b>${esc(p.pm)||'—'}</div>
           <div><b>監造單位</b>${esc(p.sup)||'—'}</div>
@@ -912,7 +912,7 @@ let editingProj=null;
 function openProj(p){
   editingProj=p||null;
   $('#projDlgTitle').textContent=p?'編輯標案':'新增標案';
-  $('#pf_name').value=p?.name||''; $('#pf_no').value=p?.no||''; $('#pf_owner').value=p?.owner||'';
+  $('#pf_name').value=p?.name||''; $('#pf_no').value=p?permitOf(p):''; $('#pf_owner').value=p?.owner||'';
   $('#pf_sup').value=p?.sup||''; $('#pf_con').value=p?.con||''; $('#pf_pm').value=p?.pm||''; $('#pf_prefix').value=p?prefixOf(p):'';
   $('#projDel').hidden=!p; $('#projDel').textContent='刪除標案'; $('#projDel').dataset.arm='';
   $('#projDlg').showModal();
@@ -921,7 +921,7 @@ $('#projCancel').onclick=()=>$('#projDlg').close();
 $('#projForm').onsubmit=async e=>{
   e.preventDefault();
   const p=editingProj||{id:uid(),created:Date.now()};
-  Object.assign(p,{name:$('#pf_name').value.trim(),no:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),pm:$('#pf_pm').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),prefix:$('#pf_prefix').value.trim(),updated:Date.now()});
+  Object.assign(p,{name:$('#pf_name').value.trim(),permit:$('#pf_no').value.trim(),owner:$('#pf_owner').value.trim(),pm:$('#pf_pm').value.trim(),sup:$('#pf_sup').value.trim(),con:$('#pf_con').value.trim(),prefix:$('#pf_prefix').value.trim(),updated:Date.now()});
   if(!p.name)return;
   await DB.put('projects',p);
   if(!editingProj)projects.push(p);
@@ -1196,6 +1196,7 @@ function dormPhotoPages(r){
 }
 /* 二期・樓板接線盒：施工查驗照片（比照 1150428-29-9F底版-消防出線盒放樣.docx） */
 const PERMIT_OF={'p-nycuh-med2':'(112)(4)(25)建管建字第00246號','p-nycuh-dorm':'(113)(5)(21)建管建字第00174號'};
+const permitOf=p=>p?(p.permit||PERMIT_OF[p.id]||''):'';
 const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程',no:'森10812',con:'崇偉營造工程(股)有限公司',con2:'崇偉科技工程有限公司',permit:'(112)(4)(25)建管建字第00246號'};
 const rocSlash=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return `${+y-1911}/${m}/${dd}`};
 function slabPhotoText(r,p){
@@ -1266,7 +1267,7 @@ function slabPhotoPages(r){
   if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
   if(!list.length)return '';
   const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
-  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(PERMIT_OF[r.projectId]?{permit:PERMIT_OF[r.projectId]}:pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(permitOf(pr)?{permit:permitOf(pr)}:{}),...(pr.no?{no:pr.no}:{})};
   const pages=[];for(let i=0;i<list.length;i+=3)pages.push(list.slice(i,i+3));
   const hdr=mhdrHTML(r);
   return pages.map(pg=>`<div class="sheet mphoto">${hdr}<table class="mph"><colgroup><col style="width:59.7%"><col style="width:40.3%"></colgroup>${pg.map(p=>{const t=textOf(r,p);return `
@@ -1276,7 +1277,7 @@ function slabPhotoPages(r){
     <tr><td class="mdesc" data-phid="${p.id}" data-rid="${r.id}">${t.desc.map(esc).join('<br>')}</td></tr>`}).join('')}</table></div>`).join('');
 }
 function mhdrHTML(r){
-  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(PERMIT_OF[r.projectId]?{permit:PERMIT_OF[r.projectId]}:pr.permit?{permit:pr.permit}:{}),...(pr.no?{no:pr.no}:{})};
+  const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(permitOf(pr)?{permit:permitOf(pr)}:{}),...(pr.no?{no:pr.no}:{})};
   return `<div class="mtitle">施工查驗照片</div><table class="mhdr"><colgroup><col style="width:11%"><col style="width:41%"><col style="width:11%"><col style="width:13%"><col style="width:8%"><col style="width:16%"></colgroup>
     <tr><td class="k">專案名稱<small>Project Name</small></td><td class="v">${esc(H.name)}</td><td class="k">專案編號<small>Project No.</small></td><td class="v big">${esc(H.no)}</td><td class="k">日期<small>Date</small></td><td class="v big">${rocSlash(r.date)}</td></tr>
     <tr><td class="k">施工廠商<small>Contractor</small></td><td class="v">${esc(H.con)}<br>${esc(H.con2)}</td><td class="k">建照字號<small>Building Permit No.</small></td><td class="v" colspan="3">${esc(H.permit)}</td></tr></table>`;
@@ -2670,7 +2671,7 @@ function sheetHTML(r){
     <h4>${modeOf(r)==='mat'?typeName(r)+'　材料進場查驗紀錄表':c.name+'工程　'+t.name+'　施工查驗紀錄表'}</h4>
     <div class="fno">表單編號：</div>
     <table>
-      <tr><td class="k">標案編號</td><td>${esc(p.no)}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
+      <tr><td class="k">建照字號</td><td>${esc(permitOf(p))}</td><td class="k">主辦機關</td><td>${esc(p.owner)}</td></tr>
       <tr><td class="k">專管單位</td><td>${esc(p.pm)}</td><td class="k">監造單位</td><td>${esc(p.sup)}</td></tr>
       <tr><td class="k">承攬廠商</td><td>${esc(p.con)}</td><td class="k">查驗日期</td><td>${rocDate(r.date)}</td></tr>
       ${modeOf(r)==='mat'?`

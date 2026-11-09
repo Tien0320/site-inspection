@@ -1284,7 +1284,7 @@ const STD_NOTE={press:'試驗壓力≧10kg/cm2，並保持壓力60分鐘無滲�
 function testPhotoText(r,p){
   const f=r.form,l=r.loc||{},row=(f.rows||[]).find(x=>x.id===p.ref),pn=(proj(r.projectId)||{}).name||'';
   const item=`${pn.replace(/興建工程$/,'')}施工配管查驗`;
-  let ar=[];if(row){testRowFix(row);ar=uniq(row.gs.map(g=>(g.area||'').replace(/\s*\/\s*/,' Line ')))}
+  let ar=[];if(row){testRowFix(row);ar=uniq(row.gs.map(g=>[g.space,(g.area||'').replace(/\s*\/\s*/,' Line ')].filter(Boolean).join(' ')))}
   const where=[l.floor,ar.join('、'),l.part].filter(Boolean).join(' ');
   const k=row?rowStd(f,row):stdsOf(f)[0],note=STD_NOTE[k]||'';
   if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/),note};

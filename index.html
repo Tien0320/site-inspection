@@ -145,8 +145,9 @@ textarea{min-height:72px;resize:vertical}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
 .tgrid input,.tgrid select{min-height:40px;padding:6px 8px}
 .tdur{min-height:40px;display:flex;align-items:center;font-weight:700;color:var(--ink);font-family:var(--mono)}
-.tsheet td,.tsheet th{font-size:10pt}
+.tsheet td,.tsheet th{font-size:9.5pt;padding:2px 4px;line-height:1.25}
 .tsheet .k{word-break:keep-all}
+.tsheet .small{font-size:8.5pt;line-height:1.2}
 .mseg{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
 .mseg button{border:0;background:transparent;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:58px}
 .mseg button+button{border-left:1px solid var(--line)}
@@ -361,7 +362,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .dsheet .dres{margin-top:6px;border-top:1px solid #000;padding-top:4px}
 .dsign{display:grid;grid-template-columns:56% 44%;margin-top:10px;font-size:11pt}
 .dsign>div{padding-left:5px}
-.tsheet .dsign{grid-template-columns:60% 40%}
+.tsheet .dsign{grid-template-columns:60% 40%;margin-top:4px}.tsheet .dsign div{min-height:10mm}
 .dsign div{display:flex;align-items:center;gap:6px;min-height:16mm}
 .dsign img{max-height:15mm;max-width:40mm}
 
@@ -2169,12 +2170,12 @@ function testSheet(r){
       <tr><td class="k">試壓媒介</td><td>${['清水','氮氣','空氣'].map(m=>cb(f.medium===m,m)).join('<br>')}</td><td class="k">檢查標準</td>
         <td colspan="3" class="small">${TEST_CONTENTS.map(c=>cb(K.includes(c.key),c.std+(c.key==='fire'&&f.head?`（全閉揚程 ${v(f.head)} kg/cm²，需 ${r2(num(f.head)*1.5)} kg/cm²）`:''))).join('<br>')}</td></tr>
     </table>
-    <table class="sec"><colgroup><col style="width:6%"><col style="width:20%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:7%"></colgroup>
+    <table class="sec"><colgroup><col style="width:5%"><col style="width:29%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:7%"></colgroup>
       <tr><th rowspan="2">項<br>次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th rowspan="2">開始<br>滿水水<br>位高度</th><th rowspan="2">最終<br>滿水水<br>位高度</th><th rowspan="2">持壓<br>壓力<br>kg/cm²</th><th rowspan="2">最終<br>壓力<br>kg/cm²</th><th rowspan="2">檢<br>查<br>結<br>果</th></tr>
       <tr><th>開始</th><th>結束</th><th>持壓</th></tr>
       ${rows.map((x,n)=>{if(!x)return `<tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
         const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c small">${(testRowFix(x),x.gs.some(g=>g.fx||g.water||g.space)?x.gs.map(g=>[v([g.space,g.area].filter(Boolean).join(' ')),v(gName(g))].filter(Boolean).join('<br>')).join('<hr class="tsep">'):v(x.sys))}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${minTxt(j.dur)}</td>
-        <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym">${SYM[j.res]||''}</td></tr>`}).join('')}
+        <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym"></td></tr>`}).join('')}
     </table>
     <table class="sec">
       <tr><td>缺失辦理情形：<br>${cb(f.fix==='done','已完成改善（檢附改善前中後照片）')}<br>${cb(f.fix==='track','未完成改善，填具「缺失改善追蹤表」進行追蹤改善')}<br>

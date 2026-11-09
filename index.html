@@ -1281,6 +1281,7 @@ const TEST_TAGS=['總覽','開始','結束'],TEST_SEQ=['總覽','開始','總覽
 function testPhTag(r,p){if(p.tag)return p.tag;const row=(r.form.rows||[]).find(x=>x.id===p.ref);if(!row)return '';
   const un=bySeq(r).filter(q=>q.ref===p.ref&&!q.tag);return TEST_SEQ[un.indexOf(p)%4]||''}
 const STD_NOTE={press:'試驗壓力≧10kg/cm2，並保持壓力60分鐘無滲漏現象',drain:'3.3M滿水或≧0.33 kg/cm² 持水≧60分鐘',fire:'試驗壓力≧全閉揚程1.5倍，並保持壓力120分鐘無滲漏現象',dry:'空氣壓力≧2.8kg/cm2，持壓24小時減壓量≦0.1kg/cm2'};
+const drVal=(pv,lv)=>[pv?`持壓壓力${pv} kg/cm²`:'',lv?`滿水水位${lv} M`:''].filter(Boolean).join(' ')||'持壓壓力 kg/cm²';
 function testPhotoText(r,p){
   const f=r.form,l=r.loc||{},row=(f.rows||[]).find(x=>x.id===p.ref),pn=(proj(r.projectId)||{}).name||'';
   const item=`${pn.replace(/興建工程$/,'')}施工配管查驗`;
@@ -1292,8 +1293,8 @@ function testPhotoText(r,p){
   const t=testPhTag(r,p),j=testJudge(f,row),title=k==='drain'?`${testSysName(row)}排水滿水持壓試驗`:k==='press'?'給水管持壓試驗':testC(k).name;
   const list=row.gs.map(g=>[g.space,gName(g)].filter(Boolean).join(' ')).filter(Boolean);
   let desc;
-  if(t==='開始')desc=k==='drain'?[title,`開始時間：${row.t0||''}`,`持壓壓力${row.p0||''} kg/cm2`]:[`開始時間: ${row.t0||''}`,`壓力${row.p0||''} kg`];
-  else if(t==='結束')desc=k==='drain'?[title,`結束時間：${row.t1||''}`,`持壓壓力${row.p1||''} kg/cm2 /持壓${j.dur==null?'':j.dur}分鐘`]:[`結束時間: ${row.t1||''}`,`持壓${j.dur==null?'':j.dur}分鐘 ; 壓力${row.p1||''} kg`];
+  if(t==='開始')desc=k==='drain'?[title,`開始時間：${row.t0||''}`,drVal(row.p0,row.lv0)]:[`開始時間: ${row.t0||''}`,`壓力${row.p0||''} kg`];
+  else if(t==='結束')desc=k==='drain'?[title,`結束時間：${row.t1||''}`,`${drVal(row.p1,row.lv1)} /持壓${j.dur==null?'':j.dur}分鐘`]:[`結束時間: ${row.t1||''}`,`持壓${j.dur==null?'':j.dur}分鐘 ; 壓力${row.p1||''} kg`];
   else desc=[title,...(k==='drain'?[]:list)];
   return {item,where,desc,note};
 }

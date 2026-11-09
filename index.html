@@ -1896,6 +1896,7 @@ function testMinutes(row){
   const a=parseHM(row.t0),b=parseHM(row.t1);if(!a||!b)return null;
   let d=(b[0]*60+b[1])-(a[0]*60+a[1]);if(d<0)d+=1440;return d;
 }
+const minTxt=m=>m==null?'':m+' 分';
 const durTxt=m=>m==null?'':m>=60?`${Math.floor(m/60)} 小時 ${m%60} 分`:`${m} 分`;
 const stdsOf=f=>Array.isArray(f.stds)&&f.stds.length?f.stds:[f.std||'press'];
 const rowStd=(f,row)=>row.std&&stdsOf(f).includes(row.std)?row.std:stdsOf(f)[0];
@@ -2045,7 +2046,7 @@ function renderTestRows(){
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${hm('t0')}</label><label>結束時間${hm('t1')}</label>
-        <label>持壓時間<div class="tdur" data-tdur="${n}">${durTxt(j.dur)||'—'}</div></label>
+        <label>持壓時間<div class="tdur" data-tdur="${n}">${minTxt(j.dur)||'—'}</div></label>
         ${showLv?`<label>開始滿水水位 M${inp('lv0','3.3')}</label><label>最終滿水水位 M${inp('lv1','3.3')}</label>`:''}
         <label>持壓壓力 kg/cm²${inp('p0',rs==='press'?'10':'')}</label><label>最終壓力 kg/cm²${inp('p1','')}</label>
         <label>檢查結果<select data-tk="res" data-tn="${n}"><option value="">自動判定${j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':''}</option><option value="ok" ${x.res==='ok'?'selected':''}>○ 合格</option><option value="ng" ${x.res==='ng'?'selected':''}>× 不合格</option><option value="na" ${x.res==='na'?'selected':''}>／ 無此項目</option></select></label>
@@ -2074,7 +2075,7 @@ function renderTestRows(){
     updTestRow(n,el)};
   const updTestRow=(n,el)=>{const row=f.rows[n];
     const j=testJudge(f,row);
-    const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=durTxt(j.dur)||'—';
+    const d=box.querySelector(`[data-tdur="${n}"]`);if(d)d.textContent=minTxt(j.dur)||'—';
     const rs=box.querySelector(`[data-tres="${n}"]`);if(rs)rs.innerHTML=j.res?`<span class="chip ${j.res==='ok'?'ok':j.res==='ng'?'ng':'na'}">${j.res==='ok'?'○ 合格':j.res==='ng'?'× 不合格':'／ 無此項'}</span>`:'';
     const w=box.querySelector(`[data-tw="${n}"]`);if(w){w.hidden=!j.msg.length;w.innerHTML=j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}
     const sel=box.querySelector(`select[data-tk="res"][data-tn="${n}"]`);if(sel)sel.options[0].text='自動判定'+(j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':'');
@@ -2127,7 +2128,7 @@ function testSheet(r){
       <tr><th rowspan="2">項<br>次</th><th rowspan="2">系統別</th><th colspan="3">持壓時間</th><th rowspan="2">開始<br>滿水水<br>位高度</th><th rowspan="2">最終<br>滿水水<br>位高度</th><th rowspan="2">持壓<br>壓力<br>kg/cm²</th><th rowspan="2">最終<br>壓力<br>kg/cm²</th><th rowspan="2">檢<br>查<br>結<br>果</th></tr>
       <tr><th>開始</th><th>結束</th><th>持壓</th></tr>
       ${rows.map((x,n)=>{if(!x)return `<tr><td class="c">&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c small">${(testRowFix(x),x.gs.some(g=>g.fx||g.water||g.space)?x.gs.map(g=>v([gName(g),g.space,g.area].filter(Boolean).join(' '))).join('<br>'):v(x.sys))}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${durTxt(j.dur)}</td>
+        const j=testJudge(f,x);return `<tr><td class="c">${n+1}</td><td class="c small">${(testRowFix(x),x.gs.some(g=>g.fx||g.water||g.space)?x.gs.map(g=>v([gName(g),g.space,g.area].filter(Boolean).join(' '))).join('<br>'):v(x.sys))}</td><td class="c">${v(x.t0)}</td><td class="c">${v(x.t1)}</td><td class="c small">${minTxt(j.dur)}</td>
         <td class="c">${x.lv0?v(x.lv0)+'M':''}</td><td class="c">${x.lv1?v(x.lv1)+'M':''}</td><td class="c">${v(x.p0)}</td><td class="c">${v(x.p1)}</td><td class="c res-sym">${SYM[j.res]||''}</td></tr>`}).join('')}
     </table>
     <table class="sec">

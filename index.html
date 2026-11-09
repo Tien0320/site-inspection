@@ -1232,7 +1232,7 @@ function slabPhotoText(r,p){
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
-    desc.push(`${sys}${equipName(x)} PVC配管(編號${f.items.indexOf(x)+1})`);
+    desc.push(`${sys}${equipName(x)} PVC配管(編號${(printSys?f.items.filter(q=>q.sys===printSys):f.items).indexOf(x)+1})`);
     if(x.e1302)desc.push('南亞CNS 1302 PVC管 E管');
     if(x.size)desc.push(`管徑:ψ${x.size.replace('"','')}"`);
     if(x.joint)desc.push('PVC配管以盒接頭銜接出線盒');
@@ -1294,6 +1294,7 @@ function genPhotoText(r,p){
 function slabPhotoPages(r){
   let list=sortedPhotos(r);
   if(r.kind==='slab'&&printSys){const ids=new Set(r.form.items.filter(x=>x.sys===printSys).map(x=>x.id));list=list.filter(p=>!p.ref||ids.has(p.ref))}
+  if(r.form&&Array.isArray(r.form.items)){const ix=p=>{const i=r.form.items.findIndex(x=>x.id===p.ref);return i<0?1e9:i};list=list.map((p,k)=>[p,ix(p),k]).sort((a,b)=>a[1]-b[1]||a[2]-b[2]).map(a=>a[0])} // 依查驗（第幾處）排序
   if(!list.length)return '';
   const textOf=isPipeMat(r)?pipePhotoText:r.kind==='sleeve'?sleevePhotoText:r.kind==='dfit'?dfPhotoText:r.kind==='slab'?slabPhotoText:genPhotoText;
   const pr=proj(r.projectId)||{},H={...MED2_HDR,...(r.projectId==='p-nycuh-dorm'?{name:pr.name||'職務宿舍興建工程'}:{}),...(permitOf(pr)?{permit:permitOf(pr)}:{}),...(pr.no?{no:pr.no}:{})};

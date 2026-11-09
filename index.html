@@ -1191,8 +1191,8 @@ function photoWhere(r){return r.kind==='drain'?drainLoc(r.form):r.kind==='sleeve
 function photoTarget(r,p){
   if(!p.ref)return '';
   if(r.kind==='dfit'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].name?' '+dfName(r.form.items[n]):''}`.trim():''}
-  if(r.kind==='slab'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
-  if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 編號${r.form.items[n].no||n+1}${r.form.items[n].pos?'・'+r.form.items[n].pos:''}`.trim():''}
+  if(r.kind==='slab'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 ${r.form.items[n].space||''}${posOf(r.form.items[n])?'・'+posOf(r.form.items[n]):''}`.trim():''}
+  if(r.kind==='sleeve'){const n=r.form.items.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}處 編號${r.form.items[n].no||n+1}${posOf(r.form.items[n])?'・'+posOf(r.form.items[n]):''}`.trim():''}
   if(r.kind==='wtest'){const n=r.form.rows.findIndex(x=>x.id===p.ref);return n>=0?`第${n+1}項 ${r.form.rows[n].sys||''} ${testRowWhere(r.form.rows[n])}`.trim():''}
   if(r.kind==='drain'){
     for(const [si,sp] of r.form.spaces.entries()){const pi=sp.pipes.findIndex(x=>x.id===p.ref);
@@ -1228,7 +1228,7 @@ function slabPhotoText(r,p){
   const f=r.form,x=f.items.find(i=>i.id===p.ref);
   const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):(printSys||SYS_OF[r.cat]||'');
   const item=`${sys||''}系統配管施工查驗`;
-  const where=`${f.floor||''}${f.part||''}${x&&x.pos?'Line '+x.pos:''}`;
+  const where=`${f.floor||''}${f.part||''}${x&&posOf(x)?'Line '+posOf(x):''}`;
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
@@ -1252,7 +1252,7 @@ function sleevePhotoText(r,p){
   const f=r.form,i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i],L=(f.label||'穿樑')+'套管';
   const sys=x?(x.sys==='其他'?(x.sysOther||'其他'):x.sys):'';
   const strip=v=>String(v||'').replace(/^[øØ∅]\s*/,'');
-  const item=`${sys}系統${L}安裝查驗`,where=`${f.floor||''}${f.part||''}${x&&x.pos?'Line '+x.pos:''}`;
+  const item=`${sys}系統${L}安裝查驗`,where=`${f.floor||''}${f.part||''}${x&&posOf(x)?'Line '+posOf(x):''}`;
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
@@ -1267,7 +1267,7 @@ function sleevePhotoText(r,p){
 function dfPhotoText(r,p){
   const f=r.form,i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i];
   const strip=v=>String(v||'').replace(/^[øØ∅]\s*/,'');
-  const item='污廢水管樓板接頭定位安裝查驗',where=`${f.floor||''}${x?x.face:''}${x&&x.pos?'Line '+x.pos:''}`;
+  const item='污廢水管樓板接頭定位安裝查驗',where=`${f.floor||''}${x?dfFace(f):''}${x&&posOf(x)?'Line '+posOf(x):''}`;
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
@@ -2237,6 +2237,7 @@ function applyRoom(x){
   x.px1=r[2];x.px2=r[3];x.py1=r[4];x.py2=r[5];x.pos=axisPos(x);return true;
 }
 /* 位置：兩組軸線，中間「~」已填好（例：5 ~ 6 ／ C ~ D） */
+const posOf=x=>x?(axisPos(x)||x.pos||''):'';
 function axisPos(x){const a=[x.px1,x.px2].filter(Boolean).join('~'),b=[x.py1,x.py2].filter(Boolean).join('~');return [a,b].filter(Boolean).join(' / ')}
 function axisHTML(b,x){
   if(x.pos&&x.px1==null){const m=x.pos.match(/^\s*([^~／/\s]+)\s*~\s*([^／/\s]+)\s*[／/]\s*([^~\s]+)\s*~\s*(\S+)\s*$/);if(m){x.px1=m[1];x.px2=m[2];x.py1=m[3];x.py2=m[4]}}
@@ -2337,7 +2338,7 @@ function sleeveStatus(r){const f=r.form;
   if(f.result==='ok')return {k:'ok',t:'合格'};return {k:'warn',t:'填寫中'}}
 function sleeveSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
-  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.編號：${u(x.no||String(i+1))}　位置：${u(x.pos)}　${['梁','外牆','內牆'].map(m=>cb(x.member===m,m)).join(' ')}　空間：${u(x.space)}</div><div class="pp">
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.編號：${u(x.no||String(i+1))}　位置：${u(posOf(x))}　${['梁','外牆','內牆'].map(m=>cb(x.member===m,m)).join(' ')}　空間：${u(x.space)}</div><div class="pp">
     <div>${cb(!!x.sys,'系統')}：${['電氣','弱電','給水','排水','空調'].map(m=>cb(x.sys===m,m)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}</div>
     <div>${cb(x.shape==='套管','套管')}${cb(x.shape==='方孔','方孔')}尺寸：設計：${x.shape==='方孔'?'':'ø'}${u(x.shape==='方孔'?x.sizeD:inchOf(x.sizeD))}　實測：${x.shape==='方孔'?'':'ø'}${u(x.shape==='方孔'?x.sizeA:inchOf(x.sizeA))}</div>
     <div>${cb(x.topD!==''||x.topA!=='','樓板~管頂')}：設計值：${u(x.topD)}cm　實測值：${u(x.topA)}cm　${cb(x.topRef==='1米基準線下','1米基準線下')} ${cb(x.topRef==='1米基準線上','1米基準線上')}</div>
@@ -2502,7 +2503,7 @@ function slabSheet(r){
   const p=proj(r.projectId)||{},f=r.form,its=printSys?f.items.filter(x=>x.sys===printSys):f.items,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,P)=>`${cb(x[k+'D']!==''||x[k+'A']!=='',P.t.replace(/（.*）/,''))}：距${P.dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${P.refs.map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
   const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}. 系統：${['弱電','電氣','消防','空調'].map(s=>cb(x.sys===s,s)).join(' ')} ${cb(x.sys==='其他',u(x.sysOther))}　${cb(!!x.equip,'設備')}：${u(equipName(x))}</div><div class="pp">
-    <div>${C.faces.map(s=>cb((isWallBox(r)?f.part:x.face)===s,s)).join(' ')}　位置：${u(x.pos)}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
+    <div>${C.faces.map(s=>cb((isWallBox(r)?f.part:x.face)===s,s)).join(' ')}　位置：${u(posOf(x))}　空間編號名稱：${u(x.space)}　數量：${u(x.qty)}</div>
     <div>${cb(!!x.screwOn,'出線盒以螺絲固定於')}${C.fix.map(s=>cb(x.screwOn===s,s)).join(' ')}　${cb(!!x.fitOn,'出線盒有貼合')}${C.fix.map(s=>cb(x.fitOn===s,s)).join(' ')}</div>
     <div>${cb(x.galv||!!x.boxType,'出線盒型式')}${cb(x.galv,'熱浸鍍鋅')} ${isWallBox(r)?'':cb(x.boxType==='八角盒','八角盒(深度10cm；厚度2mm)')+' '}${cb(x.boxType==='長方盒','長方盒(深度5cm；厚度2mm)')}</div>
     <div>${pos(x,'ew',C.pos1)}</div><div>${pos(x,'ns',C.pos2)}</div>
@@ -2626,7 +2627,7 @@ function viewDf(r){
 function dfSheet(r){
   const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const pos=(x,k,dirs,lead)=>`${lead}距${dirs.map(d=>cb(x[k+'Dir']===d,d)).join(' ')} ${['梁','柱','牆'].map(d=>cb(x[k+'Ref']===d,d)).join(' ')}　設計值：${u(x[k+'D'])}cm　實測值：${u(x[k+'A'])}cm`;
-  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(x.pos)}</div><div class="pp">
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.空間名稱編號：${u(x.space)}　位置：${u(posOf(x))}</div><div class="pp">
     <div>排水名稱：${DF_NAMES.map(s=>s==='其他'?cb(x.name===s,'其他'+(x.name==='其他'&&x.nameOther?'：'+u(x.nameOther):'')):cb(x.name===s,s)).join(' ')}</div>
     <div>配管規格：${DF_SPEC.map(s=>cb((x.spec||[]).includes(s),s)).join(' ')}　管色：${['橘','灰'].map(c=>cb(x.color===c,c)).join(' ')}</div>
     <div>管徑尺寸：設計值：ø${u(inchOf(x.sizeD))}　實測值：ø${u(inchOf(x.sizeA))}</div>

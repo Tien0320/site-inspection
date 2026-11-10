@@ -2461,7 +2461,7 @@ const MONITOR=[['R','門禁用感應式讀卡機含讀卡控制器(配合內裝�
   ['PTZ','全功能快速球高解析彩色攝影機','當層頂板'],['EB','緊急按鈕附透明外罩及說明文字','FL+120'],['SOS','緊急求救閃光喇叭','門框上緣10cm'],['FD','鐵捲門門位感知器','預留配管'],
   ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管']];
 const eqShort=n=>n.split('，')[0].replace(/\(配合內裝與現場\)/,'').trim();
-const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,n]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)])};
+const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)])};
 const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}

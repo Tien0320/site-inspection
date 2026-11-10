@@ -2470,6 +2470,8 @@ const INFO=[['41U','19"41U機櫃','','配合現場位置'],['20U','19"20U機櫃'
 const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)]),
   '弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,`${n}${sp?' '+sp:''}（${w}）`,n])};
 const EQ_DEFS={'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
+/* 設置於頂版（當層頂板）的設備：柱/牆接線盒不列 */
+const onSlab=(o,k)=>{const D=EQ_DEFS[o];const q=D&&D.find(z=>z[0]===k);return !!(q&&/頂板/.test(q[2]))};
 const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
@@ -2479,7 +2481,7 @@ function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i
   document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=(r.left+scrollX)+'px';m.style.top=(r.bottom+scrollY+2)+'px';m.style.minWidth=r.width+'px';
   const showSub=o=>{m.querySelectorAll('.eqsub').forEach(z=>z.remove());m.querySelectorAll('.eqsys').forEach(z=>z.classList.toggle('open',z.dataset.eqsys===o));
     const col=document.createElement('div');col.className='eqcol eqsub';col.style.setProperty('--ec',EQ_COLOR[o]);
-    col.innerHTML=`<div class="eqhd">${o}</div>`+SUB_EQUIP[o].map(([k,l])=>`<div class="eqit ${x.equip===o&&subEq(x)===k?'on':''}" data-eqsys2="${o}" data-eqk="${k}">${esc(l)}</div>`).join('');
+    col.innerHTML=`<div class="eqhd">${o}</div>`+SUB_EQUIP[o].filter(([k])=>!(isWallBox(cur)&&onSlab(o,k))).map(([k,l])=>`<div class="eqit ${x.equip===o&&subEq(x)===k?'on':''}" data-eqsys2="${o}" data-eqk="${k}">${esc(l)}</div>`).join('');
     m.appendChild(col);const mr=m.getBoundingClientRect();
     if(innerWidth<640||mr.right>innerWidth-4){m.classList.add('narrow');m.querySelector('.eqcol').style.display='none';col.querySelector('.eqhd').innerHTML=`<span class="eqback" data-eqback="1">◀ 返回</span>　${o}`}};
   m.addEventListener('mouseover',e=>{const t=e.target.closest('.eqsys');if(t&&innerWidth>=640&&matchMedia('(hover:hover)').matches&&!t.classList.contains('open'))showSub(t.dataset.eqsys)});

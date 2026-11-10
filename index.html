@@ -2461,13 +2461,21 @@ const MONITOR=[['R','門禁用感應式讀卡機含讀卡控制器(配合內裝�
   ['PTZ','全功能快速球高解析彩色攝影機','當層頂板'],['EB','緊急按鈕附透明外罩及說明文字','FL+120'],['SOS','緊急求救閃光喇叭','門框上緣10cm'],['FD','鐵捲門門位感知器','預留配管'],
   ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管']];
 const eqShort=n=>n.split('，')[0].replace(/\(配合內裝與現場\)/,'').trim();
-const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)])};
-const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6'};
+/* 弱電・資訊系統（醫療大樓／教研大樓 2F 圖例）：[代號, 設備名稱, 規格, 設置說明] */
+const INFO=[['41U','19"41U機櫃','','配合現場位置'],['20U','19"20U機櫃','','配合現場位置'],['15U','15U壁掛機櫃','','配合現場位置'],['OLDF','光纖配線櫃(OLDF)','','配合現場位置'],
+  ['C','資訊出口','EMTx1,UTP CAT.6x1,含蓋板(FFL+30cm)','FL+30'],['CC','資訊雙出口','EMTx1,UTP CAT.6x2,含蓋板(FFL+30cm)','FL+30'],
+  ['AP','公區無線網路','EMTx1,UTP CAT.6x1','配合現場位置'],['AP2','病房無線網路','EMTx1,UTP CAT.6x1','配合現場位置'],
+  ['T','電話出口','EMTx1,UTP CAT.6x1,含蓋板(FFL+30cm)','FL+30'],['PT','公共電話出口','EMTx1,UTP CAT.6x1,含蓋板(FFL+150cm)','FL+150'],
+  ['TV','電視出口','EMTx1,RG-6Ux1','FL+30'],['TVB','電視箱','','配合現場位置'],['JC','出線口(資訊)-醫療用','','預留當層頂板']];
+const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)]),
+  '弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,`${n}${sp?' '+sp:''}（${w}）`,n])};
+const EQ_DEFS={'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
+const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
 function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i=+btn.dataset.eqbtn,x=cur.form.items[i];if(!x)return;
   const list=[...(EQUIP_OF[x.sys]||[]),'其他'],m=document.createElement('div');m.className='eqmenu';
-  m.innerHTML=`<div class="eqcol">${list.map(o=>SUB_EQUIP[o]?`<div class="eqit eqsys ${x.equip===o?'on':''}" data-eqsys="${o}" style="--ec:${EQ_COLOR[o]}">${o==='護士呼叫'?'🔴':'🔵'} ${o}<span>▶</span></div>`:`<div class="eqit ${x.equip===o?'on':''}" data-eqv="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
+  m.innerHTML=`<div class="eqcol">${list.map(o=>SUB_EQUIP[o]?`<div class="eqit eqsys ${x.equip===o?'on':''}" data-eqsys="${o}" style="--ec:${EQ_COLOR[o]}">${EQ_ICON[o]||'▪'} ${o}<span>▶</span></div>`:`<div class="eqit ${x.equip===o?'on':''}" data-eqv="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
   document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=(r.left+scrollX)+'px';m.style.top=(r.bottom+scrollY+2)+'px';m.style.minWidth=r.width+'px';
   const showSub=o=>{m.querySelectorAll('.eqsub').forEach(z=>z.remove());m.querySelectorAll('.eqsys').forEach(z=>z.classList.toggle('open',z.dataset.eqsys===o));
     const col=document.createElement('div');col.className='eqcol eqsub';col.style.setProperty('--ec',EQ_COLOR[o]);
@@ -2486,11 +2494,11 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
-const eqHeight=x=>{if(x.equip!=='監控')return 0;const q=MONITOR.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
+const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN'};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
 const equipName=x=>{if(LEGACY_MON[x.equip]&&x.sys==='弱電'){x.eqSub=LEGACY_MON[x.equip];x.equip='監控'}if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return q?q[2]:x.equip}return x.equip||''};
-const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});

@@ -1106,7 +1106,7 @@ function viewRec(id){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn okbtn" id="doneRec">完成</button>
+    <button class="btn ${r.done?'':'okbtn'}" id="doneRec">${r.done?'↩ 改回填寫中':'完成'}</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
@@ -1462,6 +1462,7 @@ function dirty(){
   document.querySelectorAll('#items .item').forEach(el=>el.classList.toggle('ng',cur.items[+el.dataset.i]?.result==='ng'));
 }
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('#doneRec');if(!b||!cur)return;const r=cur;
+  if(r.done){delete r.done;r.updated=Date.now();await flush();await DB.put('records',r);b.textContent='完成';b.classList.add('okbtn');toast('已改回填寫中');return}
   r.done=true;delete r.isNew;r.updated=Date.now();await flush();await DB.put('records',r);toast('已完成並儲存');go(backOf(r))});
 async function flush(){
   clearTimeout(saveTimer); if(!cur)return;
@@ -1694,7 +1695,7 @@ function viewDrain(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn okbtn" id="doneRec">完成</button>
+    <button class="btn ${r.done?'':'okbtn'}" id="doneRec">${r.done?'↩ 改回填寫中':'完成'}</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();go('print-'+r.id)};
@@ -2260,7 +2261,7 @@ function saveBar(r){
   $('#savebar').hidden=false;
   $('#savebarIn').innerHTML=`<span class="status" id="saveSt">已儲存</span>
     <button class="btn danger small" id="delRec">刪除</button>
-    <button class="btn okbtn" id="doneRec">完成</button>
+    <button class="btn ${r.done?'':'okbtn'}" id="doneRec">${r.done?'↩ 改回填寫中':'完成'}</button>
     <button class="btn primary" id="saveNow">儲存</button>
     <button class="btn" id="toPrint">列印表單</button>`;
   $('#toPrint').onclick=async()=>{await flush();printSys=(r.kind==='slab'&&slabTab!=='全部')?slabTab:'';go('print-'+r.id)};

@@ -2459,7 +2459,7 @@ const NURSE_CALL=[['M','對講話機'],['B','對講床邊呼叫盤'],['T','浴�
 const MONITOR=[['R','門禁用感應式讀卡機含讀卡控制器(配合內裝與現場)','FL+120'],['EK','陽極電鎖及磁簧開關，安裝於門框及門扇上','門框上緣'],['RB','不鏽鋼開門按鈕(配合內裝與現場)','FL+120'],
   ['DOME','半球型高解析彩色攝影機，安裝於天花板','當層頂板(天花)'],['GUN','固定式槍型手動變焦彩色攝影機，裝設於天花下15cm或270cm處','FL+270'],['AF','槍型自動對焦高解析彩色攝影機','當層頂板'],
   ['PTZ','全功能快速球高解析彩色攝影機','當層頂板'],['EB','緊急按鈕附透明外罩及說明文字','FL+120'],['SOS','緊急求救閃光喇叭','門框上緣10cm'],['FD','鐵捲門門位感知器','預留配管'],
-  ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管']];
+  ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管'],['WL','沉水液位計',''],['TM','水箱磁簧',''],['FM','水管壓力雨水流量計','']];
 const eqShort=n=>n.split('，')[0].replace(/\(配合內裝與現場\)/,'').trim();
 /* 弱電・資訊系統（醫療大樓／教研大樓 2F 圖例）：[代號, 設備名稱, 規格, 設置說明] */
 const INFO=[['41U','19"41U機櫃','','配合現場位置'],['20U','19"20U機櫃','','配合現場位置'],['15U','15U壁掛機櫃','','配合現場位置'],['OLDF','光纖配線櫃(OLDF)','','配合現場位置'],
@@ -2467,7 +2467,7 @@ const INFO=[['41U','19"41U機櫃','','配合現場位置'],['20U','19"20U機櫃'
   ['AP','公區無線網路','EMTx1,UTP CAT.6x1','配合現場位置'],['AP2','病房無線網路','EMTx1,UTP CAT.6x1','配合現場位置'],
   ['T','電話出口','EMTx1,UTP CAT.6x1,含蓋板(FFL+30cm)','FL+30'],['PT','公共電話出口','EMTx1,UTP CAT.6x1,含蓋板(FFL+150cm)','FL+150'],
   ['TV','電視出口','EMTx1,RG-6Ux1','FL+30'],['TVB','電視箱','','配合現場位置'],['JC','出線口(資訊)-醫療用','','預留當層頂板']];
-const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)]),
+const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,w?`${n}（${w}）`:n,eqShort(n)]),
   '弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,`${n}${sp?' '+sp:''}（${w}）`,n])};
 const EQ_DEFS={'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
 /* 設置於頂版（當層頂板）的設備：柱/牆接線盒不列 */
@@ -2497,10 +2497,10 @@ addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
 const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
-const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN'};
+const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN','沉水液位計':'WL','水箱磁簧':'TM','水管壓力雨水流量計':'FM'};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
 const equipName=x=>{if(LEGACY_MON[x.equip]&&x.sys==='弱電'){x.eqSub=LEGACY_MON[x.equip];x.equip='監控'}if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return q?q[2]:x.equip}return x.equip||''};
-const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});

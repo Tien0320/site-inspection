@@ -22,15 +22,15 @@
   --r:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0f171d; --surface:#18232b; --surface-2:#1e2b34; --line:#2c3b46;
-  --ink:#e4ebef; --ink-2:#9db0bc; --brand:#24475e; --brand-ink:#ffffff; --accent:#f08a46;
+  --bg:#1c2932; --surface:#26353f; --surface-2:#2f404b; --line:#435867;
+  --ink:#f3f7f9; --ink-2:#bccbd4; --brand:#2f5a76; --brand-ink:#ffffff; --accent:#f08a46;
   --ok:#5cc28d; --ok-bg:#163527; --ng:#f07a72; --ng-bg:#3a1d1b; --na:#9aa6ae; --na-bg:#25313a;
   --warn:#e8b14c; --warn-bg:#3a2e14;
   --c-elec:#e0aa2c; --c-hvac:#3db3d1; --c-plumb:#6b97e6; --c-low:#a588e0; --c-fire:#f07a72; --c-beam:#f06fa4;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f171d; --surface:#18232b; --surface-2:#1e2b34; --line:#2c3b46;
-  --ink:#e4ebef; --ink-2:#9db0bc; --brand:#24475e; --brand-ink:#ffffff; --accent:#f08a46;
+  --bg:#1c2932; --surface:#26353f; --surface-2:#2f404b; --line:#435867;
+  --ink:#f3f7f9; --ink-2:#bccbd4; --brand:#2f5a76; --brand-ink:#ffffff; --accent:#f08a46;
   --ok:#5cc28d; --ok-bg:#163527; --ng:#f07a72; --ng-bg:#3a1d1b; --na:#9aa6ae; --na-bg:#25313a;
   --warn:#e8b14c; --warn-bg:#3a2e14;
   --c-elec:#e0aa2c; --c-hvac:#3db3d1; --c-plumb:#6b97e6; --c-low:#a588e0; --c-fire:#f07a72; --c-beam:#f06fa4;
@@ -466,6 +466,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
       <button class="btn primary" id="expBtn">匯出備份檔</button>
       <label class="btn">匯入備份檔<input type="file" id="impFile" accept=".json,application/json" hidden></label>
     </div>
+    <div class="row" style="align-items:center"><span class="label" style="margin:0">外觀</span><select id="themeSel" style="width:auto"><option value="">跟隨手機設定</option><option value="light">淺色（白底）</option><option value="dark">深色</option></select></div>
     <p class="muted num" id="usage" style="margin:0"></p>
     <p class="muted num" style="margin:0">版本 <span id="ver"></span>（手機與電腦開同一個網址，會自動用最新版）</p>
     <div class="acts"><button class="btn" id="setClose">關閉</button></div>
@@ -3063,6 +3064,10 @@ async function viewPrintAll(ck,tk,md){
 const _setTop=setTop;
 setTop=function(t,b){_setTop(t,b);$('#printArea').style.display=''};
 
+/* 外觀：自動／淺色／深色 */
+const applyTheme=t=>{if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme;const m=document.querySelector('meta[name=theme-color]');if(m)m.content=getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||m.content};
+applyTheme(LS.get('theme')||'');
+$('#themeSel').value=LS.get('theme')||'';$('#themeSel').onchange=e=>{LS.set('theme',e.target.value);applyTheme(e.target.value);toast(e.target.value==='light'?'已改為淺色':e.target.value==='dark'?'已改為深色':'已改為跟隨手機設定')};
 /* ---------- 備份 ---------- */
 $('#setBtn').onclick=async()=>{
   try{const e=await navigator.storage?.estimate?.();$('#usage').textContent=e?`已使用約 ${(e.usage/1048576).toFixed(1)} MB／可用約 ${(e.quota/1048576).toFixed(0)} MB`:''}catch(_){}

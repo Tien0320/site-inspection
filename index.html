@@ -142,6 +142,11 @@ textarea{min-height:72px;resize:vertical}
 .chipx{border:0;background:transparent;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:12px}
 .tsheet hr.tsep{border:0;border-top:1px dashed #000;margin:2px 0}
 .fld.dm2{display:grid!important;grid-template-columns:1fr 1fr;gap:10px 14px;align-items:start}.dm2>.fld{min-width:0}
+.eqbtn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:15px;text-align:left;cursor:pointer}.eqcaret{color:var(--ink-2)}
+.eqmenu{position:absolute;z-index:60;display:flex;align-items:flex-start;gap:4px;font-size:15px}.eqmenu.narrow{flex-direction:column}
+.eqcol{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:4px;min-width:180px;max-width:min(420px,92vw);max-height:60vh;overflow:auto}
+.eqit{padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}.eqit:hover,.eqit.open{background:var(--surface-2)}.eqit.on{background:var(--accent);color:#fff}
+.eqsys{color:var(--ec);font-weight:700}.eqsys.on{background:var(--ec);color:#fff}.eqsub{border-color:var(--ec)}.eqback{cursor:pointer;color:var(--ink-2);font-weight:400}.eqhd{padding:6px 10px;font-weight:700;color:var(--ec);border-bottom:1px solid var(--line);margin-bottom:2px}
 .tgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}.tgrp-h{display:flex;gap:6px;align-items:center}.tgrp-h select,.tgrp-h input{flex:1;min-width:0;min-height:40px}.tgrp-h .muted{font-size:12px;white-space:nowrap}
 .tsys{display:flex;gap:6px;flex:1;min-width:0}.tsys select{flex:1;min-width:0;min-height:40px}
 .tgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2)}
@@ -2455,6 +2460,28 @@ const MONITOR=[['R','門禁用感應式讀卡機含讀卡控制器(配合內裝�
   ['PTZ','全功能快速球高解析彩色攝影機','當層頂板'],['EB','緊急按鈕附透明外罩及說明文字','FL+120'],['SOS','緊急求救閃光喇叭','門框上緣10cm'],['FD','鐵捲門門位感知器','預留配管'],
   ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管']];
 const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,`${n}（${w}）`])};
+const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6'};
+/* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
+function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
+function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i=+btn.dataset.eqbtn,x=cur.form.items[i];if(!x)return;
+  const list=[...(EQUIP_OF[x.sys]||[]),'其他'],m=document.createElement('div');m.className='eqmenu';
+  m.innerHTML=`<div class="eqcol">${list.map(o=>SUB_EQUIP[o]?`<div class="eqit eqsys ${x.equip===o?'on':''}" data-eqsys="${o}" style="--ec:${EQ_COLOR[o]}">${o==='護士呼叫'?'🔴':'🔵'} ${o}<span>▶</span></div>`:`<div class="eqit ${x.equip===o?'on':''}" data-eqv="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
+  document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=(r.left+scrollX)+'px';m.style.top=(r.bottom+scrollY+2)+'px';m.style.minWidth=r.width+'px';
+  const showSub=o=>{m.querySelectorAll('.eqsub').forEach(z=>z.remove());m.querySelectorAll('.eqsys').forEach(z=>z.classList.toggle('open',z.dataset.eqsys===o));
+    const col=document.createElement('div');col.className='eqcol eqsub';col.style.setProperty('--ec',EQ_COLOR[o]);
+    col.innerHTML=`<div class="eqhd">${o}</div>`+SUB_EQUIP[o].map(([k,l])=>`<div class="eqit ${x.equip===o&&subEq(x)===k?'on':''}" data-eqsys2="${o}" data-eqk="${k}">${esc(l)}</div>`).join('');
+    m.appendChild(col);const mr=m.getBoundingClientRect();
+    if(innerWidth<640||mr.right>innerWidth-4){m.classList.add('narrow');m.querySelector('.eqcol').style.display='none';col.querySelector('.eqhd').innerHTML=`<span class="eqback" data-eqback="1">◀ 返回</span>　${o}`}};
+  m.addEventListener('mouseover',e=>{const t=e.target.closest('.eqsys');if(t&&innerWidth>=640&&matchMedia('(hover:hover)').matches&&!t.classList.contains('open'))showSub(t.dataset.eqsys)});
+  m.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('[data-eqback]')){m.querySelectorAll('.eqsub').forEach(z=>z.remove());m.querySelector('.eqcol').style.display='';return}const sy=e.target.closest('[data-eqsys]');if(sy){showSub(sy.dataset.eqsys);return}
+    const k=e.target.closest('[data-eqk]'),v=e.target.closest('[data-eqv]');if(!k&&!v)return;
+    if(k){x.equip=k.dataset.eqsys2;x.eqSub=k.dataset.eqk;delete x.nurse;const h=eqHeight(x);if(h&&isWallBox(cur)){x.nsDir='完成面';x.nsD=String(h);toast(`已帶入安裝高度設計值：距完成面 ${h} cm`)}}
+    else{x.equip=v.dataset.eqv;x.eqSub=''}
+    closeEqMenu();renderSlab();dirty();if(x.equip==='其他'){const o=document.querySelector(`[data-path="items.${i}.equipOther"]`);if(o)o.focus()}});
+  const cs=x.equip&&SUB_EQUIP[x.equip]?x.equip:'';if(cs)showSub(cs)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-eqbtn]');if(b){e.preventDefault();const was=document.querySelector('.eqmenu');closeEqMenu();if(!was||was.dataset.for!==b.dataset.eqbtn){openEqMenu(b);const m=document.querySelector('.eqmenu');if(m)m.dataset.for=b.dataset.eqbtn}return}
+  if(!(e.target.closest&&e.target.closest('.eqmenu')))closeEqMenu()});
+addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
 const eqHeight=x=>{if(x.equip!=='監控')return 0;const q=MONITOR.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
@@ -2485,9 +2512,8 @@ function slabItemHTML(i,x,no){
       <label class="field" style="max-width:90px"><span>數量</span>${inp(b+'.qty',x.qty,'個',1)}</label></div>
     <div class="pbody" style="border-top:0;padding:0;background:none">
       ${x.sys==='其他'?`<label class="field"><span>其他系統名稱</span>${inp(b+'.sysOther',x.sysOther,'系統名稱')}</label>`:''}
-      <label class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<select data-path="${b}.equip"${SUB_EQUIP[x.equip]?` style="color:${x.equip==='護士呼叫'?'#d6336c':'#1c7ed6'};font-weight:700;border-color:currentColor"`:''}><option value="">請選擇</option>${[...EQUIP_OF[x.sys],'其他'].map(o=>SUB_EQUIP[o]?`<option value="${o}" ${o===x.equip?'selected':''} style="color:${o==='護士呼叫'?'#d6336c':'#1c7ed6'};font-weight:700">${o==='護士呼叫'?'🔴':'🔵'} ${o}（系統）</option>`:`<option ${o===x.equip?'selected':''}>${o}</option>`).join('')}${x.equip&&x.equip!=='其他'&&!EQUIP_OF[x.sys].includes(x.equip)?`<option selected>${esc(x.equip)}</option>`:''}</select>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</label>
+      <div class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<button type="button" class="eqbtn" data-eqbtn="${i}" style="${SUB_EQUIP[x.equip]?`color:${EQ_COLOR[x.equip]};font-weight:700;border-color:currentColor`:''}">${esc(equipName(x)||'請選擇')}<span class="eqcaret">▾</span></button>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</div>
       ${x.equip==='其他'&&EQUIP_OF[x.sys]?`<label class="field"><span>其他設備名稱</span>${inp(b+'.equipOther',x.equipOther,'請輸入設備名稱')}</label>`:''}
-      ${SUB_EQUIP[x.equip]?`<label class="field" style="grid-column:1/-1"><span>${x.equip}設備（依圖例）</span><select data-path="${b}.eqSub"><option value="">請選擇</option>${SUB_EQUIP[x.equip].map(([k,l])=>`<option value="${k}" ${subEq(x)===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`:''}
       ${fl('出線盒以螺絲固定於',opts(b+'.screwOn',C.fix,'one',x.screwOn))}
       ${fl('出線盒有貼合',opts(b+'.fitOn',C.fix,'one',x.fitOn))}
       ${fl('出線盒型式',`<div class="opts">${chk(b+'.galv','熱浸鍍鋅',x.galv)}</div>`+opts(b+'.boxType',[['八角盒','八角盒（深 10cm、厚 2mm）'],['長方盒','長方盒（深 5cm、厚 2mm）']].filter(o=>!W||o[0]!=='八角盒'),'one',x.boxType),1)}

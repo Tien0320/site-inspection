@@ -2460,7 +2460,8 @@ const MONITOR=[['R','門禁用感應式讀卡機含讀卡控制器(配合內裝�
   ['DOME','半球型高解析彩色攝影機，安裝於天花板','當層頂板(天花)'],['GUN','固定式槍型手動變焦彩色攝影機，裝設於天花下15cm或270cm處','FL+270'],['AF','槍型自動對焦高解析彩色攝影機','當層頂板'],
   ['PTZ','全功能快速球高解析彩色攝影機','當層頂板'],['EB','緊急按鈕附透明外罩及說明文字','FL+120'],['SOS','緊急求救閃光喇叭','門框上緣10cm'],['FD','鐵捲門門位感知器','預留配管'],
   ['IR','人體紅外線偵測器','預留配管'],['DS','門位感知器','門框上緣'],['LCD','LCD液晶螢幕','預留配管']];
-const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,`${n}（${w}）`])};
+const eqShort=n=>n.split('，')[0].replace(/\(配合內裝與現場\)/,'').trim();
+const SUB_EQUIP={'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,n]),'監控':MONITOR.map(([k,n,w])=>[k,`${n}（${w}）`,eqShort(n)])};
 const EQ_COLOR={'護士呼叫':'#d6336c','監控':'#1c7ed6'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
@@ -2487,7 +2488,7 @@ addEventListener('hashchange',closeEqMenu);
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
 const eqHeight=x=>{if(x.equip!=='監控')return 0;const q=MONITOR.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
-const equipName=x=>{if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return x.equip+(q?'・'+q[2]:'')}return x.equip||''};
+const equipName=x=>{if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return q?q[2]:x.equip}return x.equip||''};
 const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','人體紅外線偵測器','槍型攝影機','沉水液位計','水箱磁簧','水管壓力雨水流量計'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',

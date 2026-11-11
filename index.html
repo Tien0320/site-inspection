@@ -1070,8 +1070,8 @@ function viewRec(id){
       ${locFields(r)}`}
     </div></section>
 
-  ${isPipeMat(r)&&r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">另件抽驗</p>
-    <button class="btn small" id="addFit" type="button">＋ 新增另件</button></div><div id="fitRows" class="prows"></div></section>`:''}
+  ${isPipeMat(r)&&r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">另件抽驗</p></div><div id="fitRows" class="prows"></div>
+    <button class="btn primary" id="addFit" type="button" style="width:100%;margin-top:10px">＋ 新增另件</button></section>`:''}
   ${isPipeMat(r)&&!r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">管材量測　標準值／實際值</p>
     <button class="btn small" id="addPipe" type="button">＋ 新增一種管徑</button></div>
     <div id="pipeRows" class="prows"></div>

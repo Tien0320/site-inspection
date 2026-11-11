@@ -1818,14 +1818,14 @@ const SUB_NAME={pvcA:'A管',pvcB:'B管',pvcE:'E管',gi6445:'CNS6445',gi4626:'CNS
 const PIPE_MAT={
   pvc:{names:{'PVC(A)':'pvcA','PVC(B)':'pvcB','PVC(E)':'pvcE'},def:'PVC(B)',brand:'南亞',specs:['1/2','3/4','1"','1-1/2','2"','2-1/2','3"','4"','5"','6"','8"']},
   gi:{names:{'鍍鋅鋼管CNS 4626':'gi4626','鍍鋅鋼管CNS 6445':'gi6445'},def:'鍍鋅鋼管CNS 6445',brand:'高興昌',specs:['1/2','3/4','1"','1-1/4','1-1/2','2"','2-1/2','3"','4"','5"','6"','8"','10"','12"','16"']},
-  hdpe:{names:{'虹吸排水HDPE管':'hdpe'},def:'虹吸排水HDPE管',brand:'valsir',specs:['56','63','75','90','110','160']}};
+  hdpe:{names:{'虹吸排水HDPE管':'hdpe'},def:'虹吸排水HDPE管',brand:'VALSIR',specs:['56','63','75','90','110','160']}};
 const subName=(t,k)=>{const n=PIPE_MAT[t]&&Object.entries(PIPE_MAT[t].names).find(([,v])=>v===k);return n&&n[0]};
 const pipeSizes=r=>PIPE_MAT[r.type]?PIPE_MAT[r.type].specs.map(v=>v.replace('"','')):Object.keys(PIPE_STD[stdKey(r)].sizes);
 const pipeSpecText=r=>[...new Set((r.pipes||[]).map(x=>x.size).filter(Boolean))].map(v=>v.includes('/')?v:v+'"').join('、');
 function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
-  if(r.fitting)r.mat.name=r.fitKind==='虹吸'?'虹吸另件':'PVC另件';else if(r.type==='hdpe')r.mat.name='虹吸';
-  const opts_=r.type==='pvc'||r.type==='hdpe'?['PVC(A)','PVC(B)','PVC(E)','PVC另件','虹吸','虹吸另件']:Object.keys(C.names);
+  if(r.fitting)r.mat.name=r.fitKind==='虹吸'?'虹吸另件':'PVC另件';else if(r.type==='hdpe')r.mat.name='虹吸管';
+  const opts_=r.type==='pvc'||r.type==='hdpe'?['PVC(A)','PVC(B)','PVC(E)','PVC另件','虹吸管','虹吸另件']:Object.keys(C.names);
   return `<label class="field"><span>材料名稱</span><select id="m_name">${opts_.map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
       ${r.fitting?'':`<label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>`}
       <label class="field"><span>${r.type==='gi'?'用途（消防／空調／給水）':'用途（照片查驗項目）'}</span><input type="text" id="m_use" list="useList" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}">${r.type==='gi'?'<datalist id="useList"><option>消防</option><option>空調</option><option>給水</option></datalist>':''}</label>`;
@@ -2083,7 +2083,7 @@ function bindMatName(r){const nm=$('#m_name');if(!nm||nm.tagName!=='SELECT')retu
       r.fitting=true;r.fitKind=k;r.mat.name=v_;r.fittings=r.fittings&&r.fittings.length?r.fittings:[];
       if(!r.fittings.length)r.fittings.push({...newFitting(),kind:k,brand:k==='虹吸'?'VALSIR':'南亞'});
       r.fittings.forEach(x=>{if(x.kind!==k&&!x.name&&!x.size){x.kind=k;x.brand=k==='虹吸'?'VALSIR':'南亞'}});return rer()}
-    if(v_==='虹吸'){delete r.fitting;r.type='hdpe';r.sub='hdpe';r.mat.name='虹吸';r.mat.brand=PIPE_MAT.hdpe.brand;if(!(r.pipes||[]).some(x=>x.sub==='hdpe'))r.pipes=[newPipeRow('hdpe')];
+    if(v_==='虹吸管'){delete r.fitting;r.type='hdpe';r.sub='hdpe';r.mat.name='虹吸管';r.mat.brand=PIPE_MAT.hdpe.brand;if(!(r.pipes||[]).some(x=>x.sub==='hdpe'))r.pipes=[newPipeRow('hdpe')];
       const st=r.items.find(i=>i.t==='標準');if(st)st.s=`CNS 編號及管種符合設計圖說：${PIPE_STD.hdpe.label}`;return rer()}
     if(r.type==='hdpe'){r.type='pvc';r.mat.brand='南亞';r.pipes=[newPipeRow('pvcB')]}
     delete r.fitting;setPipeSub(r,PIPE_MAT.pvc.names[v_])}}

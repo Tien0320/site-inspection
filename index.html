@@ -1904,10 +1904,14 @@ function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
 function pipePhotoText(r,p){
-  if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),item='PVC另件',where=r.location||'材料放置區';
+  if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
+    const item=(r.mat&&r.mat.use)||(x&&fitSiph(x)?'虹吸排水系統用另件':'排水系統用另件');
     if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};if(!x)return {item,where,desc:[]};
-    if(fitSiph(x))return {item:'虹吸排水另件',where,desc:[`廠牌:${x.brand||'VALSIR'}`,`品名:${fitName(x)}`,`品質管理標準:${x.size||''}`,x.meas?`實測值:${x.meas}`:'',x.look==='合格'?'外觀:無破損、變形':''].filter(Boolean)};
-    return {item,where,desc:[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,`管徑:${psi(x.size)}`,`規格:${fitStd(x)}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'',x.mark?'外觀打印:'+x.mark:''].filter(Boolean)}}
+    const t=fitTag(r,p),spec=fitSiph(x)?(x.size||''):psi(x.size),std=fitStd(x);let desc;
+    if(t==='實測')desc=fitSiph(x)?[`設計值:${spec}`,`實際量測:${x.meas||''}`]:[`設計值:管徑${spec}`,`實際量測:${x.meas||''}`];
+    else if(t==='外觀打印')desc=['外觀打印:',x.mark||''];
+    else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'','外觀打印:',x.mark||''];
+    return {item,where,desc:desc.filter(v=>v!=='')}}
   const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=r.location||'材料放置區';
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
@@ -1971,17 +1975,22 @@ const SIPH_FIT={'45°斜三通':['063/056mm','075/056mm','075mm','90/75mm'],'45�
   '不鏽鋼懸吊管卡':['D063','D075','D090','D110','D160'],'不鏽鋼立管卡':['D075','D090','D110','D160'],'不鏽鋼方鋼接合件30型(插銷)':['不鏽鋼30型(插銷)'],
   '不鏽鋼M10安裝片':['M10'],'不鏽鋼M18安裝片':['M18'],'030不鏽鋼方鋼卡':['030不鏽鋼方鋼卡'],'不鏽鋼插銷-長':['不鏽鋼插銷-長']};
 const fitStd=x=>fitSiph(x)?'EN1519 HDPE':`CNS1298 ${x.spec||''}`;
+const FIT_TAGS=['總覽','實測','外觀打印'];
+function fitTag(r,p){if(p.tag&&FIT_TAGS.includes(p.tag))return p.tag;const un=bySeq(r).filter(q=>q.ref===p.ref&&!(q.tag&&FIT_TAGS.includes(q.tag))),used=new Set(bySeq(r).filter(q=>q.ref===p.ref&&FIT_TAGS.includes(q.tag)).map(q=>q.tag)),free=FIT_TAGS.filter(t=>!used.has(t));return free[un.indexOf(p)]||''}
+function fitPhStrip(r,x){const list=bySeq(r).filter(p=>p.ref===x.id);
+  return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(fitTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
+    <div class="opts" style="margin-top:6px">${FIT_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}<label class="opt">＋照片（自動）<input type="file" accept="image/*" multiple hidden data-phref="${x.id}"></label></div>`}
 const fitName=x=>x.name==='其他'?(x.nameOther||'其他'):(x.name||'');
 function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;r.fittings=r.fittings||[];
   const sel=(k,n,list,ph,cur_)=>`<select data-fk="${k}" data-fn="${n}"><option value="">${ph}</option>${list.map(o=>`<option ${o===cur_?'selected':''}>${o}</option>`).join('')}</select>`;
   box.innerHTML=r.fittings.length?r.fittings.map((x,n)=>`<div class="prow">
     <div class="prow-h"><b class="num">${n+1}</b>${sel('kind',n,['排水','虹吸'],'排水／虹吸',x.kind)}${sel('name',n,fitSiph(x)?Object.keys(SIPH_FIT):FIT_NAMES,'品名',x.name)}${sel('size',n,fitSiph(x)?(SIPH_FIT[x.name]||[]):PIPE_MAT.pvc.specs.map(v=>v.replace('"','')),fitSiph(x)?'規格':'管徑',x.size)}<span class="grow"></span><button type="button" class="btn small danger" data-fdel="${n}">刪除</button></div>
     ${x.name==='其他'?`<label class="field"><span>其他品名</span><input type="text" data-fk="nameOther" data-fn="${n}" value="${esc(x.nameOther||'')}"></label>`:''}
-    <div class="tgrid">${fitSiph(x)?`<label>實測值<input type="text" data-fk="meas" data-fn="${n}" value="${esc(x.meas||'')}" placeholder="${esc(x.size||'實測值')}"></label>`:`<label>規格${sel('spec',n,['A管','B管','E管'],'規格',x.spec)}</label><label>管色${sel('color',n,['橘','灰'],'管色',x.color)}</label>`}
+    <div class="tgrid">${fitSiph(x)?`<label>實測值<input type="text" data-fk="meas" data-fn="${n}" value="${esc(x.meas||'')}" placeholder="${esc(x.size||'實測值')}"></label>`:`<label>實測值<input type="text" data-fk="meas" data-fn="${n}" value="${esc(x.meas||'')}" placeholder="${esc(psi(x.size)||'實測值')}"></label><label>規格${sel('spec',n,['A管','B管','E管'],'規格',x.spec)}</label><label>管色${sel('color',n,['橘','灰'],'管色',x.color)}</label>`}
       <label>廠牌<input type="text" data-fk="brand" data-fn="${n}" value="${esc(x.brand||'')}" placeholder="南亞"></label><label>抽驗數量<input type="text" inputmode="numeric" data-fk="qty" data-fn="${n}" value="${esc(x.qty||'')}" placeholder="1"></label></div>
     <div class="fld"><span>外觀檢查</span><div class="opts">${['合格','不合格'].map(o=>`<button type="button" class="opt ${x.look===o?'on':''}" data-fk="look" data-fn="${n}" data-val="${o}">${o==='合格'?'無破損、變形，合格':'不合格'}</button>`).join('')}</div></div>
     <label class="field"><span>外觀打印（品名印字）</span><input type="text" data-fk="mark" data-fn="${n}" value="${esc(x.mark||'')}" placeholder="例：南亞 CNS1298 DV 90°L 4&quot;"></label>
-    <div class="fld"><span>此另件照片</span>${phStrip(x.id)}</div></div>`).join(''):'<div class="empty">尚無另件，按「新增另件」。</div>';
+    <div class="fld"><span>此另件照片（依序：總覽、實測、外觀打印）</span>${fitPhStrip(r,x)}</div></div>`).join(''):'<div class="empty">尚無另件，按「新增另件」。</div>';
   box.oninput=e=>{const el=e.target,k=el.dataset.fk;if(!k||el.tagName==='BUTTON')return;const x=r.fittings[+el.dataset.fn];x[k]=el.value;if(k==='kind'){x.size='';x.name='';x.brand=fitSiph(x)?'VALSIR':'南亞';if(fitSiph(x))x.color=''}if(k==='name'&&fitSiph(x)){const L=SIPH_FIT[x.name]||[];x.size=L.length===1?L[0]:''}if(k==='name'||k==='kind'){renderFitRows()}dirty()};
   box.onclick=e=>{const o=e.target.closest('[data-fk="look"]');if(o){const x=r.fittings[+o.dataset.fn];x.look=x.look===o.dataset.val?'':o.dataset.val;renderFitRows();dirty();return}
     const d=e.target.closest('[data-fdel]');if(d){if(!d.dataset.arm){d.dataset.arm='1';d.textContent='確定？';setTimeout(()=>{if(d.isConnected){d.dataset.arm='';d.textContent='刪除'}},2500);return}

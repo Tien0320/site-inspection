@@ -1826,7 +1826,7 @@ function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
   if(r.fitting)r.mat.name='另件';
   return `<label class="field"><span>材料名稱</span><select id="m_name">${[...Object.keys(C.names),...(r.type==='pvc'?['另件']:[])].map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
-      <label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>
+      ${r.fitting?'':`<label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>`}
       <label class="field"><span>${r.type==='gi'?'用途（消防／空調／給水）':'用途（照片查驗項目）'}</span><input type="text" id="m_use" list="useList" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}">${r.type==='gi'?'<datalist id="useList"><option>消防</option><option>空調</option><option>給水</option></datalist>':''}</label>`;
 }
 /* 電線材料：名稱、廠牌固定，規格下拉 */

@@ -2000,7 +2000,7 @@ function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;bindMatNam
 }
 function fitSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`;
-  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">實測值:<span class="ul">${x.meas?v(x.meas):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c">${x.look==='合格'?'合格':x.look==='不合格'?'不合格':''}</td></tr>`;
+  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>實測值:<span class="ul">${x.meas?v(x.meas):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c">${x.look==='合格'?'合格':x.look==='不合格'?'不合格':''}</td></tr>`;
     const std=[`廠牌:${v(x.brand)}`,`品名:${v(fitName(x))}`,`管徑:${psi(x.size)}`,`規格:${v(fitStd(x))}`,'外觀:無破損、變形'].join('<br>');
     const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.name,'品名:'+v(fitName(x))),cb(!!x.size,'管徑:'+psi(x.size)),cb(true,'規格:'+v(fitStd(x))),cb(x.look==='合格','外觀:無破損、變形')+(x.mark?'<br>外觀打印:'+v(x.mark):'')].join('<br>');
     return `<tr><td class="c">${fitSiph(x)?'虹吸另件':'排水另件'}<br>${v(fitName(x))}<br>${psi(x.size)}${x.color?`<br>(${v(x.color)}色)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${x.look==='合格'?'合格':x.look==='不合格'?'不合格':''}</td></tr>`}).join('');

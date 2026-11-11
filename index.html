@@ -512,7 +512,7 @@ const MODES = [
   {key:'mat',  name:'材料查驗', code:'',  hint:'材料進場檢驗'}
 ];
 const modeOf = r => r.mode || 'work';
-const typeName = r => modeOf(r)==='mat' ? (MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name+(r.fitting?' 另件':r.sub&&typeof SUB_NAME!=='undefined'&&SUB_NAME[r.sub]?' '+SUB_NAME[r.sub]:'') : typN(r.cat,r.type).name;
+const typeName = r => modeOf(r)==='mat' ? r.fitting?(r.fitKind==='虹吸'?'虹吸另件':'PVC另件'):(MAT_TYPES.find(t=>t.key===r.type)||{name:r.type}).name+(r.fitting?(r.fitKind==='虹吸'?' 虹吸另件':' 另件'):r.sub&&typeof SUB_NAME!=='undefined'&&SUB_NAME[r.sub]?' '+SUB_NAME[r.sub]:'') : typN(r.cat,r.type).name;
 /* 樓板接線盒可含多系統：在各系統頁也列出含該系統接線盒的紀錄 */
 /* 樓板／柱牆接線盒可含多系統：依各處實際選的系統歸類（沒選系統時才用建立時的類別） */
 const recUnits=list=>list.reduce((n,r)=>n+(modeOf(r)==='work'?Math.max(1,slabSyss(r).length):1),0); // 一張含多系統的接線盒算多筆（依系統各一張表）
@@ -1824,8 +1824,9 @@ const pipeSizes=r=>PIPE_MAT[r.type]?PIPE_MAT[r.type].specs.map(v=>v.replace('"',
 const pipeSpecText=r=>[...new Set((r.pipes||[]).map(x=>x.size).filter(Boolean))].map(v=>v.includes('/')?v:v+'"').join('、');
 function pipeMatFields(r){
   const C=PIPE_MAT[r.type];r.mat=r.mat||{};r.mat.name=subName(r.type,stdKey(r))||C.def;r.mat.brand=C.brand;
-  if(r.fitting)r.mat.name='另件';
-  return `<label class="field"><span>材料名稱</span><select id="m_name">${[...Object.keys(C.names),...(r.type==='pvc'?['另件']:[])].map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
+  if(r.fitting)r.mat.name=r.fitKind==='虹吸'?'虹吸另件':'PVC另件';else if(r.type==='hdpe')r.mat.name='虹吸';
+  const opts_=r.type==='pvc'||r.type==='hdpe'?['PVC(A)','PVC(B)','PVC(E)','PVC另件','虹吸','虹吸另件']:Object.keys(C.names);
+  return `<label class="field"><span>材料名稱</span><select id="m_name">${opts_.map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>
       ${r.fitting?'':`<label class="field"><span>廠牌</span><input type="text" id="m_brand" value="${C.brand}" readonly></label>`}
       <label class="field"><span>${r.type==='gi'?'用途（消防／空調／給水）':'用途（照片查驗項目）'}</span><input type="text" id="m_use" list="useList" value="${esc(r.mat.use||'')}" placeholder="${esc(pipeUse({...r,mat:{}}))}">${r.type==='gi'?'<datalist id="useList"><option>消防</option><option>空調</option><option>給水</option></datalist>':''}</label>`;
 }
@@ -1981,7 +1982,7 @@ function fitPhStrip(r,x){const list=bySeq(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(fitTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${FIT_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}<label class="opt">＋照片（自動）<input type="file" accept="image/*" multiple hidden data-phref="${x.id}"></label></div>`}
 const fitName=x=>x.name==='其他'?(x.nameOther||'其他'):(x.name||'');
-function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;r.fittings=r.fittings||[];
+function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;bindMatName(r);r.fittings=r.fittings||[];
   const sel=(k,n,list,ph,cur_)=>`<select data-fk="${k}" data-fn="${n}"><option value="">${ph}</option>${list.map(o=>`<option ${o===cur_?'selected':''}>${o}</option>`).join('')}</select>`;
   box.innerHTML=r.fittings.length?r.fittings.map((x,n)=>`<div class="prow">
     <div class="prow-h"><b class="num">${n+1}</b>${sel('kind',n,['排水','虹吸'],'排水／虹吸',x.kind)}${sel('name',n,fitSiph(x)?Object.keys(SIPH_FIT):FIT_NAMES,'品名',x.name)}${sel('size',n,fitSiph(x)?(SIPH_FIT[x.name]||[]):PIPE_MAT.pvc.specs.map(v=>v.replace('"','')),fitSiph(x)?'規格':'管徑',x.size)}<span class="grow"></span><button type="button" class="btn small danger" data-fdel="${n}">刪除</button></div>
@@ -1995,7 +1996,7 @@ function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;r.fittings
   box.onclick=e=>{const o=e.target.closest('[data-fk="look"]');if(o){const x=r.fittings[+o.dataset.fn];x.look=x.look===o.dataset.val?'':o.dataset.val;renderFitRows();dirty();return}
     const d=e.target.closest('[data-fdel]');if(d){if(!d.dataset.arm){d.dataset.arm='1';d.textContent='確定？';setTimeout(()=>{if(d.isConnected){d.dataset.arm='';d.textContent='刪除'}},2500);return}
       const [g]=r.fittings.splice(+d.dataset.fdel,1);orphan([g.id]);renderFitRows();renderPhotos();dirty()}};
-  const a=$('#addFit');if(a)a.onclick=()=>{const last=r.fittings[r.fittings.length-1];const n=newFitting();if(last){n.kind=last.kind;n.spec=last.spec;n.color=last.color;n.brand=last.brand}r.fittings.push(n);renderFitRows();dirty()};
+  const a=$('#addFit');if(a)a.onclick=()=>{const last=r.fittings[r.fittings.length-1];const n=newFitting();n.kind=r.fitKind||'排水';n.brand=n.kind==='虹吸'?'VALSIR':'南亞';if(last){n.kind=last.kind;n.spec=last.spec;n.color=last.color;n.brand=last.brand}r.fittings.push(n);renderFitRows();dirty()};
 }
 function fitSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`;
@@ -2072,10 +2073,20 @@ function renderPipeRows(){
     r.pipes.splice(+b.dataset.pdel,1);renderPipeRows();dirty()};
   const add=$('#addPipe');if(add)add.onclick=()=>{const last=r.pipes[r.pipes.length-1];r.pipes.push(newPipeRow(last?rowKey(r,last):stdKey(r)));renderPipeRows();dirty()};
   const sub=$('#pipeSub');if(sub)sub.onchange=e=>setPipeSub(r,e.target.value);
-  const nm=$('#m_name');if(nm&&nm.tagName==='SELECT')nm.addEventListener('change',e=>{
-    if(e.target.value==='另件'){r.fitting=true;r.mat.name='另件';r.fittings=r.fittings&&r.fittings.length?r.fittings:[newFitting()];dirty();const y=scrollY;render();scrollTo(0,y);return}
-    if(r.fitting){delete r.fitting}setPipeSub(r,PIPE_MAT[r.type].names[e.target.value])});
+  bindMatName(r);
 }
+/* 材料名稱：PVC(A/B/E)、PVC另件、虹吸（HDPE 管）、虹吸另件 互相切換 */
+function bindMatName(r){const nm=$('#m_name');if(!nm||nm.tagName!=='SELECT')return;
+  nm.onchange=e=>{const v_=e.target.value,rer=()=>{dirty();const y=scrollY;render();scrollTo(0,y)};
+    if(v_==='PVC另件'||v_==='虹吸另件'){const k=v_==='虹吸另件'?'虹吸':'排水';
+      if(r.type==='hdpe'){r.type='pvc';r.sub='pvcB'}
+      r.fitting=true;r.fitKind=k;r.mat.name=v_;r.fittings=r.fittings&&r.fittings.length?r.fittings:[];
+      if(!r.fittings.length)r.fittings.push({...newFitting(),kind:k,brand:k==='虹吸'?'VALSIR':'南亞'});
+      r.fittings.forEach(x=>{if(x.kind!==k&&!x.name&&!x.size){x.kind=k;x.brand=k==='虹吸'?'VALSIR':'南亞'}});return rer()}
+    if(v_==='虹吸'){delete r.fitting;r.type='hdpe';r.sub='hdpe';r.mat.name='虹吸';r.mat.brand=PIPE_MAT.hdpe.brand;if(!(r.pipes||[]).some(x=>x.sub==='hdpe'))r.pipes=[newPipeRow('hdpe')];
+      const st=r.items.find(i=>i.t==='標準');if(st)st.s=`CNS 編號及管種符合設計圖說：${PIPE_STD.hdpe.label}`;return rer()}
+    if(r.type==='hdpe'){r.type='pvc';r.mat.brand='南亞';r.pipes=[newPipeRow('pvcB')]}
+    delete r.fitting;setPipeSub(r,PIPE_MAT.pvc.names[v_])}}
 function setPipeSub(r,k){r.sub=k;if(PIPE_MAT[r.type]){r.mat=r.mat||{};r.mat.name=subName(r.type,k)}const st=r.items.find(i=>i.t==='標準');if(st)st.s=`CNS 編號及管種符合設計圖說：${PIPE_STD[r.sub].label}`;
     r.pipes.forEach(x=>{x.sub=r.sub;if(x.size){if(PIPE_STD[r.sub].sizes[x.size])pipeApplyStd(r.sub,x);else{if(!pipeSizes(r).includes(x.size))x.size='';['stdOD','odTol','stdT','tPlus','tMinus','stdL'].forEach(k=>x[k]='')}}});
     dirty();const y=scrollY;render();scrollTo(0,y);

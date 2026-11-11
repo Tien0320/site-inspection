@@ -1896,7 +1896,9 @@ const STD_NAME={pvcA:'CNS1298 A管',pvcB:'CNS1298 B管',pvcE:'CNS1302 E管',gi64
 const HD_IN={'56':'1-1/2"','63':'2"','75':'2-1/2"','90':'3"','110':'4"','160':'6"'};
 const HD_PRINT={'90':'3.5','110':'4.2','160':'6.2'};
 const hdIn=v=>HD_IN[v]||'';
-const hdID=x=>x.stdOD&&x.stdT?`${r2(num(x.stdOD)-2*num(x.stdT))}mm`:'';
+/* 內徑 Di 依 VALSIR 型錄 */
+const HD_DI={'56':'50','63':'57','75':'69','90':'83','110':'101.4','160':'147.6'};
+const hdID=x=>HD_DI[x.size]?`${HD_DI[x.size]}mm`:'';
 const psi=v=>v?(/^(56|63|75|90|110|160)$/.test(v)?`D${v}`:`ψ${v}〞`):'';
 const odTxt=x=>x.stdOD?`${x.stdOD}mm${x.odTol!==''&&x.odTol!=null?'±'+x.odTol+'mm':''}`:'';
 const thkTxt=x=>x.stdT?`${x.stdT}mm${x.tPlus!==''&&x.tPlus!=null?'+'+x.tPlus+'mm':''}${x.tMinus&&+x.tMinus?'-'+x.tMinus+'mm':''}`:'';

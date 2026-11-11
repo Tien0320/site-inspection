@@ -1910,8 +1910,8 @@ function pipePhotoText(r,p){
     if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};if(!x)return {item,where,desc:[]};
     const t=fitTag(r,p),spec=fitSiph(x)?(x.size||''):psi(x.size),std=fitStd(x);let desc;
     if(t==='實測')desc=fitSiph(x)?[`設計值:${spec}`,`實際量測:${x.meas||''}`]:[`設計值:管徑${spec}`,`實際量測:${x.meas||''}`];
-    else if(t==='外觀打印')desc=['外觀打印:',x.mark||''];
-    else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`實際量測:${x.meas||''}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'','外觀打印:',x.mark||''];
+    else if(t==='外觀打印')desc=[...(x.mark?['外觀打印:',x.mark]:[])];
+    else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`實際量測:${x.meas||''}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'',...(x.mark?['外觀打印:',x.mark]:[])];
     return {item,where,desc:desc.filter(v=>v!=='')}}
   const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=r.location||'材料放置區';
   let desc=[];
@@ -1921,14 +1921,14 @@ function pipePhotoText(r,p){
     else if(t==='厚度')desc=[`設計值:壁厚:${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值;長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
     else if(t==='外觀打印')desc=['外觀打印:',x.print||'',`${giItem(r)} ${giSpec(x.size)}`,x.inQty?`共進場${x.inQty}`:''];
-    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,'外觀打印:',x.print||''];
+    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,...(x.print?['外觀打印:',x.print]:[])];
   }
   else if(x){const t=phTag(r,p),k=rowKey(r,x);
     if(t==='外徑')desc=[`設計值外徑: ${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
     else if(t==='厚度')desc=[`設計值厚度: ${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
     else if(t==='外觀打印')desc=['外觀打印:',x.print||''];
-    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,'外觀打印:',x.print||''];
+    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,...(x.print?['外觀打印:',x.print]:[])];
   }
   return {item,where,desc:desc.filter(v=>v!=='')};
 }

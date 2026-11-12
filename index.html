@@ -574,7 +574,7 @@ const MAT_TPL = {
    ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
   ],
   duct:[
-   ['廠牌','鍍鋅鋼板廠牌與核准送審資料相符'],
+   ['廠牌','風管廠牌與核准送審資料相符（創映）'],
    ['材質','鍍鋅鋼板 CNS1244 SGCC，鍍鋅量 Z27（275g/m²）以上'],
    ['板厚','依風管長邊：≦300mm 0.5mm、301～750mm 0.6mm、751～1500mm 0.8mm、1501～2250mm 1.0mm、2251mm以上 1.2mm'],
    ['尺寸','風管尺寸符合設計圖說'],
@@ -1076,7 +1076,7 @@ function viewRec(id){
       <label class="field"><span>查驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${modeOf(r)==='mat'?`
       ${PIPE_MAT[r.type]?pipeMatFields(r):r.type==='wire'?wireMatFields(r):`${r.type==='duct'?ductNameField(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>`}
-      <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="${r.type==='duct'?'例：燁輝 鍍鋅鋼板':'例：南亞'}"></label>
+      <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="${r.type==='duct'?'例：創映':'例：南亞'}"></label>
       <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="${r.type==='duct'?'例：600×400mm t0.8mm':'例：4&quot; CNS1298'}"></label>`}
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
       :`<label class="field"><span>檢查時機</span><input type="text" id="f_stage" value="${esc(r.stage='施工完成')}" readonly></label>
@@ -1874,26 +1874,29 @@ const DUCT_KINDS=['空調風管','排煙風管'];
 const DUCT_THK={'空調風管':'依風管長邊：≦300mm 0.5mm、301～750mm 0.6mm、751～1500mm 0.8mm、1501～2250mm 1.0mm、2251mm以上 1.2mm',
   '排煙風管':'依風管長邊：≦450mm 0.8mm、451～1200mm 1.0mm、1201mm以上 1.2mm'};
 function setDuctKind(r,k){r.mat=r.mat||{};r.mat.name=k;const it=(r.items||[]).find(i=>i.t==='板厚');if(it)it.s=DUCT_THK[k];dirty()}
-function ductNameField(r){r.mat=r.mat||{};if(!DUCT_KINDS.includes(r.mat.name))setDuctKind(r,'空調風管');
+function ductNameField(r){r.mat=r.mat||{};if(!r.mat.brand)r.mat.brand='創映';if(!DUCT_KINDS.includes(r.mat.name))setDuctKind(r,'空調風管');
   return `<label class="field"><span>材料名稱</span><select id="m_name">${DUCT_KINDS.map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>`}
 const DUCT_GAUGES=['#26','#24','#22','#20','#18'];
 const DUCT_THK_SEED={'#24':'0.57~0.71'};
+/* 空調風管標準值（寬×高 cm；#24、長 143cm、厚 0.57~0.71mm） */
+const DUCT_STD_AC=['35×30','35×35','40×30','40×35','45×30','45×35','45×40','50×30','50×35','50×40','55×30','55×40','55×50','60×40','60×45','60×50','65×35','70×50','70×65','75×50'];
 function ductThkMem(){try{return {...DUCT_THK_SEED,...JSON.parse(LS.get('ductThk')||'{}')}}catch(e){return {...DUCT_THK_SEED}}}
 const newDuct=()=>({id:uid(),gauge:'#24',len:'143',w:'',h:'',thk:ductThkMem()['#24']||'',meas:''});
 function ductJudge(x){const m=num(x.meas),a=String(x.thk||'').split(/[~～\-]/).map(num);if(m==null||a[0]==null)return null;return m>=a[0]-1e-9&&(a[1]==null||m<=a[1]+1e-9)}
 function renderDuctRows(){const r=cur,box=$('#ductRows');if(!box)return;r.ducts=r.ducts||[];
   const inp=(k,n,v,ph,mode)=>`<input type="text" ${mode?`inputmode="${mode}"`:''} data-dk="${k}" data-dn="${n}" value="${esc(v||'')}" placeholder="${ph}">`;
   box.innerHTML=r.ducts.length?r.ducts.map((x,n)=>{const j=ductJudge(x);return `<div class="prow">
-    <div class="prow-h"><b class="num">${n+1}</b><select data-dk="gauge" data-dn="${n}"><option value="">厚度編號</option>${DUCT_GAUGES.map(g=>`<option ${g===x.gauge?'selected':''}>${g}</option>`).join('')}</select><span class="grow"></span><button type="button" class="btn small danger" data-ddel="${n}">刪除</button></div>
+    <div class="prow-h"><b class="num">${n+1}</b><select data-dk="gauge" data-dn="${n}"><option value="">厚度編號</option>${DUCT_GAUGES.map(g=>`<option ${g===x.gauge?'selected':''}>${g}</option>`).join('')}</select>${r.mat&&r.mat.name==='排煙風管'?'':`<select data-dk="std" data-dn="${n}"><option value="">標準尺寸</option>${DUCT_STD_AC.map(o=>`<option ${o===x.w+'×'+x.h?'selected':''}>${o}</option>`).join('')}</select>`}<span class="grow"></span><button type="button" class="btn small danger" data-ddel="${n}">刪除</button></div>
     <div class="tgrid"><label>長度(cm)${inp('len',n,x.len,'143','decimal')}</label><label>寬度(cm)${inp('w',n,x.w,'65','decimal')}</label><label>高度(cm)${inp('h',n,x.h,'35','decimal')}</label>
       <label>厚度範圍(mm)${inp('thk',n,x.thk,'0.57~0.71')}</label><label>實測厚度(mm)<input type="text" inputmode="decimal" data-dk="meas" data-dn="${n}" value="${esc(x.meas||'')}" placeholder="0.65" ${j===false?'style="border-color:var(--ng,#c62828);color:var(--ng,#c62828)"':''}></label></div>
     ${j===false?'<p class="muted" style="color:var(--ng,#c62828);margin:4px 0">實測厚度超出範圍</p>':''}
     <div class="fld"><span>此節照片</span>${phStrip(x.id)}</div></div>`}).join(''):'<div class="empty">尚無量測，按「新增一節風管」。</div>';
   box.onchange=e=>{const el=e.target,k=el.dataset.dk;if(!k)return;const x=r.ducts[+el.dataset.dn];
+    if(k==='std'&&el.value){const [w,h]=el.value.split('×');Object.assign(x,{gauge:'#24',len:'143',w,h,thk:ductThkMem()['#24']||'0.57~0.71'});renderDuctRows();dirty();return}
     if(k==='gauge'){x.gauge=el.value;const t=ductThkMem()[el.value];x.thk=t||'';renderDuctRows();dirty()}
     if(k==='thk'&&x.gauge){const m=JSON.parse(LS.get('ductThk')||'{}');m[x.gauge]=el.value;LS.set('ductThk',JSON.stringify(m))}
     if(k==='meas')renderDuctRows()};
-  box.oninput=e=>{const el=e.target,k=el.dataset.dk;if(!k||k==='gauge')return;r.ducts[+el.dataset.dn][k]=el.value;dirty()};
+  box.oninput=e=>{const el=e.target,k=el.dataset.dk;if(!k||k==='gauge'||k==='std')return;r.ducts[+el.dataset.dn][k]=el.value;dirty()};
   box.onclick=e=>{const d=e.target.closest('[data-ddel]');if(!d)return;if(!d.dataset.arm){d.dataset.arm='1';d.textContent='確定？';setTimeout(()=>{if(d.isConnected){d.dataset.arm='';d.textContent='刪除'}},2500);return}
     const [g]=r.ducts.splice(+d.dataset.ddel,1);orphan([g.id]);renderDuctRows();renderPhotos();dirty()};
   const a=$('#addDuct');if(a)a.onclick=()=>{const last=r.ducts[r.ducts.length-1],n=newDuct();if(last){n.gauge=last.gauge;n.thk=last.thk;n.len=last.len}r.ducts.push(n);renderDuctRows();dirty()};
@@ -1904,7 +1907,7 @@ function ductSheet(r){if(!(r.ducts||[]).length)return '';const v=x=>esc(x==null?
 function ductPhotoText(r,p){const x=(r.ducts||[]).find(q=>q.id===p.ref);if(!x)return null;
   const item=(r.mat&&r.mat.name)||'風管',where=r.location||'材料放置區';
   if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};
-  return {item,where,desc:[`厚度編號:${x.gauge||''}`,`尺寸:長${x.len||''}×寬${x.w||''}×高${x.h||''}cm`,`厚度:${x.thk||''}mm`,`實際量測:${x.meas?x.meas+'mm':''}`]}}
+  return {item,where,desc:[`廠牌:${(r.mat&&r.mat.brand)||''}`,`厚度編號:${x.gauge||''}`,`尺寸:長${x.len||''}×寬${x.w||''}×高${x.h||''}cm`,`厚度:${x.thk||''}mm`,`實際量測:${x.meas?x.meas+'mm':''}`]}}
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
 const newPipeRow=type=>({id:uid(),sub:type,brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
 function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}

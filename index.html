@@ -521,6 +521,7 @@ const inCat=(r,ck)=>{const ss=slabSyss(r);if(ss.length&&typeof SYS_OF!=='undefin
 const backOf = r => (typeof zoneBack!=='undefined'&&zoneBack&&zoneBackId===r.id) ? zoneBack : modeOf(r)==='mat' ? `mat-${r.type}` : `cat-${r.cat}-${r.type}-work`;
 const mode = k => MODES.find(m=>m.key===k) || MODES[0];
 /* 材料查驗：依材料種類分（不分大項） */
+const MAT_LOC='機電材料置放區';
 const MAT_CAT = {key:'mat', name:'材料', code:'M'};
 const MAT_TYPES = [
   {key:'pvc', name:'PVC管',    code:'PV', color:'plumb', hint:'A管／B管／E管'},
@@ -1080,7 +1081,8 @@ function viewRec(id){
       ${PIPE_MAT[r.type]?pipeMatFields(r):r.type==='wire'?wireMatFields(r):`${r.type==='duct'?ductNameField(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>`}
       <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="${r.type==='duct'?'例：創映':'例：南亞'}"></label>
       <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="${r.type==='duct'?'例：600×400mm t0.8mm':'例：4&quot; CNS1298'}"></label>`}
-      <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
+      ${(()=>{if(r.location==null||r.location==='')r.location=MAT_LOC;const oth=r.location!==MAT_LOC;return `<label class="field"><span>存放位置</span><select id="f_locSel"><option ${oth?'':'selected'}>${MAT_LOC}</option><option value="其他" ${oth?'selected':''}>其他（自行輸入）</option></select></label>
+      ${oth?`<label class="field"><span>其他存放位置</span><input type="text" id="f_loc" value="${esc(r.location==='其他'?'':r.location)}" placeholder="例：B1 材料區"></label>`:''}`})()}`
       :`<label class="field"><span>檢查時機</span><input type="text" id="f_stage" value="${esc(r.stage='施工完成')}" readonly></label>
       ${locFields(r)}`}
     </div></section>
@@ -1117,6 +1119,7 @@ function viewRec(id){
 `;
   renderItems(); renderPhotos(); if(r.type==='duct'&&modeOf(r)==='mat')renderDuctRows(); if(isPipeMat(r)){if(r.fitting)renderFitRows();else renderPipeRows()}
   const bind=(sel,key)=>{if($(sel))$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
+  if($('#f_locSel'))$('#f_locSel').addEventListener('change',e=>{r.location=e.target.value==='其他'?'其他':MAT_LOC;dirty();const y=scrollY;render();scrollTo(0,y);if($('#f_loc'))$('#f_loc').focus()});
   bind('#f_date','date');if($('#f_stage'))bind('#f_stage','stage');
   if(modeOf(r)!=='mat')bindLoc(r);
   r.mat=r.mat||{};['name','brand','spec','qty','ref','use'].forEach(k=>{const el=$('#m_'+k);if(el)el.addEventListener('input',e=>{r.mat[k]=e.target.value;dirty()})});bind('#f_loc','location');bind('#f_insp','inspector');
@@ -1909,7 +1912,7 @@ function ductSheet(r){if(!(r.ducts||[]).length)return '';const v=x=>esc(x==null?
   return `<table style="margin-top:6px"><tr><th colspan="7">風管量測紀錄</th></tr><tr><th>項次</th><th>厚度編號</th><th>長度(cm)</th><th>寬度(cm)</th><th>高度(cm)</th><th>厚度(mm)</th><th>實測厚度(mm)</th></tr>
     ${r.ducts.map((x,n)=>{const j=ductJudge(x);return `<tr><td class="c">${n+1}</td><td class="c">${v(x.gauge)}</td><td class="c">${v(x.len)}</td><td class="c">${v(x.w)}</td><td class="c">${v(x.h)}</td><td class="c">${v(x.thk)}</td><td class="c">${v(x.meas)}${j===false?' ×':''}</td></tr>`}).join('')}</table>`}
 function ductPhotoText(r,p){const x=(r.ducts||[]).find(q=>q.id===p.ref);if(!x)return null;
-  const item=(r.mat&&r.mat.name)||'風管',where=r.location||'材料放置區';
+  const item=(r.mat&&r.mat.name)||'風管',where=(r.location&&r.location!=='其他'?r.location:MAT_LOC);
   if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};
   return {item,where,desc:[`廠牌:${(r.mat&&r.mat.brand)||''}`,`厚度編號:${x.gauge||''}`,`尺寸:長${x.len||''}×寬${x.w||''}×高${x.h||''}cm`,`厚度:${x.thk||''}mm`,`實際量測:${x.meas?x.meas+'mm':''}`]}}
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
@@ -1976,7 +1979,7 @@ const pvcSheetName=u=>{u=u.replace(/系統用管$/,'');if(/PVC/i.test(u))return 
 const inQ=x=>{const v=String(x.inQty||'').trim();const m=v.match(/^([\d.]+)\s*[mM]?$/);return m?m[1]+'m':v};
 const mz=(v,u)=>` 實測:${v?v+u:''}`;
 function pipePhotoText(r,p){
-  if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
+  if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=(r.location&&r.location!=='其他'?r.location:MAT_LOC);
     const item=(r.mat&&r.mat.use)||(x&&fitSiph(x)?'虹吸排水系統用另件':'排水系統用另件');
     if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/).map(l=>l.replace(/^(實際量測:)(.+)$/,(m,a,b)=>a+fmU(b)))};if(!x)return {item,where,desc:[]};
     const t=fitTag(r,p),spec=fitSiph(x)?(x.size||''):psi(x.size),std=fitStd(x);let desc;
@@ -1984,7 +1987,7 @@ function pipePhotoText(r,p){
     else if(t==='外觀打印')desc=[...(x.mark?['外觀打印:',x.mark]:[])];
     else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`實際量測:${fmU(x.meas)}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'',...(x.mark?['外觀打印:',x.mark]:[])];
     return {item,where,desc:desc.filter(v=>v!=='')}}
-  const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=r.location||'材料放置區';
+  const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=(r.location&&r.location!=='其他'?r.location:MAT_LOC);
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x&&G){const t=phTag(r,p),k=rowKey(r,x);
@@ -3063,7 +3066,7 @@ function sheetHTML(r){
       <tr><td class="k">承攬廠商</td><td>${esc(p.con)}</td><td class="k">查驗日期</td><td>${rocDate(r.date)}</td></tr>
       ${modeOf(r)==='mat'?`
       <tr><td class="k">材料名稱</td><td>${esc(r.mat?.name)}</td><td class="k">廠牌／型號</td><td>${esc(r.mat?.brand)}</td></tr>
-      <tr><td class="k">規格</td><td>${esc(PIPE_MAT[r.type]?pipeSpecText(r):r.mat?.spec)}</td><td class="k">使用位置</td><td>${esc(r.location)}</td></tr>`
+      <tr><td class="k">規格</td><td>${esc(PIPE_MAT[r.type]?pipeSpecText(r):r.mat?.spec)}</td><td class="k">存放位置</td><td>${esc(r.location==="其他"?"":r.location)}</td></tr>`
       :`<tr><td class="k">檢查時機</td><td colspan="3">${STAGES.map(s=>(s==='施工完成'?'■':'□')+s).join('　')}</td></tr>
       <tr><td class="k">查驗位置</td><td colspan="3">${esc(r.location)}</td></tr>`}
     </table>

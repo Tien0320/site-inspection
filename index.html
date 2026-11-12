@@ -1971,7 +1971,7 @@ function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
 const pvcSheetName=u=>{u=u.replace(/系統用管$/,'');if(/PVC/i.test(u))return u;return `PVC ${/管/.test(u)?u:u+'管'}`};
-const inQ=x=>{const v=String(x.inQty||'').trim();return /^[\d.]+$/.test(v)?v+'M':v};
+const inQ=x=>{const v=String(x.inQty||'').trim();const m=v.match(/^([\d.]+)\s*[mM]?$/);return m?m[1]+'m':v};
 const mz=(v,u)=>` 實測:${v?v+u:''}`;
 function pipePhotoText(r,p){
   if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
@@ -2114,7 +2114,7 @@ function renderPipeRows(){
           <label>厚度 mm <span data-pj="t${n}">${mark(j.t)}</span>${fa('t','實測厚度','t')}</label>
           <label>長度 cm <span data-pj="len${n}">${mark(j.len)}</span>${fa('len','實測長度','len')}</label>
           <label>抽驗數量<input type="text" inputmode="numeric" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="1"></label>
-          <label>進場數量 M（照片用）<input type="text" inputmode="decimal" data-pk="inQty" data-pn="${n}" value="${esc(x.inQty||'')}" placeholder="例：42.7"></label>
+          <label>進場數量 m（照片用）<input type="text" inputmode="decimal" data-pk="inQty" data-pn="${n}" value="${esc(x.inQty||'')}" placeholder="例：42.7"></label>
         </div>
       </div>
       <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>

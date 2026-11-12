@@ -526,6 +526,7 @@ const MAT_TYPES = [
   {key:'pvc', name:'PVC管',    code:'PV', color:'plumb', hint:'A管／B管／E管'},
   {key:'gi',  name:'鍍鋅鋼管', code:'GI', color:'hvac',  hint:'CNS6445／CNS4626'},
   {key:'hdpe',name:'虹吸排水HDPE管', code:'HD', color:'plumb', hint:'valsir EN1519 D56～D160'},
+  {key:'duct',name:'風管', code:'DU', color:'hvac', hint:'鍍鋅鋼板風管'},
   {group:'其他材料',key:'wire',   name:'電線',     code:'W', color:'elec',  hint:'電線、電纜'},
   {group:'其他材料',key:'box',    name:'接線盒',   code:'B', color:'low',   hint:'接線盒、出線盒'},
   {group:'其他材料',key:'hanger', name:'吊架',     code:'H', color:'hvac',  hint:'吊桿、角鋼、管束'},
@@ -537,6 +538,7 @@ const MAT_ICON = {
   pipe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h11a4 4 0 014 4v8M3 15h9a2 2 0 012 2v4"/></svg>',
   wire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 18c4 0 4-12 8-12s4 12 8 12"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/><circle cx="21" cy="18" r="1.5" fill="currentColor"/></svg>',
   box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
+  duct:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 8h12l4-3v14l-4-3H3z"/><path d="M7 8v8M11 8v8"/></svg>',
   hanger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3h18M8 3v12M16 3v12M5 15h14v4H5z"/></svg>',
   panel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
   other:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>'
@@ -570,6 +572,17 @@ const MAT_TPL = {
    ['數量','進場數量與送貨單相符'],
    ['現場存放','分類堆置，防潮、防曬'],
    ['取樣送驗','依規定需取樣送驗者已辦理（另附紀錄）']
+  ],
+  duct:[
+   ['廠牌','鍍鋅鋼板廠牌與核准送審資料相符'],
+   ['材質','鍍鋅鋼板 CNS1244 SGCC，鍍鋅量 Z27（275g/m²）以上'],
+   ['板厚','依風管長邊：≦300mm 0.5mm、301～750mm 0.6mm、751～1500mm 0.8mm、1501～2250mm 1.0mm、2251mm以上 1.2mm'],
+   ['尺寸','風管尺寸符合設計圖說'],
+   ['接合補強','縱向接縫咬合確實，法蘭接合及補強符合規範'],
+   ['外觀打印','鋼板印字清楚：廠牌、CNS、鍍鋅量、厚度'],
+   ['外觀','鍍層無剝落、鏽蝕、凹陷、變形'],
+   ['證明文件','出廠證明、檢驗報告齊全'],
+   ['現場存放','墊高存放，風管口封口防塵']
   ],
   hanger:[
    ['廠牌型號','吊架材料廠牌、型號與核准送審資料相符'],
@@ -1062,9 +1075,9 @@ function viewRec(id){
     <div class="panel fields">
       <label class="field"><span>查驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       ${modeOf(r)==='mat'?`
-      ${PIPE_MAT[r.type]?pipeMatFields(r):r.type==='wire'?wireMatFields(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>
-      <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="例：南亞"></label>
-      <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="例：4&quot; CNS1298"></label>`}
+      ${PIPE_MAT[r.type]?pipeMatFields(r):r.type==='wire'?wireMatFields(r):`${r.type==='duct'?ductNameField(r):`<label class="field"><span>材料名稱</span><input type="text" id="m_name" value="${esc(r.mat?.name)}" placeholder="例：PVC 排水管"></label>`}
+      <label class="field"><span>廠牌／型號</span><input type="text" id="m_brand" value="${esc(r.mat?.brand)}" placeholder="${r.type==='duct'?'例：燁輝 鍍鋅鋼板':'例：南亞'}"></label>
+      <label class="field"><span>規格</span><input type="text" id="m_spec" value="${esc(r.mat?.spec)}" placeholder="${r.type==='duct'?'例：600×400mm t0.8mm':'例：4&quot; CNS1298'}"></label>`}
       <label class="field" style="grid-column:1/-1"><span>使用位置／存放位置</span><input type="text" id="f_loc" value="${esc(r.location)}" placeholder="例：2F 四人房浴廁／B1 材料區"></label>`
       :`<label class="field"><span>檢查時機</span><input type="text" id="f_stage" value="${esc(r.stage='施工完成')}" readonly></label>
       ${locFields(r)}`}
@@ -1102,6 +1115,7 @@ function viewRec(id){
   bind('#f_date','date');if($('#f_stage'))bind('#f_stage','stage');
   if(modeOf(r)!=='mat')bindLoc(r);
   r.mat=r.mat||{};['name','brand','spec','qty','ref','use'].forEach(k=>{const el=$('#m_'+k);if(el)el.addEventListener('input',e=>{r.mat[k]=e.target.value;dirty()})});bind('#f_loc','location');bind('#f_insp','inspector');
+  if(r.type==='duct'&&$('#m_name'))$('#m_name').addEventListener('change',e=>{setDuctKind(r,e.target.value);const y=scrollY;render();scrollTo(0,y)});
   bind('#f_defect','defect');bind('#f_fix','fix');bind('#f_rdate','recheckDate');bind('#f_recheck','recheck');bind('#f_remark','remark');
   $('#allOk').onclick=()=>{r.items.forEach(i=>{if(!i.result)i.result='ok'});renderItems();dirty()};
   $('#addItem').onclick=()=>{const t=$('#newItem').value.trim();if(!t)return;r.items.push({id:uid(),t,s:'',result:'',note:'',custom:true});$('#newItem').value='';renderItems();dirty()};
@@ -1851,6 +1865,13 @@ function stdFor(type,size){
   return {stdOD:od,odTol:small?0.3:r2(od*0.008),stdT:t,tPlus:t<3?0.3:r2(t*0.1),tMinus:t<3?0.3:r2(t*0.1),stdL:6};
 }
 const isPipeType=k=>!!PIPE_GROUPS[k]||PIPE_TYPES.includes(k);
+/* 風管：空調風管／排煙風管，板厚標準依種類 */
+const DUCT_KINDS=['空調風管','排煙風管'];
+const DUCT_THK={'空調風管':'依風管長邊：≦300mm 0.5mm、301～750mm 0.6mm、751～1500mm 0.8mm、1501～2250mm 1.0mm、2251mm以上 1.2mm',
+  '排煙風管':'依風管長邊：≦450mm 0.8mm、451～1200mm 1.0mm、1201mm以上 1.2mm'};
+function setDuctKind(r,k){r.mat=r.mat||{};r.mat.name=k;const it=(r.items||[]).find(i=>i.t==='板厚');if(it)it.s=DUCT_THK[k];dirty()}
+function ductNameField(r){r.mat=r.mat||{};if(!DUCT_KINDS.includes(r.mat.name))setDuctKind(r,'空調風管');
+  return `<label class="field"><span>材料名稱</span><select id="m_name">${DUCT_KINDS.map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>`}
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
 const newPipeRow=type=>({id:uid(),sub:type,brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
 function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}

@@ -1976,7 +1976,7 @@ const mz=(v,u)=>` 實測:${v?v+u:''}`;
 function pipePhotoText(r,p){
   if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
     const item=(r.mat&&r.mat.use)||(x&&fitSiph(x)?'虹吸排水系統用另件':'排水系統用另件');
-    if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};if(!x)return {item,where,desc:[]};
+    if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/).map(l=>l.replace(/^(實際量測:)(.+)$/,(m,a,b)=>a+fmU(b)))};if(!x)return {item,where,desc:[]};
     const t=fitTag(r,p),spec=fitSiph(x)?(x.size||''):psi(x.size),std=fitStd(x);let desc;
     if(t==='實測')desc=fitSiph(x)?[`設計值:${spec}`,`實際量測:${fmU(x.meas)}`]:[`設計值:管徑${spec}`,`實際量測:${fmU(x.meas)}`];
     else if(t==='外觀打印')desc=[...(x.mark?['外觀打印:',x.mark]:[])];

@@ -901,8 +901,10 @@ function viewHome(){
       return `<button class="tile" style="--c:var(--c-${c.key})" data-cat="${c.key}">
         <span class="ic">${ICON[c.key]}</span><span class="nm">${c.name}${c.key==='beam'?'<small class="nmsub">穿樑/穿牆</small>':''}</span>
         <span class="ct"><span class="num">${rs.length} 筆</span>${ng?`<span class="chip ng">待改善 ${ng}</span>`:''}</span></button>`}).join('')}</div></section>`;
-    const recent=[...recs].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
-    html+=`<section><p class="label">最近的查驗</p>${recent.length?`<div class="list" id="recentList">${recent.flatMap(r=>{const ss=slabSyss(r);return ss.length>1?ss.map(x=>recRow(r,x)):[recRow(r)]}).join('')}</div>`:`<div class="empty">這個標案還沒有查驗紀錄。點上方任一查驗大項開始。</div>`}</section>`;
+    const byUpd=l=>[...l].sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,6);
+    const recSec=(title,l,empty)=>`<section><p class="label">${title}</p>${l.length?`<div class="list recentList">${l.flatMap(r=>{const ss=slabSyss(r);return ss.length>1?ss.map(x=>recRow(r,x)):[recRow(r)]}).join('')}</div>`:`<div class="empty">${empty}</div>`}</section>`;
+    html+=recSec('最近的施工查驗',byUpd(recs.filter(r=>modeOf(r)!=='mat')),'尚無施工查驗紀錄。');
+    html+=recSec('最近的材料查驗',byUpd(recs.filter(r=>modeOf(r)==='mat')),'尚無材料查驗紀錄。');
   }
   $('#view').innerHTML=html;
   $('#toTrash')&&($('#toTrash').onclick=()=>go('trash'));
@@ -914,7 +916,7 @@ function viewHome(){
   document.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>{curProj=b.dataset.proj;LS.set('curProj',curProj);viewHome()});
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>go('cat-'+b.dataset.cat+'-'+(b.dataset.cat==='beam'?'pick':typesOf(b.dataset.cat)[0].key)+'-work'));
   bindRecRows();
-  document.querySelectorAll('#recentList [data-rec]').forEach(b=>b.onclick=()=>{printSys=b.dataset.sys||'';go('view-'+b.dataset.rec)});
+  document.querySelectorAll('.recentList [data-rec]').forEach(b=>b.onclick=()=>{printSys=b.dataset.sys||'';go('view-'+b.dataset.rec)});
 }
 function viewTrash(){
   const p=proj(curProj);if(!p)return go('home');

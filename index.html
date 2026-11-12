@@ -1085,9 +1085,9 @@ function viewRec(id){
 
   ${isPipeMat(r)&&r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">另件抽驗</p></div><div id="fitRows" class="prows"></div>
     <button class="btn primary" id="addFit" type="button" style="width:100%;margin-top:10px">＋ 新增另件</button></section>`:''}
-  ${isPipeMat(r)&&!r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">管材量測　標準值／實際值</p>
-    <button class="btn small" id="addPipe" type="button">＋ 新增一種管徑</button></div>
+  ${isPipeMat(r)&&!r.fitting?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">管材量測　標準值／實際值</p></div>
     <div id="pipeRows" class="prows"></div>
+    <button class="btn primary" id="addPipe" type="button" style="width:100%;margin-top:10px">＋ 新增一種管徑</button>
     <p class="muted" style="margin:6px 0 0">選好管徑會自動帶入 CNS 標準外徑、厚度與公差（可修改）；廠牌與外觀打印依管徑各自記住。實測值超出公差會標紅並提醒。</p></section>`:''}
   ${modeOf(r)==='mat'&&r.type==='duct'?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">風管量測</p></div><div id="ductRows" class="prows"></div>
     <button class="btn primary" id="addDuct" type="button" style="width:100%;margin-top:10px">＋ 新增一節風管</button>

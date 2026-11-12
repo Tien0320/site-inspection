@@ -1970,6 +1970,7 @@ function phTag(r,p){if(p.tag)return p.tag;const row=(r.pipes||[]).find(x=>x.id==
 function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
+const pvcSheetName=u=>{u=u.replace(/系統用管$/,'');if(/PVC/i.test(u))return u;return `PVC ${/管/.test(u)?u:u+'管'}`};
 const mz=(v,u)=>` 實測:${v?v+u:''}`;
 function pipePhotoText(r,p){
   if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
@@ -2004,7 +2005,7 @@ function pipePhotoText(r,p){
 function pipeSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`,ul=(x,u)=>`<span class="ul">${x?v(x):'&emsp;&emsp;&emsp;'}</span>${u}`;
   const ks=[...new Set((r.pipes||[]).map(x=>rowKey(r,x)))];
-  const G=r.type==='gi',name=r.type==='hdpe'?'虹吸 HDPE管':G?`鍍鋅鋼管${[...new Set((r.pipes||[]).map(x=>(STD_NAME[rowKey(r,x)]||'').replace('CNS','CNS ')))].join('、')||''} (${pipeUse(r)})`:`PVC ${pipeUse(r).replace(/系統用管$/,'').replace(/管$/,'')}管`;
+  const G=r.type==='gi',name=r.type==='hdpe'?'虹吸 HDPE管':G?`鍍鋅鋼管${[...new Set((r.pipes||[]).map(x=>(STD_NAME[rowKey(r,x)]||'').replace('CNS','CNS ')))].join('、')||''} (${pipeUse(r)})`:pvcSheetName(pipeUse(r));
   const rows=(r.pipes||[]).map(x=>{const k=rowKey(r,x),j=pipeJudge(x),S=PIPE_STD[k]||{};
     if(S.hdpe){const sp=hdIn(x.size)||(x.size?'D'+v(x.size):'');
       const std=[`廠牌:${v(x.brand)}`,`標準:CNS2456`,`規格:${sp}`,`材質:HDPE`,`外徑:${odTxt(x)}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:${v(x.print)}`].join('<br>');

@@ -1971,6 +1971,7 @@ function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
 const pvcSheetName=u=>{u=u.replace(/系統用管$/,'');if(/PVC/i.test(u))return u;return `PVC ${/管/.test(u)?u:u+'管'}`};
+const inQ=x=>{const v=String(x.inQty||'').trim();return /^[\d.]+$/.test(v)?v+'M':v};
 const mz=(v,u)=>` 實測:${v?v+u:''}`;
 function pipePhotoText(r,p){
   if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
@@ -1988,16 +1989,16 @@ function pipePhotoText(r,p){
     if(t==='外徑')desc=[`設計值:外徑:${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
     else if(t==='厚度')desc=[`設計值:壁厚:${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值;長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
-    else if(t==='外觀打印')desc=['外觀打印:',x.print||'',`${giItem(r)} ${giSpec(x.size)}`,x.inQty?`共進場${x.inQty}`:''];
-    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${x.inQty}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
+    else if(t==='外觀打印')desc=['外觀打印:',x.print||'',`${giItem(r)} ${giSpec(x.size)}`,x.inQty?`共進場${inQ(x)}`:''];
+    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${inQ(x)}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
   }
   else if(x){const t=phTag(r,p),k=rowKey(r,x);
     if(t==='外徑')desc=[`設計值外徑: ${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
     else if(t==='厚度')desc=[`設計值${r.type==='hdpe'?'壁厚':'厚度'}: ${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
     else if(t==='外觀打印')desc=['外觀打印:',x.print||''];
-    else if(r.type==='hdpe')desc=[`廠牌:${x.brand||''}`,`標準:CNS2456`,`規格:${hdIn(x.size)||psi(x.size)}`,'材質:HDPE',`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${x.inQty}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
-    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`厚度:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${x.inQty}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
+    else if(r.type==='hdpe')desc=[`廠牌:${x.brand||''}`,`標準:CNS2456`,`規格:${hdIn(x.size)||psi(x.size)}`,'材質:HDPE',`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${inQ(x)}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
+    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`厚度:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.inQty?[`進場數量:${inQ(x)}`]:[]),...(x.print?['外觀打印:',x.print]:[])];
   }
   return {item,where,desc:desc.filter(v=>v!=='')};
 }
@@ -2113,7 +2114,7 @@ function renderPipeRows(){
           <label>厚度 mm <span data-pj="t${n}">${mark(j.t)}</span>${fa('t','實測厚度','t')}</label>
           <label>長度 cm <span data-pj="len${n}">${mark(j.len)}</span>${fa('len','實測長度','len')}</label>
           <label>抽驗數量<input type="text" inputmode="numeric" data-pk="qty" data-pn="${n}" value="${esc(x.qty)}" placeholder="1"></label>
-          <label>進場數量（照片用）<input type="text" data-pk="inQty" data-pn="${n}" value="${esc(x.inQty||'')}" placeholder="例：42.7M"></label>
+          <label>進場數量 M（照片用）<input type="text" inputmode="decimal" data-pk="inQty" data-pn="${n}" value="${esc(x.inQty||'')}" placeholder="例：42.7"></label>
         </div>
       </div>
       <div class="pwarn" data-pw="${n}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div>

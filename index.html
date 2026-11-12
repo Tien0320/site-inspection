@@ -1978,9 +1978,9 @@ function pipePhotoText(r,p){
     const item=(r.mat&&r.mat.use)||(x&&fitSiph(x)?'虹吸排水系統用另件':'排水系統用另件');
     if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};if(!x)return {item,where,desc:[]};
     const t=fitTag(r,p),spec=fitSiph(x)?(x.size||''):psi(x.size),std=fitStd(x);let desc;
-    if(t==='實測')desc=fitSiph(x)?[`設計值:${spec}`,`實際量測:${x.meas||''}`]:[`設計值:管徑${spec}`,`實際量測:${x.meas||''}`];
+    if(t==='實測')desc=fitSiph(x)?[`設計值:${spec}`,`實際量測:${fmU(x.meas)}`]:[`設計值:管徑${spec}`,`實際量測:${fmU(x.meas)}`];
     else if(t==='外觀打印')desc=[...(x.mark?['外觀打印:',x.mark]:[])];
-    else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`實際量測:${x.meas||''}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'',...(x.mark?['外觀打印:',x.mark]:[])];
+    else desc=[`廠牌:${x.brand||''}`,`品名:${fitName(x)}`,fitSiph(x)?`規格:${spec}`:`管徑:${spec}`,`實際量測:${fmU(x.meas)}`,`標準:${std}${x.color?'（'+x.color+'色）':''}`,x.look==='合格'?'外觀:無破損、變形':'',...(x.mark?['外觀打印:',x.mark]:[])];
     return {item,where,desc:desc.filter(v=>v!=='')}}
   const x=(r.pipes||[]).find(q=>q.id===p.ref),G=r.type==='gi',item=G?giItem(r):pipeUse(r),where=r.location||'材料放置區';
   let desc=[];
@@ -2046,6 +2046,7 @@ const SIPH_FIT={'45°斜三通':['063/056mm','075/056mm','075mm','90/75mm'],'45�
   '偏心變徑':['63/56mm','75/56mm','75/63mm','90/75mm','110/56mm','110/63mm','110/75mm','110/90mm'],'電銲管箍':['63mm','75mm','90mm','110mm','160mm'],
   '不鏽鋼懸吊管卡':['D063','D075','D090','D110','D160'],'不鏽鋼立管卡':['D075','D090','D110','D160'],'不鏽鋼方鋼接合件30型(插銷)':['不鏽鋼30型(插銷)'],
   '不鏽鋼M10安裝片':['M10'],'不鏽鋼M18安裝片':['M18'],'030不鏽鋼方鋼卡':['030不鏽鋼方鋼卡'],'不鏽鋼插銷-長':['不鏽鋼插銷-長']};
+const fmU=v=>{v=String(v||'').trim();return /^[\d.\/\s]+$/.test(v)&&v?v+'mm':v};
 const fitStd=x=>fitSiph(x)?'EN1519 HDPE':`CNS1298 ${x.spec||''}`;
 const FIT_TAGS=['總覽','實測','外觀打印'];
 function fitTag(r,p){if(p.tag&&FIT_TAGS.includes(p.tag))return p.tag;const un=bySeq(r).filter(q=>q.ref===p.ref&&!(q.tag&&FIT_TAGS.includes(q.tag))),used=new Set(bySeq(r).filter(q=>q.ref===p.ref&&FIT_TAGS.includes(q.tag)).map(q=>q.tag)),free=FIT_TAGS.filter(t=>!used.has(t));return free[un.indexOf(p)]||''}
@@ -2071,7 +2072,7 @@ function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;bindMatNam
 }
 function fitSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`;
-  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>實測值:<span class="ul">${x.meas?v(x.meas):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c"></td></tr>`;
+  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>實測值:<span class="ul">${x.meas?v(fmU(x.meas)):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c"></td></tr>`;
     const std=[`廠牌:${v(x.brand)}`,`品名:${v(fitName(x))}`,`管徑:${psi(x.size)}`,`規格:${v(fitStd(x))}`,'外觀:無破損、變形'].join('<br>');
     const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.name,'品名:'+v(fitName(x))),cb(!!x.size,'管徑:'+psi(x.size)),cb(true,'規格:'+v(fitStd(x))),cb(x.look==='合格','外觀:無破損、變形')+(x.mark?'<br>外觀打印:'+v(x.mark):'')].join('<br>');
     return `<tr><td class="c">${fitSiph(x)?'虹吸另件':'排水另件'}<br>${v(fitName(x))}<br>${psi(x.size)}${x.color?`<br>(${v(x.color)}色)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c"></td></tr>`}).join('');

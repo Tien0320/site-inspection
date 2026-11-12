@@ -362,7 +362,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 .sptools{gap:6px}
 .dsheet{font-size:10pt}
 .wsheet h3{letter-spacing:.2em}.wsheet .dsub{padding-left:0;text-align:right}
-.psheet{font-size:10pt}.psheet h3{margin-bottom:6px}.psheet .dsub{font-size:11pt;margin:2px 0 4px}.psheet .ul{display:inline-block;min-width:3.5em;border-bottom:1px solid #000;text-align:center}.psheet .pfoot{text-align:right;margin-top:8mm;font-size:10pt}
+.psheet{font-size:10pt}.psheet h3{margin-bottom:6px}.psheet .dsub{font-size:11pt;margin:2px 0 4px;text-align:right}.psheet .ul{display:inline-block;min-width:3.5em;border-bottom:1px solid #000;text-align:center}.psheet .pfoot{text-align:right;margin-top:8mm;font-size:10pt}
 .dsheet .dsub{font-size:11pt;padding-left:3em;margin:2px 0}
 .dsheet .dsub+table{margin-top:4px}
 .dsheet .dtop{display:flex;justify-content:space-between;font-size:9.5pt;margin-bottom:2px}
@@ -2003,28 +2003,28 @@ function pipePhotoText(r,p){
 function pipeSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`,ul=(x,u)=>`<span class="ul">${x?v(x):'&emsp;&emsp;&emsp;'}</span>${u}`;
   const ks=[...new Set((r.pipes||[]).map(x=>rowKey(r,x)))];
-  const G=r.type==='gi',name=r.type==='hdpe'?'虹吸 HDPE管':G?`鍍鋅鋼管${[...new Set((r.pipes||[]).map(x=>(STD_NAME[rowKey(r,x)]||'').replace('CNS','CNS ')))].join('、')||''} (${pipeUse(r)})`:`PVC ${pipeUse(r).replace(/系統用管$/,'')}管`;
+  const G=r.type==='gi',name=r.type==='hdpe'?'虹吸 HDPE管':G?`鍍鋅鋼管${[...new Set((r.pipes||[]).map(x=>(STD_NAME[rowKey(r,x)]||'').replace('CNS','CNS ')))].join('、')||''} (${pipeUse(r)})`:`PVC ${pipeUse(r).replace(/系統用管$/,'').replace(/管$/,'')}管`;
   const rows=(r.pipes||[]).map(x=>{const k=rowKey(r,x),j=pipeJudge(x),S=PIPE_STD[k]||{};
     if(S.hdpe){const sp=hdIn(x.size)||(x.size?'D'+v(x.size):'');
       const std=[`廠牌:${v(x.brand)}`,`標準:CNS2456`,`規格:${sp}`,`材質:HDPE`,`外徑:${odTxt(x)}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:${v(x.print)}`].join('<br>');
       const got=['廠牌:'+cb(!!x.brand,v(x.brand)),'標準:'+cb(true,'CNS2456'),'規格:'+cb(!!x.size,sp),'材質:'+cb(true,'HDPE'),`外徑:${ul(x.od,'mm')}${j.od===false?' ×':''}`,`壁厚:${ul(x.t,'mm')}${j.t===false?' ×':''}`,`長度:${ul(x.len,'cm')}${j.len===false?' ×':''}`,'外觀打印:',cb(!!x.print,'外觀打印:'+v(x.print))].join('<br>');
-      return `<tr><td class="c">虹吸<br>HDPE管<br>${x.size?`${sp} (${v(x.size)}mm)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${j.all==null?'':j.all?'合格':'不合格'}</td></tr>`}
+      return `<tr><td class="c">虹吸<br>HDPE管<br>${x.size?`${sp} (${v(x.size)}mm)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c"></td></tr>`}
     if(!S.pvc){const sn=(STD_NAME[k]||'').replace('CNS','CNS ');
       const std=[`廠牌:${v(x.brand)}`,`標準:${(STD_NAME[k]||'')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:<br>${v(x.print)}`].join('<br>');
       const got=['廠牌:'+cb(!!x.brand,v(x.brand)),'標準:'+cb(!!k,sn),'規格:'+cb(!!x.size,giSpec(x.size)),`外徑:${ul(x.od,'mm')}${j.od===false?' ×':''}`,`壁厚:${ul(x.t,'mm')}${j.t===false?' ×':''}`,`長度:${ul(x.len,'cm')}${j.len===false?' ×':''}`,'外觀打印:<br>'+cb(!!x.print,v(x.print))].join('<br>');
-      return `<tr><td class="c">鍍鋅鋼管<br>${sn}<br>${x.size?v(x.size)+'” ('+(GI_MM[x.size]||'')+'mm)':''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${j.all==null?'':j.all?'合格':'不合格'}</td></tr>`}
+      return `<tr><td class="c">鍍鋅鋼管<br>${sn}<br>${x.size?v(x.size)+'” ('+(GI_MM[x.size]||'')+'mm)':''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c"></td></tr>`}
     const kind=S.pvc?`PVC管 ${psi(x.size)}<br>${SUB_NAME[k]||''}${x.color?`<br>(${v(x.color)}色)`:''}`:`鍍鋅鋼管 ${psi(x.size)}<br>${STD_NAME[k]||''}`;
     const std=[`廠牌:${v(x.brand)}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,`外觀打印:<br>${v(x.print)}`].join('<br>');
     const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.size,'管徑:'+psi(x.size)),cb(!!k,'標準:'+(STD_NAME[k]||'').replace(/ .*/,''))+(S.pvc?' '+cb(!!k,SUB_NAME[k]||''):''),
       `外徑:${ul(x.od,'mm')}${j.od===false?' ×':''}`,`厚度:${ul(x.t,'mm')}${j.t===false?' ×':''}`,`長度:${ul(x.len,'cm')}${j.len===false?' ×':''}`,cb(!!x.print,'外觀打印:')+`<br>${v(x.print)}`].join('<br>');
-    return `<tr><td class="c">${kind}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${j.all==null?'':j.all?'合格':'不合格'}</td></tr>`}).join('');
+    return `<tr><td class="c">${kind}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c"></td></tr>`}).join('');
   const isD=r.projectId==='p-nycuh-dorm';
   return `<div class="sheet psheet">
     <h3>表5-5材料/設備品質抽驗紀錄表</h3>
     <div class="dsub">表單編號：${isD||r.projectId==='p-nycuh-med2'?'10812-SB-':''}</div>
     <table><colgroup><col style="width:15%"><col style="width:33%"><col style="width:8%"><col style="width:30%"><col style="width:14%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="4">${v(p.name)}</td></tr>
-      <tr><td class="k">材料/設備名稱</td><td colspan="2">${v(name)}</td><td class="k">檢查日期</td><td class="c">${rocDate(r.date)}</td></tr>
+      <tr><td class="k">材料/設備名稱</td><td colspan="2">${v(name)}</td><td colspan="2" style="padding:0"><table style="width:100%;height:100%;border-collapse:collapse;margin:0"><tr><td class="k" style="border:0;border-right:1px solid #000;width:45%">檢查日期</td><td class="c" style="border:0;white-space:nowrap">${rocDate(r.date)}</td></tr></table></td></tr>
       <tr><th>抽驗項目</th><th>抽驗標準</th><th>抽驗<br>數量</th><th>抽驗值</th><th>抽驗結果</th></tr>
       ${rows}
       <tr><td></td><td class="c">以下空白</td><td></td><td></td><td></td></tr>
@@ -2068,15 +2068,15 @@ function renderFitRows(){const r=cur,box=$('#fitRows');if(!box)return;bindMatNam
 }
 function fitSheet(r){
   const p=proj(r.projectId)||{},v=x=>esc(x==null?'':x),cb=(on,l)=>`${on?'■':'□'}${l}`;
-  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>實測值:<span class="ul">${x.meas?v(x.meas):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c">${x.look==='合格'?'合格':x.look==='不合格'?'不合格':''}</td></tr>`;
+  const rows=(r.fittings||[]).map(x=>{if(fitSiph(x))return `<tr><td class="c">${v(fitName(x))}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>${v(x.size)}</td><td class="c">${v(x.qty||'1')}</td><td class="small">廠牌:${v(x.brand||'VALSIR')}<br>實測值:<span class="ul">${x.meas?v(x.meas):'&emsp;&emsp;&emsp;'}</span>${x.look==='合格'?'<br>■外觀無破損、變形':''}</td><td class="c"></td></tr>`;
     const std=[`廠牌:${v(x.brand)}`,`品名:${v(fitName(x))}`,`管徑:${psi(x.size)}`,`規格:${v(fitStd(x))}`,'外觀:無破損、變形'].join('<br>');
     const got=[cb(!!x.brand,'廠牌:'+v(x.brand)),cb(!!x.name,'品名:'+v(fitName(x))),cb(!!x.size,'管徑:'+psi(x.size)),cb(true,'規格:'+v(fitStd(x))),cb(x.look==='合格','外觀:無破損、變形')+(x.mark?'<br>外觀打印:'+v(x.mark):'')].join('<br>');
-    return `<tr><td class="c">${fitSiph(x)?'虹吸另件':'排水另件'}<br>${v(fitName(x))}<br>${psi(x.size)}${x.color?`<br>(${v(x.color)}色)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c">${x.look==='合格'?'合格':x.look==='不合格'?'不合格':''}</td></tr>`}).join('');
+    return `<tr><td class="c">${fitSiph(x)?'虹吸另件':'排水另件'}<br>${v(fitName(x))}<br>${psi(x.size)}${x.color?`<br>(${v(x.color)}色)`:''}</td><td class="small">${std}</td><td class="c">${v(x.qty||'1')}</td><td class="small">${got}</td><td class="c"></td></tr>`}).join('');
   return `<div class="sheet psheet"><h3>表5-5材料/設備品質抽驗紀錄表</h3>
     <div class="dsub">表單編號：${/^p-nycuh/.test(r.projectId)?'10812-SB-':''}</div>
     <table><colgroup><col style="width:15%"><col style="width:33%"><col style="width:8%"><col style="width:30%"><col style="width:14%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="4">${v(p.name)}</td></tr>
-      <tr><td class="k">材料/設備名稱</td><td colspan="2">${[...new Set((r.fittings||[]).map(x=>fitSiph(x)?'虹吸另件':'排水另件'))].join('、')||'另件'}</td><td class="k">檢查日期</td><td class="c">${rocDate(r.date)}</td></tr>
+      <tr><td class="k">材料/設備名稱</td><td colspan="2">${[...new Set((r.fittings||[]).map(x=>fitSiph(x)?'虹吸另件':'排水另件'))].join('、')||'另件'}</td><td colspan="2" style="padding:0"><table style="width:100%;height:100%;border-collapse:collapse;margin:0"><tr><td class="k" style="border:0;border-right:1px solid #000;width:45%">檢查日期</td><td class="c" style="border:0;white-space:nowrap">${rocDate(r.date)}</td></tr></table></td></tr>
       <tr><th>抽驗項目</th><th>抽驗標準</th><th>抽驗<br>數量</th><th>抽驗值</th><th>抽驗結果</th></tr>
       ${rows}<tr><td></td><td class="c">以下空白</td><td></td><td></td><td></td></tr>
       <tr><td class="k">說明</td><td colspan="4" class="small">1.『抽驗結果』為抽驗值與抽驗標準之比較，填寫『合格』、『不合格』。<br>2.抽驗不合格則登錄至「材料設備檢（試）驗管制總表」第○項進行追蹤改善</td></tr>

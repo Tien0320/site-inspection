@@ -1970,6 +1970,7 @@ function phTag(r,p){if(p.tag)return p.tag;const row=(r.pipes||[]).find(x=>x.id==
 function pipePhStrip(r,x){const list=sortedPhotos(r).filter(p=>p.ref===x.id);
   return `<div class="phstrip">${list.map(p=>`<div class="pht">${p.src?`<img src="${p.src}" alt="照片 ${phNo(r,p)}">`:`<span class="w">載入中</span>`}<b>${phNo(r,p)} ${esc(phTag(r,p))}</b><button type="button" data-phdel="${p.id}" aria-label="刪除照片">✕</button></div>`).join('')}</div>
     <div class="opts" style="margin-top:6px">${PIPE_TAGS.map(t=>`<label class="opt">＋${t}<input type="file" accept="image/*" hidden data-phref="${x.id}" data-phtag="${t}"></label>`).join('')}</div>`}
+const mz=(v,u)=>v?` 實測:${v}${u}`:'';
 function pipePhotoText(r,p){
   if(r.fitting){const x=(r.fittings||[]).find(q=>q.id===p.ref),where=r.location||'材料放置區';
     const item=(r.mat&&r.mat.use)||(x&&fitSiph(x)?'虹吸排水系統用另件':'排水系統用另件');
@@ -1987,15 +1988,15 @@ function pipePhotoText(r,p){
     else if(t==='厚度')desc=[`設計值:壁厚:${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值;長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
     else if(t==='外觀打印')desc=['外觀打印:',x.print||'',`${giItem(r)} ${giSpec(x.size)}`,x.inQty?`共進場${x.inQty}`:''];
-    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,...(x.print?['外觀打印:',x.print]:[])];
+    else desc=[`廠牌:${x.brand||''}`,`標準:${(STD_NAME[k]||'').replace(' ','')}`,`規格:${giSpec(x.size)}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.print?['外觀打印:',x.print]:[])];
   }
   else if(x){const t=phTag(r,p),k=rowKey(r,x);
     if(t==='外徑')desc=[`設計值外徑: ${odTxt(x)}`,`實際量測:${x.od?x.od+'mm':''}`];
     else if(t==='厚度')desc=[`設計值${r.type==='hdpe'?'壁厚':'厚度'}: ${thkTxt(x)}`,`實際量測:${x.t?x.t+'mm':''}`];
     else if(t==='長度')desc=[`設計值長度:${lenTxt(x)}`,`實際量測:${x.len?x.len+'cm':''}`];
     else if(t==='外觀打印')desc=['外觀打印:',x.print||''];
-    else if(r.type==='hdpe')desc=[`廠牌:${x.brand||''}`,`標準:CNS2456`,`規格:${hdIn(x.size)||psi(x.size)}`,'材質:HDPE',`外徑:${odTxt(x)}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}`,`長度:${lenTxt(x)}`,...(x.print?['外觀打印:',x.print]:[])];
-    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}`,`厚度:${thkTxt(x)}`,`長度:${lenTxt(x)}`,...(x.print?['外觀打印:',x.print]:[])];
+    else if(r.type==='hdpe')desc=[`廠牌:${x.brand||''}`,`標準:CNS2456`,`規格:${hdIn(x.size)||psi(x.size)}`,'材質:HDPE',`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`內徑:${hdID(x)}`,`壁厚:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.print?['外觀打印:',x.print]:[])];
+    else desc=[`廠牌:${x.brand||''}`,`管徑:${psi(x.size)}`,`標準:${STD_NAME[k]||''}`,`外徑:${odTxt(x)}${mz(x.od,'mm')}`,`厚度:${thkTxt(x)}${mz(x.t,'mm')}`,`長度:${lenTxt(x)}${mz(x.len,'cm')}`,...(x.print?['外觀打印:',x.print]:[])];
   }
   return {item,where,desc:desc.filter(v=>v!=='')};
 }

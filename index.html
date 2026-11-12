@@ -1089,6 +1089,9 @@ function viewRec(id){
     <button class="btn small" id="addPipe" type="button">＋ 新增一種管徑</button></div>
     <div id="pipeRows" class="prows"></div>
     <p class="muted" style="margin:6px 0 0">選好管徑會自動帶入 CNS 標準外徑、厚度與公差（可修改）；廠牌與外觀打印依管徑各自記住。實測值超出公差會標紅並提醒。</p></section>`:''}
+  ${modeOf(r)==='mat'&&r.type==='duct'?`<section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">風管量測</p></div><div id="ductRows" class="prows"></div>
+    <button class="btn primary" id="addDuct" type="button" style="width:100%;margin-top:10px">＋ 新增一節風管</button>
+    <p class="muted" style="margin:6px 0 0">選號數自動帶入厚度範圍（可修改，依號數記住）；實測厚度超出範圍會標紅。</p></section>`:''}
   <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">檢查項目　○ 合格　× 不合格　／ 無此項目</p>
     <button class="btn small" id="allOk">未填的全部合格</button></div>
     <div class="items" id="items"></div>
@@ -1110,7 +1113,7 @@ function viewRec(id){
     <p class="muted" style="margin:6px 0 0">列印時所有照片依上傳順序貼在「施工照片黏貼表」，說明自動帶入樓層、位置與項目。</p></section>
 
 `;
-  renderItems(); renderPhotos(); if(isPipeMat(r)){if(r.fitting)renderFitRows();else renderPipeRows()}
+  renderItems(); renderPhotos(); if(r.type==='duct'&&modeOf(r)==='mat')renderDuctRows(); if(isPipeMat(r)){if(r.fitting)renderFitRows();else renderPipeRows()}
   const bind=(sel,key)=>{if($(sel))$(sel).addEventListener('input',e=>{r[key]=e.target.value;dirty()})};
   bind('#f_date','date');if($('#f_stage'))bind('#f_stage','stage');
   if(modeOf(r)!=='mat')bindLoc(r);
@@ -1170,7 +1173,7 @@ function phStrip(ref){
 }
 function refreshPhotos(){
   if(!cur)return;
-  if(cur.kind==='dfit'){if($('#dfits'))renderDf()}else if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else{if($('#items'))renderItems();if($('#pipeRows'))renderPipeRows();if($('#fitRows'))renderFitRows()}
+  if(cur.kind==='dfit'){if($('#dfits'))renderDf()}else if(cur.kind==='slab'){if($('#slabs'))renderSlab()}else if(cur.kind==='sleeve'){if($('#sleeves'))renderSleeves()}else if(cur.kind==='wtest'){if($('#testRows'))renderTestRows()}else if(cur.kind==='drain'){if($('#spaces'))renderSpaces()}else{if($('#items'))renderItems();if($('#pipeRows'))renderPipeRows();if($('#fitRows'))renderFitRows();if($('#ductRows'))renderDuctRows()}
   renderPhotos();
 }
 function orphan(ids){(cur.photos||[]).forEach(p=>{if(ids.includes(p.ref))p.ref=''})}
@@ -1379,6 +1382,7 @@ function drainPhotoText(r,p){
   return {item,where,desc:d};
 }
 function genPhotoText(r,p){
+  if(r.type==='duct'&&modeOf(r)==='mat'){const d=ductPhotoText(r,p);if(d)return d}
   if(r.kind==='drain')return drainPhotoText(r,p);
   const l=r.loc||{};
   const item=modeOf(r)==='mat'?`${typeName(r)}材料進場查驗`:r.kind==='wtest'?'給排水管壓力試驗':r.kind==='drain'?'污廢水管吊管施工查驗':`${cat(r.cat).name}設備配管施工查驗`;
@@ -1872,6 +1876,35 @@ const DUCT_THK={'空調風管':'依風管長邊：≦300mm 0.5mm、301～750mm 0
 function setDuctKind(r,k){r.mat=r.mat||{};r.mat.name=k;const it=(r.items||[]).find(i=>i.t==='板厚');if(it)it.s=DUCT_THK[k];dirty()}
 function ductNameField(r){r.mat=r.mat||{};if(!DUCT_KINDS.includes(r.mat.name))setDuctKind(r,'空調風管');
   return `<label class="field"><span>材料名稱</span><select id="m_name">${DUCT_KINDS.map(v=>`<option ${v===r.mat.name?'selected':''}>${v}</option>`).join('')}</select></label>`}
+const DUCT_GAUGES=['#26','#24','#22','#20','#18'];
+const DUCT_THK_SEED={'#24':'0.57~0.71'};
+function ductThkMem(){try{return {...DUCT_THK_SEED,...JSON.parse(LS.get('ductThk')||'{}')}}catch(e){return {...DUCT_THK_SEED}}}
+const newDuct=()=>({id:uid(),gauge:'#24',len:'143',w:'',h:'',thk:ductThkMem()['#24']||'',meas:''});
+function ductJudge(x){const m=num(x.meas),a=String(x.thk||'').split(/[~～\-]/).map(num);if(m==null||a[0]==null)return null;return m>=a[0]-1e-9&&(a[1]==null||m<=a[1]+1e-9)}
+function renderDuctRows(){const r=cur,box=$('#ductRows');if(!box)return;r.ducts=r.ducts||[];
+  const inp=(k,n,v,ph,mode)=>`<input type="text" ${mode?`inputmode="${mode}"`:''} data-dk="${k}" data-dn="${n}" value="${esc(v||'')}" placeholder="${ph}">`;
+  box.innerHTML=r.ducts.length?r.ducts.map((x,n)=>{const j=ductJudge(x);return `<div class="prow">
+    <div class="prow-h"><b class="num">${n+1}</b><select data-dk="gauge" data-dn="${n}"><option value="">厚度編號</option>${DUCT_GAUGES.map(g=>`<option ${g===x.gauge?'selected':''}>${g}</option>`).join('')}</select><span class="grow"></span><button type="button" class="btn small danger" data-ddel="${n}">刪除</button></div>
+    <div class="tgrid"><label>長度(cm)${inp('len',n,x.len,'143','decimal')}</label><label>寬度(cm)${inp('w',n,x.w,'65','decimal')}</label><label>高度(cm)${inp('h',n,x.h,'35','decimal')}</label>
+      <label>厚度範圍(mm)${inp('thk',n,x.thk,'0.57~0.71')}</label><label>實測厚度(mm)<input type="text" inputmode="decimal" data-dk="meas" data-dn="${n}" value="${esc(x.meas||'')}" placeholder="0.65" ${j===false?'style="border-color:var(--ng,#c62828);color:var(--ng,#c62828)"':''}></label></div>
+    ${j===false?'<p class="muted" style="color:var(--ng,#c62828);margin:4px 0">實測厚度超出範圍</p>':''}
+    <div class="fld"><span>此節照片</span>${phStrip(x.id)}</div></div>`}).join(''):'<div class="empty">尚無量測，按「新增一節風管」。</div>';
+  box.onchange=e=>{const el=e.target,k=el.dataset.dk;if(!k)return;const x=r.ducts[+el.dataset.dn];
+    if(k==='gauge'){x.gauge=el.value;const t=ductThkMem()[el.value];x.thk=t||'';renderDuctRows();dirty()}
+    if(k==='thk'&&x.gauge){const m=JSON.parse(LS.get('ductThk')||'{}');m[x.gauge]=el.value;LS.set('ductThk',JSON.stringify(m))}
+    if(k==='meas')renderDuctRows()};
+  box.oninput=e=>{const el=e.target,k=el.dataset.dk;if(!k||k==='gauge')return;r.ducts[+el.dataset.dn][k]=el.value;dirty()};
+  box.onclick=e=>{const d=e.target.closest('[data-ddel]');if(!d)return;if(!d.dataset.arm){d.dataset.arm='1';d.textContent='確定？';setTimeout(()=>{if(d.isConnected){d.dataset.arm='';d.textContent='刪除'}},2500);return}
+    const [g]=r.ducts.splice(+d.dataset.ddel,1);orphan([g.id]);renderDuctRows();renderPhotos();dirty()};
+  const a=$('#addDuct');if(a)a.onclick=()=>{const last=r.ducts[r.ducts.length-1],n=newDuct();if(last){n.gauge=last.gauge;n.thk=last.thk;n.len=last.len}r.ducts.push(n);renderDuctRows();dirty()};
+}
+function ductSheet(r){if(!(r.ducts||[]).length)return '';const v=x=>esc(x==null?'':x);
+  return `<table style="margin-top:6px"><tr><th colspan="7">風管量測紀錄</th></tr><tr><th>項次</th><th>厚度編號</th><th>長度(cm)</th><th>寬度(cm)</th><th>高度(cm)</th><th>厚度(mm)</th><th>實測厚度(mm)</th></tr>
+    ${r.ducts.map((x,n)=>{const j=ductJudge(x);return `<tr><td class="c">${n+1}</td><td class="c">${v(x.gauge)}</td><td class="c">${v(x.len)}</td><td class="c">${v(x.w)}</td><td class="c">${v(x.h)}</td><td class="c">${v(x.thk)}</td><td class="c">${v(x.meas)}${j===false?' ×':''}</td></tr>`}).join('')}</table>`}
+function ductPhotoText(r,p){const x=(r.ducts||[]).find(q=>q.id===p.ref);if(!x)return null;
+  const item=(r.mat&&r.mat.name)||'風管',where=r.location||'材料放置區';
+  if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/)};
+  return {item,where,desc:[`厚度編號:${x.gauge||''}`,`尺寸:長${x.len||''}×寬${x.w||''}×高${x.h||''}cm`,`厚度:${x.thk||''}mm`,`實際量測:${x.meas?x.meas+'mm':''}`]}}
 const isPipeMat=r=>modeOf(r)==='mat'&&isPipeType(r.type);
 const newPipeRow=type=>({id:uid(),sub:type,brand:PIPE_STD[type]&&PIPE_STD[type].pvc?'南亞':PIPE_STD[type]&&PIPE_STD[type].steel?'高興昌':'',print:'',size:'',color:'',stdOD:'',odTol:'',stdT:'',tPlus:'',tMinus:'',stdL:'',od:'',t:'',len:'',qty:''});
 function pipeMem(){try{return JSON.parse(LS.get('pipeMem')||'{}')}catch(e){return {}}}
@@ -3029,6 +3062,7 @@ function sheetHTML(r){
       <tr><th>項次</th><th>檢查項目</th><th>檢查標準</th><th>結果</th><th>實測紀錄／說明</th></tr>
       ${r.items.map((i,n)=>`<tr><td class="c">${n+1}</td><td>${esc(i.t)}</td><td class="small">${esc(i.s)}</td><td class="res-sym">${SYM[i.result]||''}</td><td class="small">${esc(i.note)}</td></tr>`).join('')}
     </table>
+    ${r.type==='duct'&&modeOf(r)==='mat'?ductSheet(r):''}
     <div class="legend">檢查結果：○ 合格　× 不合格　／ 無此檢查項目</div>
     <table>
       <tr><td class="k">缺失內容</td><td colspan="3">${defect.length?defect.map(esc).join('<br>'):'無'}</td></tr>

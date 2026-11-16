@@ -3115,8 +3115,7 @@ function wpSheet(r){
   const rd=d=>{if(!d)return '　　年　　月　　日';const [y,m,dd]=d.split('-');return `${+y-1911}年${+m}月${+dd}日`};
   const has=v=>v!==''&&v!=null;
   const hgt=(x,k,t)=>`${cb(has(x[k+'D'])||has(x[k+'A']),t)}:設計值:${u(x[k+'D'])}cm　實測值:${cb(/^1M線/.test(x[k+'Dir']||''),'1M線')} ${cb(x[k+'Dir']==='1M線上','上')} ${cb(x[k+'Dir']==='1M線下','下')}${u(x[k+'A'])}cm`;
-  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.名稱${u(wpName(x))}　編號:${u(x.space)}　位置:${u(posOf(x))}</div><div class="pp">
-    <div>隔間:${u(x.room)}</div>
+  const item=(x,i)=>`<div class="dsp"><div class="dsph">${i+1}.名稱${u(wpName(x))}　編號:${u(x.space)}　位置:${u(posOf(x))}　隔間:${u(x.room)}</div><div class="pp">
     <div>${cb((x.spec||[]).length||!!x.size,'配管規格')}:${WP_SPEC.map(s_=>cb((x.spec||[]).includes(s_),s_)).join(' ')}</div>
     <div>管徑:${WP_SIZES.map(z=>cb(x.size===z,z)).join(' ')}</div>
     <div>${cb((x.water||[]).includes('排水管'),'排水管')} ${cb((x.water||[]).includes('冷水管'),'冷水管')} ${cb((x.water||[]).includes('熱水管'),'熱水管')} ${cb(x.insul,'熱水管有保溫發泡被覆')}</div>

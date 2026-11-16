@@ -2696,8 +2696,8 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   if(!(e.target.closest&&e.target.closest('.eqmenu')))closeEqMenu()});
 addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
-/* 插座：設計值直接用 FL+；其他設備換算 1M線 */
-function setEqH(x,h){if(['插座','火警','廣播避難'].includes(x.equip)){x.nsDir='FL+';x.nsD=String(h);toast(`已帶入安裝高度設計值：FL+${h} cm`);return}const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}
+/* 安裝高度設計值一律用 FL+ */
+function setEqH(x,h){x.nsDir='FL+';x.nsD=String(h);toast(`已帶入安裝高度設計值：FL+${h} cm`)}
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
 const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN','沉水液位計':'WL','水箱磁簧':'TM','水管壓力雨水流量計':'FM'};

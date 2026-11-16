@@ -1296,6 +1296,15 @@ function dormPhotoPages(r){
 /* 二期・樓板接線盒：施工查驗照片（比照 1150428-29-9F底版-消防出線盒放樣.docx） */
 const PERMIT_OF={'p-nycuh-med2':'(112)(4)(25)建管建字第00246號','p-nycuh-dorm':'(113)(5)(21)建管建字第00174號'};
 const permitOf=p=>p?(p.permit||PERMIT_OF[p.id]||''):'';
+const projFull=r=>r.projectId==='p-nycuh-med2'?MED2_HDR.name:((proj(r.projectId)||{}).name||'');
+/* 二期：工程查驗紀錄表表頭一律比照表7-2 */
+const d72Head=(r,loc)=>`<h3>表7-2 工程查驗紀錄表</h3>
+    <div class="dsub">工程查驗紀錄表(不定期抽查)</div>
+    <div class="dsub">編號：</div>
+    <table>
+      <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
+      <tr><td class="k">工程名稱</td><td>${esc(projFull(r))}</td><td class="k">日　期</td><td class="c">${rocDate(r.date)}</td></tr>
+      <tr><td class="k">抽查位置</td><td>${esc(loc)}</td><td class="k">承攬廠商</td><td>${esc((proj(r.projectId)||{}).con||'')}</td></tr>`;
 const MED2_HDR={name:'國立陽明交通大學附設醫院第二期興建工程',no:'森10812',con:'崇偉營造工程(股)有限公司',con2:'崇偉科技工程有限公司',permit:'(112)(4)(25)建管建字第00246號'};
 const rocSlash=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return `${+y-1911}/${m}/${dd}`};
 function slabPhotoText(r,p){
@@ -1791,7 +1800,7 @@ function drainSheet(r){
     <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
-      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">工程名稱</td><td>${esc(projFull(r))}</td><td class="k">日　期</td><td class="c">${rocDate(r.date)}</td></tr>
       <tr><td class="k">抽查位置</td><td>${esc(drainLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>
         ${f.spaces.map((sp,si)=>`<div class="dsp"><div class="dsph">${si+1}.空間名稱：${u(spName(sp))}　位置：${u(sp.pos)}</div>${sp.pipes.map(pipeTxt).join('<hr>')}</div>`).join('')}
@@ -2600,7 +2609,7 @@ function sleeveSheet(r){
     <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
-      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">工程名稱</td><td>${esc(projFull(r))}</td><td class="k">日　期</td><td class="c">${rocDate(r.date)}</td></tr>
       <tr><td class="k">抽查位置</td><td>${esc(sleeveLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${f.items.map(item).join('<hr>')}
         <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
@@ -2835,15 +2844,15 @@ function wallSheet(r){
     <div>${cb(!!x.ewDir||!!x.ewRef,'出線盒安裝與')}${C.pos1.dirs.map(d=>cb(x.ewDir===d,d)).join(' ')} ${C.pos1.refs.map(d=>cb(x.ewRef===d,d)).join(' ')}之距離</div>
     <div>設計值:${u(x.ewD)}cm 實測值:${u(x.ewA)}cm</div>
   </div></div>`;
-  return `<div class="sheet dsheet wsheet">
-    <h3>工 程 查 驗 紀 錄 表</h3>
+  return `<div class="sheet dsheet ${r.projectId==='p-nycuh-med2'?'':'wsheet'}">
+    ${r.projectId==='p-nycuh-med2'?d72Head(r,`${slabLoc(f)}（${sysName+C.name}）`):`<h3>工 程 查 驗 紀 錄 表</h3>
     <div class="dsub">填表日期：${rd(r.date)}</div>
     <table>
       <colgroup><col style="width:15%"><col style="width:37%"><col style="width:14%"><col style="width:34%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="3">${esc(p.name)}</td></tr>
       <tr><td class="k">主辦機關</td><td>${esc(p.owner)}</td><td class="k">專管單位</td><td>${esc(p.pm)}</td></tr>
       <tr><td class="k">監造單位</td><td>${esc(p.sup)}</td><td class="k">營造單位</td><td>${esc(p.con)}</td></tr>
-      <tr><td class="k">抽查項目</td><td>${esc(sysName+C.name)}</td><td class="k">抽查位置</td><td>${esc(slabLoc(f))}</td></tr>
+      <tr><td class="k">抽查項目</td><td>${esc(sysName+C.name)}</td><td class="k">抽查位置</td><td>${esc(slabLoc(f))}</td></tr>`}
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${its.length?its.map(item).join('<hr>'):''}</td></tr>
       <tr><td colspan="4"><b>二、查驗結果</b><br>${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，')}　執行 ${cb(f.fixType==='改善','改善')} ${cb(f.fixType==='拆除重作','拆除重作')}<br>
         ${cb(!!f.ncr,'不合格改善報告書編號')}：NCR-QB-${u(f.ncr)}號　改善期限：${rd(f.deadline)}</td></tr>
@@ -2876,7 +2885,7 @@ function slabSheet(r){
     <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
-      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">工程名稱</td><td>${esc(projFull(r))}</td><td class="k">日　期</td><td class="c">${rocDate(r.date)}</td></tr>
       <tr><td class="k">抽查位置</td><td>${esc(slabLoc(f))}${printSys?'（'+esc(printSys)+'）':''}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${its.length?its.map(item).join('<hr>'):'（無此系統資料）'}
         <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
@@ -2998,7 +3007,7 @@ function dfSheet(r){
     <div class="dsub">編號：</div>
     <table>
       <colgroup><col style="width:14%"><col style="width:42%"><col style="width:14%"><col style="width:30%"></colgroup>
-      <tr><td class="k">工程名稱</td><td>${esc(p.name)}</td><td class="k">日期</td><td>${rocDate(r.date)}</td></tr>
+      <tr><td class="k">工程名稱</td><td>${esc(projFull(r))}</td><td class="k">日　期</td><td class="c">${rocDate(r.date)}</td></tr>
       <tr><td class="k">抽查位置</td><td>${esc(dfLoc(f))}</td><td class="k">承攬廠商</td><td>${esc(p.con)}</td></tr>
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${f.items.map(item).join('<hr>')}
         <div class="dres">${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，執行')} ${cb(f.fixType==='改善','改善')}${cb(f.fixType==='拆除重作','拆除重作')}　改善期限：${f.deadline?rocDate(f.deadline):u('')}</div>
@@ -3087,7 +3096,7 @@ function viewWp(r){
     const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
     if(path==='floor')setTimeout(refreshPhotos,0);
     if(path==='floor'||path==='part'){r.location=wpLoc(f);$('#locView').textContent=r.location||'—'}
-    if(path==='part'){const k=f.part==='柱'?'hoop':'rebar';f.items.forEach(x=>{if(!x.lay)x.lay=k});renderWp()}
+    if(path==='part'){const k=f.part==='柱'?'hoop':'rebar';f.items.forEach(x=>{x.lay=k});renderWp()}
     if(path==='result')$('#ngWrap').hidden=f.result!=='ng';
   };
   v.oninput=e=>{const el=e.target;if(!el.dataset.path||el.type==='file')return;setP(f,el.dataset.path,el.value);after(el.dataset.path);dirty()};
@@ -3126,15 +3135,15 @@ function wpSheet(r){
     <div>${hgt(x,'out','出水口安裝高度')}</div>
     <div>${cb(!!x.posDir||!!x.posRef,'出水口安裝位置')}:距${['東側','西側','南側','北側'].map(d=>cb(x.posDir===d,d)).join(' ')} ${['柱','樑','牆','冷熱中心'].map(d=>cb(x.posRef===d,d)).join(' ')}　設計值:${u(x.posD)}cm　實測值:${u(x.posA)}cm</div>
   </div></div>`;
-  return `<div class="sheet dsheet wsheet">
-    <h3>工 程 查 驗 紀 錄 表</h3>
+  return `<div class="sheet dsheet ${r.projectId==='p-nycuh-med2'?'':'wsheet'}">
+    ${r.projectId==='p-nycuh-med2'?d72Head(r,`${wpLoc(f)}（給排水預埋管）`):`<h3>工 程 查 驗 紀 錄 表</h3>
     <div class="dsub" style="display:flex;justify-content:space-between;text-align:left"><span>填表日期：${rd(r.date)}</span><span>表單編號：${/^p-nycuh/.test(r.projectId)?'10812-EP-':''}</span></div>
     <table>
       <colgroup><col style="width:15%"><col style="width:37%"><col style="width:14%"><col style="width:34%"></colgroup>
       <tr><td class="k">工程名稱</td><td colspan="3">${esc(p.name)}</td></tr>
       <tr><td class="k">主辦機關</td><td>${esc(p.owner)}</td><td class="k">專管單位</td><td>${esc(p.pm)}</td></tr>
       <tr><td class="k">監造單位</td><td>${esc(p.sup)}</td><td class="k">營造單位</td><td>${esc(p.con)}</td></tr>
-      <tr><td class="k">抽查項目</td><td>給排水預埋管（${esc(f.part||'柱/牆')}）</td><td class="k">抽查位置</td><td>${esc(wpLoc(f))}</td></tr>
+      <tr><td class="k">抽查項目</td><td>給排水預埋管（${esc(f.part||'柱/牆')}）</td><td class="k">抽查位置</td><td>${esc(wpLoc(f))}</td></tr>`}
       <tr><td colspan="4" class="dbody"><b>抽驗情形：</b>${f.items.map(item).join('<hr>')}</td></tr>
       <tr><td colspan="4"><b>二、查驗結果</b><br>${cb(f.result==='ok','合格，符合圖說規範規定內容。')}<br>${cb(f.result==='ng','不合格，')}　執行 ${cb(f.fixType==='改善','改善')} ${cb(f.fixType==='拆除重作','拆除重作')}<br>
         ${cb(!!f.ncr,'不合格改善報告書編號')}：NCR-QB-${u(f.ncr)}號　改善期限：${rd(f.deadline)}</td></tr>

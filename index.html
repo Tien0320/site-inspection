@@ -3035,7 +3035,7 @@ function wpItemHTML(i,x){
       <label class="field"><span>隔間</span>${inp(b+'.room',x.room,'例：RC牆')}</label>
       ${fl('配管規格',opts(b+'.spec',WP_SPEC,'many',x.spec),1)}
       ${fl('管徑',opts(b+'.size',WP_SIZES,'one',x.size),1)}
-      <div class="fld wide"><span>管別</span><div class="opts">${opts(b+'.water',['冷水管','熱水管','排水管'],'many',x.water).replace(/^<div class="opts">|<\/div>$/g,'')}${chk(b+'.insul','熱水管有保溫發泡被覆',x.insul)}</div></div>
+      <div class="fld wide"><span>管別</span><div class="opts">${opts(b+'.water',['排水管','冷水管','熱水管'],'many',x.water).replace(/^<div class="opts">|<\/div>$/g,'')}${chk(b+'.insul','熱水管有保溫發泡被覆',x.insul)}</div></div>
       ${fl('配管配置',opts(b+'.lay',[['hoop','柱內配管有配置於箍筋之中'],['rebar','壁面配管有配置於雙層鋼筋之中']],'one',x.lay),1)}
       <div class="fld wide"><span>固定</span><div class="opts">${chk(b+'.tied','配管以鐵線綁紮固定',x.tied)}${chk(b+'.capped','管口有封閉',x.capped)}${chk(b+'.outTied','出水口以鐵線固定於鋼筋',x.outTied)}${chk(b+'.insTape','不同金屬連接時有使用絕緣膠帶隔離',x.insTape)}</div>
         <div class="meas"><label>固定間距⑴ cm${inp(b+'.tie1',x.tie1,'cm',1)}</label><label>固定間距⑵ cm${inp(b+'.tie2',x.tie2,'cm',1)}</label></div></div>
@@ -3119,7 +3119,7 @@ function wpSheet(r){
     <div>隔間:${u(x.room)}</div>
     <div>${cb((x.spec||[]).length||!!x.size,'配管規格')}:${WP_SPEC.map(s_=>cb((x.spec||[]).includes(s_),s_)).join(' ')}</div>
     <div>管徑:${WP_SIZES.map(z=>cb(x.size===z,z)).join(' ')}</div>
-    <div>${cb((x.water||[]).includes('冷水管'),'冷水管')} ${cb((x.water||[]).includes('熱水管'),'熱水管')} ${cb((x.water||[]).includes('排水管'),'排水管')} ${cb(x.insul,'熱水管有保溫發泡被覆')}</div>
+    <div>${cb((x.water||[]).includes('排水管'),'排水管')} ${cb((x.water||[]).includes('冷水管'),'冷水管')} ${cb((x.water||[]).includes('熱水管'),'熱水管')} ${cb(x.insul,'熱水管有保溫發泡被覆')}</div>
     <div>${cb(x.lay==='hoop','柱內配管有配置於箍筋之中')} ${cb(x.lay==='rebar','壁面配管有配置於雙層鋼筋之中')}</div>
     <div>${cb(x.tied,'配管以鐵線綁紮固定')} ${cb(has(x.tie1)||has(x.tie2),'固定間距')}:⑴${u(x.tie1)}cm、⑵${u(x.tie2)}cm ${cb(x.capped,'管口有封閉')}</div>
     <div>${cb(x.outTied,'出水口以')}${cb(x.outTied,'鐵線固定於')}${cb(x.outTied,'鋼筋')}　${cb(x.insTape,'不同金屬連接時有使用絕緣膠帶隔離')}</div>

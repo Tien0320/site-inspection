@@ -2656,12 +2656,24 @@ const OUTLET=[['DUP','埋入式雙插座(附接地極) 1φ110V','FL+30'],['SGL',
   ['U','感應式水龍頭插座(含漏電保護) 1φ110V','FL+40'],['IJ','小便斗/殘障小便斗感應器電源單插座 1φ110V','FL+130/90'],['DS','自動門電源插座(附接地極) 1φ110V','門框上緣10cm'],
   ['A','護士呼叫主機電源出線口','依現況高度'],['JA','氣體警報箱電源出線口','依現況高度'],['JB','氣體開關閥箱電源出線口','依現況高度'],['J','電源出線口','依現況高度'],
   ['M8','電動捲門電源出線口 1φ220V','板下-40CM'],['SM','排煙機電源出線口 3φ380V','地面翻管'],['WM','洗窗機電源出線口 3φ380V','FL+80']];
-const SUB_EQUIP={'插座':OUTLET.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,w?`${n}（${w}）`:n,eqShort(n)]),
+/* 消防・火警（消防火警設備高度圖例） */
+const FIREAL=[['EXT','乾粉滅火器10型','置於地面或掛勾'],['HB','室內消防栓箱','配合室裝高度'],['CB1','綜合消防栓箱(含綜合盤，單口連結不含警鈴)','配合室裝高度'],
+  ['CB2','綜合消防栓箱(含綜合盤不含警鈴)','配合室裝高度'],['FP','火警綜合盤','FL+140'],['SD2','偵煙式定址式探測器(2種)','當層頂板'],['HD2','差動式定址式探測器(2種)','當層頂板'],
+  ['FHS','定溫式定址式探測器(特種)','當層頂板'],['FH1','定溫式定址式探測器(1種)','當層頂板'],['DH','防火門扣','FL+20'],
+  ['SS1','鐵捲門控制盤*1','FL+140'],['FS1','防煙捲門控制盤*1','FL+140'],['FS2','防煙捲門控制盤*2','FL+140'],['FS3','防煙捲門控制盤*3','FL+140']];
+/* 消防・廣播避難（消防廣播避難設備高度圖例） */
+const EVAC=[['SPW','廣播喇叭(壁掛式)','FL+220'],['SPC','廣播喇叭(崁頂式)','當層頂板'],['VOL','音量控制器 30W','FL+120'],['EXB','出口標示燈 B級','門框上10cm'],
+  ['DS1','避難方向指示燈(單面單向)','FL+90'],['DS2','避難方向指示燈(雙面單向)','當層頂板'],['DS3','避難方向指示燈(雙面雙向)','當層頂板'],
+  ['ELW','緊急照明燈(壁掛式)(LED燈)','FL+220'],['ELC','緊急照明燈(崁頂式)(LED燈)','當層頂板'],['FLR','樓層標示燈','FL+90'],
+  ['EVS','避難器具標示牌','門框上10cm'],['EVL','避難器具標示燈(入口)','門框上10cm'],['RB','救助袋','配合室裝高度'],['DES','緩降機','配合室裝高度'],
+  ['SDS','偵煙式局限型探測器2種(供閃滅兼音聲引導功能用)','當層頂板'],['EXS','出口標示燈 B級(供閃滅兼音聲引導功能用)','門框上10cm'],
+  ['RT','遠端話機裝置','配合室裝高度'],['SL','自走式避難梯','配合室裝高度']];
+const SUB_EQUIP={'廣播避難':EVAC.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'火警':FIREAL.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'插座':OUTLET.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,w?`${n}（${w}）`:n,eqShort(n)]),
   '弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,`${n}${sp?' '+sp:''}（${w}）`,n])};
-const EQ_DEFS={'插座':OUTLET.map(([k,n,w])=>[k,n,w]),'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
+const EQ_DEFS={'廣播避難':EVAC.map(([k,n,w])=>[k,n,w]),'火警':FIREAL.map(([k,n,w])=>[k,n,w]),'插座':OUTLET.map(([k,n,w])=>[k,n,w]),'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
 /* 設置於頂版（當層頂板）的設備：柱/牆接線盒不列 */
 const onSlab=(o,k)=>{const D=EQ_DEFS[o];const q=D&&D.find(z=>z[0]===k);return !!(q&&/頂板/.test(q[2]))};
-const EQ_COLOR={'插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
+const EQ_COLOR={'廣播避難':'#2b8a3e','火警':'#e03131','插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'廣播避難':'📢','火警':'🔥','插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
 function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i=+btn.dataset.eqbtn,x=cur.form.items[i];if(!x)return;
@@ -2685,13 +2697,13 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
 /* 插座：設計值直接用 FL+；其他設備換算 1M線 */
-function setEqH(x,h){if(x.equip==='插座'){x.nsDir='FL+';x.nsD=String(h);toast(`已帶入安裝高度設計值：FL+${h} cm`);return}const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}
+function setEqH(x,h){if(['插座','火警','廣播避難'].includes(x.equip)){x.nsDir='FL+';x.nsD=String(h);toast(`已帶入安裝高度設計值：FL+${h} cm`);return}const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
 const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN','沉水液位計':'WL','水箱磁簧':'TM','水管壓力雨水流量計':'FM'};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
 const equipName=x=>{if(LEGACY_MON[x.equip]&&x.sys==='弱電'){x.eqSub=LEGACY_MON[x.equip];x.equip='監控'}if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return q?q[2]:x.equip}return x.equip||''};
-const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)'],'消防':['偵煙式定址式探測器','緊急廣播','緊急照明'],'空調':['設備電源']};
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)'],'消防':['火警','廣播避難'],'空調':['設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});

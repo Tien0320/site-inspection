@@ -2668,12 +2668,16 @@ const EVAC=[['SPW','廣播喇叭(壁掛式)','FL+220'],['SPC','廣播喇叭(崁�
   ['EVS','避難器具標示牌','門框上10cm'],['EVL','避難器具標示燈(入口)','門框上10cm'],['RB','救助袋','配合室裝高度'],['DES','緩降機','配合室裝高度'],
   ['SDS','偵煙式局限型探測器2種(供閃滅兼音聲引導功能用)','當層頂板'],['EXS','出口標示燈 B級(供閃滅兼音聲引導功能用)','門框上10cm'],
   ['RT','遠端話機裝置','配合室裝高度'],['SL','自走式避難梯','配合室裝高度']];
-const SUB_EQUIP={'廣播避難':EVAC.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'火警':FIREAL.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'插座':OUTLET.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,w?`${n}（${w}）`:n,eqShort(n)]),
+/* 空調・空調監控（圖例） */
+const ACCTL=[['SDB','系統配線箱','配合現場位置'],['DDC','中央監控系統控制箱','配合現場位置'],['RTUC','小型送風機控制器','配合現場位置'],
+  ['CR','小型送風機一對一面板','FL+120'],['CM','小型送風機一對多面板','FL+120'],['VR','VAV溫控面板','FL+120'],['VC','VAV控制器','配合現場位置'],
+  ['DR','雙通道VAV溫控面板','FL+120'],['DVC','雙通道VAV控制器','配合現場位置']];
+const SUB_EQUIP={'空調監控':ACCTL.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'廣播避難':EVAC.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'火警':FIREAL.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'插座':OUTLET.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'護士呼叫':NURSE_CALL.map(([k,n])=>[k,`${k}　${n}`,`護士呼叫・${k} ${n}`]),'監控':MONITOR.map(([k,n,w])=>[k,w?`${n}（${w}）`:n,eqShort(n)]),
   '弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,`${n}${sp?' '+sp:''}（${w}）`,n])};
-const EQ_DEFS={'廣播避難':EVAC.map(([k,n,w])=>[k,n,w]),'火警':FIREAL.map(([k,n,w])=>[k,n,w]),'插座':OUTLET.map(([k,n,w])=>[k,n,w]),'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
+const EQ_DEFS={'空調監控':ACCTL.map(([k,n,w])=>[k,n,w]),'廣播避難':EVAC.map(([k,n,w])=>[k,n,w]),'火警':FIREAL.map(([k,n,w])=>[k,n,w]),'插座':OUTLET.map(([k,n,w])=>[k,n,w]),'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
 /* 設置於頂版（當層頂板）的設備：柱/牆接線盒不列 */
 const onSlab=(o,k)=>{const D=EQ_DEFS[o];const q=D&&D.find(z=>z[0]===k);return !!(q&&/頂板/.test(q[2]))};
-const EQ_COLOR={'廣播避難':'#2b8a3e','火警':'#e03131','插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'廣播避難':'📢','火警':'🔥','插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
+const EQ_COLOR={'空調監控':'#0c8599','廣播避難':'#2b8a3e','火警':'#e03131','插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'空調監控':'❄️','廣播避難':'📢','火警':'🔥','插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
 function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i=+btn.dataset.eqbtn,x=cur.form.items[i];if(!x)return;
@@ -2703,7 +2707,7 @@ const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0
 const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN','沉水液位計':'WL','水箱磁簧':'TM','水管壓力雨水流量計':'FM'};
 const subEq=x=>x.eqSub||(x.equip==='護士呼叫'?x.nurse:'')||'';
 const equipName=x=>{if(LEGACY_MON[x.equip]&&x.sys==='弱電'){x.eqSub=LEGACY_MON[x.equip];x.equip='監控'}if(x.equip==='其他')return x.equipOther||'其他';const L=SUB_EQUIP[x.equip];if(L){const q=L.find(z=>z[0]===subEq(x));return q?q[2]:x.equip}return x.equip||''};
-const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)'],'消防':['火警','廣播避難'],'空調':['設備電源']};
+const EQUIP_OF={'電氣':ELEC_EQUIP,'弱電':['護士呼叫','監控','弱電(資訊)'],'消防':['火警','廣播避難'],'空調':['空調監控','設備電源']};
 const newSlabItem=sys=>({id:uid(),sys:sys||'',sysOther:'',equip:'',face:'頂版',pos:'',space:'',qty:'',
   screwOn:'',fitOn:'',galv:false,boxType:'',ewDir:'',ewRef:'',ewD:'',ewA:'',nsDir:'',nsRef:'',nsD:'',nsA:'',
   e1302:true,size:'',layIn:'',tied:false,tie1:'',tie2:'',joint:false,capped:false,riser:'',over30:'',bends3:'',pullBox:''});

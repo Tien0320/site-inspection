@@ -1320,7 +1320,7 @@ function slabPhotoText(r,p){
     if(x.size)desc.push(`管徑:ψ${x.size.replace('"','')}"`);
     if(x.joint)desc.push('PVC配管以盒接頭銜接出線盒');
     if(x.ewD||x.ewA)desc.push(`出線盒距離${x.ewDir||''}${x.ewRef||''} 設計${x.ewD||''}cm 實測${x.ewA||''}cm`);
-    if(x.nsD||x.nsA)desc.push(`出線盒距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
+    if(x.nsD||x.nsA)desc.push(x.nsDir==='FL+'?`出線盒安裝高度 設計FL+${x.nsD||''}cm 實測FL+${x.nsA||''}cm`:`出線盒距離${x.nsDir||''}${x.nsRef||''} 設計${x.nsD||''}cm 實測${x.nsA||''}cm`);
     const C=slabCfg(r);
     if(x.galv&&x.boxType)desc.push(`${C.in}配置熱浸鍍鋅${x.boxType} 厚度2.0mm`);
     if(x.fitOn)desc.push(`出線盒有與${x.fitOn}緊貼密合`);
@@ -2676,7 +2676,7 @@ function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i
   m.addEventListener('mouseover',e=>{const t=e.target.closest('.eqsys');if(t&&innerWidth>=640&&matchMedia('(hover:hover)').matches&&!t.classList.contains('open'))showSub(t.dataset.eqsys)});
   m.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('[data-eqback]')){m.querySelectorAll('.eqsub').forEach(z=>z.remove());m.querySelector('.eqcol').style.display='';return}const sy=e.target.closest('[data-eqsys]');if(sy){showSub(sy.dataset.eqsys);return}
     const k=e.target.closest('[data-eqk]'),v=e.target.closest('[data-eqv]');if(!k&&!v)return;
-    if(k){x.equip=k.dataset.eqsys2;x.eqSub=k.dataset.eqk;delete x.nurse;const h=eqHeight(x);if(h&&isWallBox(cur)){const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}}
+    if(k){x.equip=k.dataset.eqsys2;x.eqSub=k.dataset.eqk;delete x.nurse;const h=eqHeight(x);if(h&&isWallBox(cur)){setEqH(x,h)}}
     else{x.equip=v.dataset.eqv;x.eqSub=''}
     closeEqMenu();renderSlab();dirty();if(x.equip==='其他'){const o=document.querySelector(`[data-path="items.${i}.equipOther"]`);if(o)o.focus()}});
   const cs=x.equip&&SUB_EQUIP[x.equip]?x.equip:'';if(cs)showSub(cs)}
@@ -2684,6 +2684,8 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   if(!(e.target.closest&&e.target.closest('.eqmenu')))closeEqMenu()});
 addEventListener('hashchange',closeEqMenu);
 /* 圖例設置高程（FL+120 → 120 cm） */
+/* 插座：設計值直接用 FL+；其他設備換算 1M線 */
+function setEqH(x,h){if(x.equip==='插座'){x.nsDir='FL+';x.nsD=String(h);toast(`已帶入安裝高度設計值：FL+${h} cm`);return}const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}
 const flTo1M=h=>({dir:h>=100?'1M線上':'1M線下',v:String(Math.abs(h-100))});
 const eqHeight=x=>{const D=EQ_DEFS[x.equip];if(!D)return 0;const q=D.find(z=>z[0]===(x.eqSub||''));const m=q&&q[2].match(/FL\+(\d+)/);return m?+m[1]:0};
 const LEGACY_MON={'人體紅外線偵測器':'IR','槍型攝影機':'GUN','沉水液位計':'WL','水箱磁簧':'TM','水管壓力雨水流量計':'FM'};
@@ -2699,7 +2701,7 @@ const slabLoc=f=>[f.floor,f.part].filter(Boolean).join(' ')||'';
 const isWallBox=r=>!!(r&&r.kind==='slab'&&r.form&&r.form.zone==='wall');
 const slabCfg=r=>isWallBox(r)?{name:'柱/牆接線盒',faces:['柱','牆'],fix:['鋼筋','模板'],
     pos1:{t:'出線盒安裝與…之距離',dirs:['東','西','南','北'],refs:['牆','柱','門邊','出線盒']},
-    pos2:{t:'出線盒安裝高度',dirs:['1M線上','1M線下'],refs:[]},
+    pos2:{t:'出線盒安裝高度',dirs:['FL+','1M線上','1M線下'],refs:[]},
     lay:[['hoop','柱內配管有配置於箍筋之中'],['rebar','壁面配管有配置於雙層鋼筋之中']],joint:'配管以盒接頭銜接出線盒',in:'柱/牆',partPh:'例：柱/牆預埋接線盒-A棟'}
   :{name:'樓板接線盒',faces:['頂版','底版','牆面'],fix:['鋼承鈑','模板'],
     pos1:{t:'出線盒安裝位置（東西向）',dirs:['東側','西側'],refs:['梁','柱','牆','出線盒']},
@@ -2813,7 +2815,7 @@ function viewSlab(r){
   const after=path=>{
     const sy=path.match(/^items\.(\d+)\.sys$/);if(sy){const x=f.items[+sy[1]];if(x.equip&&x.equip!=='其他'&&!(EQUIP_OF[x.sys]||[]).includes(x.equip))x.equip='';renderSlab();toast(`已改為${x.sys}`)}
     const eq=path.match(/^items\.(\d+)\.equip$/);if(eq&&document.querySelector(`select[data-path="${path}"]`)){renderSlab();if(f.items[+eq[1]].equip==='其他'){const o=document.querySelector(`[data-path="items.${eq[1]}.equipOther"]`);if(o)o.focus()}}
-    const es=path.match(/^items\.(\d+)\.eqSub$/);if(es){const x=f.items[+es[1]],h=eqHeight(x);if(h&&isWallBox(r)){const q=flTo1M(h);x.nsDir=q.dir;x.nsD=q.v;renderSlab();toast(`已帶入安裝高度設計值：${q.dir} ${q.v} cm（FL+${h}）`)}}
+    const es=path.match(/^items\.(\d+)\.eqSub$/);if(es){const x=f.items[+es[1]],h=eqHeight(x);if(h&&isWallBox(r)){setEqH(x,h);renderSlab()}}
     const ax=path.match(/^items\.(\d+)\.(px1|px2|py1|py2)$/);if(ax){const x=f.items[+ax[1]];x.pos=axisPos(x)}
     const sp=path.match(/^items\.(\d+)\.space$/);if(sp){const x=f.items[+sp[1]];if(applyRoom(x)){refreshPhotos();toast(`${x.space}：${x.pos}`)}}
     if(path==='floor')setTimeout(refreshPhotos,0);
@@ -2856,7 +2858,7 @@ function wallSheet(r){
     <div>${cb(x.tied,'配管以鐵線綁紮固定')} ${cb(x.tie1!==''&&x.tie1!=null||x.tie2!==''&&x.tie2!=null,'固定間距')}:⑴${u(x.tie1)}cm、⑵${u(x.tie2)}cm</div>
     <div>${cb(!!x.orient,'出線盒安裝')}:${cb(x.orient==='直式','直式')} ${cb(x.orient==='橫式','橫式')} ${cb(x.joint,'配管以盒接頭銜接出線盒')} ${cb(x.capped,'出線盒有封閉')} ${cb(x.riser!==''&&x.riser!=null,'升管預留')}${u(x.riser)}cm</div>
     <div>${cb(x.over30==='是','導線管長度超過30m')} ${cb(x.bends3==='是','三個以上90°彎頭')} ${cb(!!x.pullBox,'在維修可及之處做拉線盒')} ${cb(x.pullBox==='是','是')}${cb(x.pullBox==='否','否')}</div>
-    <div>${cb(x.nsD!==''&&x.nsD!=null||x.nsA!==''&&x.nsA!=null,'出線盒安裝高度')} 設計值:${u(x.nsD)}cm 實測值:${u(x.nsA)}cm ${cb(/^1M線/.test(x.nsDir||''),'1M線')}${cb(x.nsDir==='1M線上','上')}${cb(x.nsDir==='1M線下','下')}</div>
+    <div>${cb(x.nsD!==''&&x.nsD!=null||x.nsA!==''&&x.nsA!=null,'出線盒安裝高度')} ${x.nsDir==='FL+'?`設計值:FL+${u(x.nsD)}cm 實測值:FL+${u(x.nsA)}cm`:`設計值:${u(x.nsD)}cm 實測值:${u(x.nsA)}cm ${cb(/^1M線/.test(x.nsDir||''),'1M線')}${cb(x.nsDir==='1M線上','上')}${cb(x.nsDir==='1M線下','下')}`}</div>
     <div>${cb(x.plumb||x.level,'出線盒安裝有')}${cb(x.plumb,'垂直')} ${cb(x.level,'水平')} ${cb(x.fitWall,'出線盒安裝有貼合牆面')} ${cb(x.alignLine,'出線盒外緣有對齊牆面放樣線')}</div>
     <div>${cb(!!x.ewDir||!!x.ewRef,'出線盒安裝與')}${C.pos1.dirs.map(d=>cb(x.ewDir===d,d)).join(' ')} ${C.pos1.refs.map(d=>cb(x.ewRef===d,d)).join(' ')}之距離</div>
     <div>設計值:${u(x.ewD)}cm 實測值:${u(x.ewA)}cm</div>

@@ -3149,7 +3149,7 @@ function wpPhotoText(r,p){
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);
   else if(x){
-    desc.push(`${x.space?x.space+' ':''}${wpName(x)}${(x.water||[]).join('、')||'給水管'}預埋(編號${i+1})`);
+    desc.push(`${x.space?x.space+' ':''}${wpName(x)}${['雨排','ACP'].includes(x.name)?'排水':(x.water||[]).join('、')||'給水管'}預埋(編號${i+1})`);
     if((x.spec||[]).length||x.size)desc.push(`採用${(x.spec||[]).join(' ')}${x.size?' 管徑'+x.size:''}`);
     if(x.insul)desc.push('熱水管有保溫發泡被覆');
     const h=(k,t)=>{if(x[k+'D']||x[k+'A'])desc.push(`${t} 設計${x[k+'D']||''}cm 實測${x[k+'Dir']?x[k+'Dir']+' ':''}${x[k+'A']||''}cm`)};

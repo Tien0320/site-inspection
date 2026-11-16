@@ -1037,7 +1037,8 @@ function nextFormNo(pid,fallback){
 }
 async function newRec(ck,tk,md,variant){
   md=mode(md).key;
-  if(!variant&&md==='work'&&tk==='box'&&SYS_OF[ck])variant='wbox'; // 電氣／弱電／消防／空調的預埋接線盒一律用柱/牆接線盒表單
+  if(!variant&&md==='work'&&tk==='box'&&SYS_OF[ck])variant='wbox';
+  if(!variant&&md==='work'&&tk==='box'&&ck==='plumb')variant='wpipe'; // 給排水預埋管一律用柱/牆預埋管表單 // 電氣／弱電／消防／空調的預埋接線盒一律用柱/牆接線盒表單
   const d=today();
   const seq=records.filter(r=>r.projectId===curProj&&r.cat===ck&&r.type===tk&&modeOf(r)===md&&r.date===d).length+1;
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工完成',inspector:'',
@@ -1070,6 +1071,7 @@ function viewRec(id){
   if(r.kind==='sleeve'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewSleeve(r)}
   if(r.kind==='slab'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewSlab(r)}
   if(r.kind==='dfit'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewDf(r)}
+  if(!r.kind&&r.cat==='plumb'&&r.type==='box'&&modeOf(r)==='work'&&!(r.photos||[]).length&&!(r.items||[]).some(i=>i.result||i.note)){r.kind='wpipe';r.items=[];r.form=newWpForm()} // 尚未填寫的舊版預埋管轉為新表單
   if(r.kind==='wpipe'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewWp(r)}
   if(r.kind==='wtest'){r.form.rows.forEach(x=>{if(!x.id)x.id=uid()});return viewTest(r)}
   if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}

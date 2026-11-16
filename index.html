@@ -3013,7 +3013,9 @@ function dfSheet(r){
 
 /* ---------- 給排水預埋管－柱/牆（依「工程查驗紀錄表」10812-EP） ---------- */
 const WP_NAMES=['面盆','馬桶','小便斗','淋浴','洗手槽','拖布盆','飲水機','熱水器','雨排','ACP','其他'];
-const WP_SPEC=['美亞','CNS 13392','不鏽鋼管','南亞','CNS 1298(B)','PVC'];
+const WP_SPEC=['南亞','美亞','CNS1298(B)','CNS13392','PVC管','不鏽鋼管'];
+const WP_SPEC_OLD={'CNS 1298(B)':'CNS1298(B)','CNS 13392':'CNS13392','PVC':'PVC管'};
+const wpNorm=f=>{(f.items||[]).forEach(x=>{if(Array.isArray(x.spec))x.spec=x.spec.map(v=>WP_SPEC_OLD[v]||v)});return f};
 const WP_SIZES=['½"','¾"','1"','1¼"','1½"','2"','2½"','3"','4"'];
 const wpName=x=>x.name==='其他'?(x.nameOther||'其他'):(x.name||'');
 const newWpItem=()=>({id:uid(),name:'',nameOther:'',space:'',pos:'',room:'',spec:[],size:'',water:[],insul:false,lay:'',tied:false,tie1:'',tie2:'',capped:false,
@@ -3050,7 +3052,7 @@ function renderWp(){const f=cur.form,box=$('#wpits');if(!box)return;
   box.innerHTML=f.items.length?f.items.map((x,i)=>wpItemHTML(i,x)).join(''):'<div class="empty">尚無資料，按下方「新增一處」。</div>';
   const c=$('#wpCount');if(c)c.textContent=f.items.length}
 function viewWp(r){
-  const p=proj(r.projectId),f=r.form;
+  const p=proj(r.projectId),f=wpNorm(r.form);
   setTop(`給排水・預埋管（柱/牆）<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
   $('#view').innerHTML=`
   <section><p class="label">基本資料</p>
@@ -3109,7 +3111,7 @@ function viewWp(r){
   saveBar(r);
 }
 function wpSheet(r){
-  const p=proj(r.projectId)||{},f=r.form,cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
+  const p=proj(r.projectId)||{},f=wpNorm(r.form),cb=(on,l)=>`${on?'■':'□'}${l}`,u=v=>`<span class="ul">${v?esc(v):'&emsp;&emsp;'}</span>`;
   const rd=d=>{if(!d)return '　　年　　月　　日';const [y,m,dd]=d.split('-');return `${+y-1911}年${+m}月${+dd}日`};
   const has=v=>v!==''&&v!=null;
   const hgt=(x,k,t)=>`${cb(has(x[k+'D'])||has(x[k+'A']),t)}:設計值:${u(x[k+'D'])}cm　實測值:${cb(/^1M線/.test(x[k+'Dir']||''),'1M線')} ${cb(x[k+'Dir']==='1M線上','上')} ${cb(x[k+'Dir']==='1M線下','下')}${u(x[k+'A'])}cm`;
@@ -3145,7 +3147,7 @@ function wpSheet(r){
   </div>`;
 }
 function wpPhotoText(r,p){
-  const f=r.form,i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i];
+  const f=wpNorm(r.form),i=f.items.findIndex(q=>q.id===p.ref),x=f.items[i];
   const item='給排水預埋管配管查驗',where=`${f.floor||''}${f.part||''}${x&&posOf(x)?' Line '+posOf(x):''}`;
   let desc=[];
   if(p.cap)desc=p.cap.split(/\s*\/\s*|\n/);

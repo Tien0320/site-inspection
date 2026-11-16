@@ -3013,7 +3013,7 @@ function dfSheet(r){
 
 /* ---------- 給排水預埋管－柱/牆（依「工程查驗紀錄表」10812-EP） ---------- */
 const WP_NAMES=['面盆','馬桶','小便斗','淋浴','洗手槽','拖布盆','飲水機','熱水器','雨排','ACP','其他'];
-const WP_SPEC=['美亞','CNS 13392','不鏽鋼管'];
+const WP_SPEC=['美亞','CNS 13392','不鏽鋼管','南亞','CNS 1298(B)'];
 const WP_SIZES=['½"','¾"','1"','1¼"','1½"','2"','2½"','3"','4"'];
 const wpName=x=>x.name==='其他'?(x.nameOther||'其他'):(x.name||'');
 const newWpItem=()=>({id:uid(),name:'',nameOther:'',space:'',pos:'',room:'',spec:[],size:'',water:[],insul:false,lay:'',tied:false,tie1:'',tie2:'',capped:false,

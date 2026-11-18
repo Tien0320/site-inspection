@@ -2349,7 +2349,7 @@ function testRowFix(x){
   x.gs=Array.from({length:n},(_,i)=>({fx:fx[i]||(fx.length===1?fx[0]:''),fxOther:(fx[i]||(fx.length===1?fx[0]:''))==='其他'?(x.fxOther||''):'',water:wa[i]||wa[0]||'',space:(sp[i]||{}).space||'',area:(sp[i]||{}).area||''}));
 }
 let isDr=false;
-const DRAIN_FX=['廢水管','汙水管','除濕機+熱水器管','透氣管','其他'];
+const DRAIN_FX=['廢水管','汙水管','廚房排水管','除濕機+熱水器管','透氣管','其他'];
 const gName=g=>Array.isArray(g.fxs)&&g.fxs.length?g.fxs.map(v=>v==='其他'?(g.fxOther||'其他'):v).join('、'):[g.fx==='其他'?(g.fxOther||'其他'):g.fx,g.water].filter(Boolean).join(' ');
 function drNorm(x){const out=[];for(const g of x.gs){g.water='';if(!Array.isArray(g.fxs))g.fxs=g.fx&&DRAIN_FX.includes(g.fx)?[g.fx]:[];g.fx='';
   const m=g.space&&out.find(o=>o.space===g.space&&o.area===g.area);if(m){g.fxs.forEach(v=>{if(!m.fxs.includes(v))m.fxs.push(v)});if(g.fxOther&&!m.fxOther)m.fxOther=g.fxOther}else out.push(g)}

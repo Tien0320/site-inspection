@@ -836,6 +836,14 @@ function setTop(title,back){
   $('#savebar').hidden=true; $('#printArea').innerHTML=''; $('#printArea').className='';
   $('#view').hidden=false; $('#view').oninput=null; $('#view').onclick=null; $('#view').onchange=null;
 }
+/* 部位下拉：最後一項「其他（自行輸入）」 */
+function partSel(f,list){const L=list.map(v=>Array.isArray(v)?v:[v,v]),inL=L.some(([v])=>v===f.part),oth=!!f._partOther||(!!f.part&&!inL);
+  return `<select data-partsel="1"><option value="">請選擇部位</option>${L.map(([v,l])=>`<option value="${esc(v)}" ${v===f.part&&!oth?'selected':''}>${esc(l)}</option>`).join('')}<option value="__other__" ${oth?'selected':''}>其他（自行輸入）</option></select>${oth?`<input type="text" data-path="part" value="${esc(f.part)}" placeholder="請輸入部位" style="margin-top:6px">`:''}`}
+document.addEventListener('change',e=>{const s=e.target.closest&&e.target.closest('[data-partsel]');if(!s||!cur||!cur.form)return;const f=cur.form;
+  if(s.value==='__other__'){f._partOther=true;f.part=''}else{delete f._partOther;f.part=s.value}
+  const L=cur.kind==='dfit'?dfLoc:cur.kind==='wpipe'?wpLoc:cur.kind==='slab'?slabLoc:cur.kind==='drain'?drainLoc:null;if(L)cur.location=L(f);
+  if(cur.kind==='wpipe'&&(f.part==='柱'||f.part==='牆')){const k=f.part==='柱'?'hoop':'rebar';f.items.forEach(x=>{x.lay=k})}
+  dirty();const y=scrollY;render();scrollTo(0,y);if(f._partOther){const i=document.querySelector('input[data-path="part"]');if(i)i.focus()}});
 function render(){
   const h=location.hash.slice(1)||'home';
   const [v,a,b,m]=h.split('-');
@@ -1660,7 +1668,7 @@ function viewDrain(r){
       <label class="field"><span>房型</span><select id="f_room">${ROOM_TYPES.map(x=>`<option ${x===f.roomType?'selected':''}>${x}</option>`).join('')}</select></label>
       <label class="field" id="roomOtherWrap" ${f.roomType==='其他'?'':'hidden'}><span>房型名稱</span><input type="text" data-path="roomOther" value="${esc(f.roomOther)}" placeholder="例：雙人房"></label>
       <label class="field"><span>部位</span>${isDorm(r.projectId)
-        ?`<select data-path="part"><option value="">請選擇部位</option>${DORM_PARTS.map(x=>`<option ${x===f.part?'selected':''}>${x}</option>`).join('')}${f.part&&!DORM_PARTS.includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select>`
+        ?partSel(f,DORM_PARTS)
         :`<input type="text" data-path="part" value="${esc(f.part)}" placeholder="例：廁所">`}</label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div id="locView" class="locv">${esc(drainLoc(f))||'—'}</div></div>
     </div></section>
@@ -2807,7 +2815,7 @@ function viewSlab(r){
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      ${isWallBox(r)?`<label class="field" style="grid-column:1/-1"><span>部位</span><select data-path="part"><option value="">請選擇部位</option>${C.faces.map(x=>`<option ${x===f.part?'selected':''}>${x}</option>`).join('')}${f.part&&!C.faces.includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select></label>`
+      ${isWallBox(r)?`<label class="field" style="grid-column:1/-1"><span>部位</span>${partSel(f,C.faces)}</label>`
         :`<label class="field" style="grid-column:1/-1"><span>部位／說明</span><input type="text" data-path="part" value="${esc(f.part)}" placeholder="${C.partPh}"></label>`}
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(slabLoc(f))||'—'}</div></div>
     </div></section>
@@ -2979,7 +2987,7 @@ function viewDf(r){
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>部位</span><select data-path="part">${['底板 排水','頂板 排水'].map(v=>`<option value="${v}" ${v===f.part?'selected':''}>${v.split(' ')[0]}</option>`).join('')}${f.part&&!['底板 排水','頂板 排水'].includes(f.part)?`<option selected>${esc(f.part)}</option>`:''}</select></label>
+      <label class="field" style="grid-column:1/-1"><span>部位</span>${partSel(f,[['底板 排水','底板'],['頂板 排水','頂板']])}</label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(dfLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="dfCount">${f.items.length}</span> 處</p>
@@ -3108,7 +3116,7 @@ function viewWp(r){
     <div class="panel fields">
       <label class="field"><span>日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
       <label class="field"><span>樓層</span><select data-path="floor"><option value="">請選擇樓層</option>${floorsOf(r.projectId).map(x=>`<option ${x===f.floor?'selected':''}>${x}</option>`).join('')}${f.floor&&!floorsOf(r.projectId).includes(f.floor)?`<option selected>${esc(f.floor)}</option>`:''}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>部位</span><select data-path="part">${['柱','牆'].map(v=>`<option ${v===f.part?'selected':''}>${v}</option>`).join('')}</select></label>
+      <label class="field" style="grid-column:1/-1"><span>部位</span>${partSel(f,['柱','牆'])}</label>
       <div class="field" style="grid-column:1/-1"><span>抽查位置（自動組合）</span><div class="locv" id="locView">${esc(wpLoc(f))||'—'}</div></div>
     </div></section>
   <section><p class="label">抽驗情形　共 <span class="num" id="wpCount">${f.items.length}</span> 處</p>

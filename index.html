@@ -2749,6 +2749,7 @@ function slabItemHTML(i,x,no){
       <div class="field"><span>設備</span>${EQUIP_OF[x.sys]?`<button type="button" class="eqbtn" data-eqbtn="${i}" style="${SUB_EQUIP[x.equip]?`color:${EQ_COLOR[x.equip]};font-weight:700;border-color:currentColor`:''}">${esc(equipName(x)||'請選擇')}<span class="eqcaret">▾</span></button>`:inp(b+'.equip',x.equip,'例：偵煙探測器')}</div>
       ${x.equip==='其他'&&EQUIP_OF[x.sys]?`<label class="field"><span>其他設備名稱</span>${inp(b+'.equipOther',x.equipOther,'請輸入設備名稱')}</label>`:''}
       ${W?`${fl('出線盒安裝',opts(b+'.orient',['直式','橫式'],'one',x.orient))}
+      ${fl('出線盒型式',opts(b+'.wbox',['長方盒(單連)','正方盒(雙連)'],'one',x.wbox)+`<div class="opts">${chk(b+'.thk2','厚度2mm',x.thk2)}${chk(b+'.dep5','深度5cm',x.dep5)}</div>`,1)}
       ${fl('出線盒安裝狀態',`<div class="opts">${chk(b+'.plumb','垂直',x.plumb)}${chk(b+'.level','水平',x.level)}${chk(b+'.fitWall','出線盒安裝有貼合牆面',x.fitWall)}${chk(b+'.alignLine','出線盒外緣有對齊牆面放樣線',x.alignLine)}</div>`,1)}`:''}
       ${W?'':fl('出線盒以螺絲固定於',opts(b+'.screwOn',C.fix,'one',x.screwOn))}
       ${W?'':fl('出線盒有貼合',opts(b+'.fitOn',C.fix,'one',x.fitOn))}
@@ -2888,6 +2889,7 @@ function wallSheet(r){
     <div>${cb(!!x.orient,'出線盒安裝')}:${cb(x.orient==='直式','直式')} ${cb(x.orient==='橫式','橫式')} ${cb(x.joint,'配管以盒接頭銜接出線盒')} ${cb(x.capped,'出線盒有封閉')} ${cb(x.riser!==''&&x.riser!=null,'升管預留')}${u(x.riser)}cm</div>
     <div>導線管長度超過30m ${cb(x.over30==='是','是')} ${cb(x.over30==='否','否')}　三個以上90°彎頭 ${cb(x.bends3==='是','是')} ${cb(x.bends3==='否','否')}　在維修可及之處做拉線盒 ${cb(x.pullBox==='是','是')} ${cb(x.pullBox==='否','否')}</div>
     <div>${cb(x.nsD!==''&&x.nsD!=null||x.nsA!==''&&x.nsA!=null,'出線盒安裝高度')} ${x.nsDir==='FL+'?`設計值:FL+${u(x.nsD)}cm 實測值:FL+${u(x.nsA)}cm`:`設計值:${u(x.nsD)}cm 實測值:${u(x.nsA)}cm ${cb(/^1M線/.test(x.nsDir||''),'1M線')}${cb(x.nsDir==='1M線上','上')}${cb(x.nsDir==='1M線下','下')}`}</div>
+    <div>${cb(!!x.wbox||x.thk2||x.dep5,'出線盒型式')}:${cb(x.wbox==='長方盒(單連)','長方盒(單連)')} ${cb(x.wbox==='正方盒(雙連)','正方盒(雙連)')} ${cb(x.thk2,'厚度2mm')} ${cb(x.dep5,'深度5cm')}</div>
     <div>${cb(x.plumb||x.level,'出線盒安裝有')}${cb(x.plumb,'垂直')} ${cb(x.level,'水平')} ${cb(x.fitWall,'出線盒安裝有貼合牆面')} ${cb(x.alignLine,'出線盒外緣有對齊牆面放樣線')}</div>
     <div>${cb(!!x.ewDir||!!x.ewRef,'出線盒安裝與')}${C.pos1.dirs.map(d=>cb(x.ewDir===d,d)).join(' ')} ${C.pos1.refs.map(d=>cb(x.ewRef===d,d)).join(' ')}之距離</div>
     <div>設計值:${u(x.ewD)}cm 實測值:${u(x.ewA)}cm</div>

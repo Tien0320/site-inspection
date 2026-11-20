@@ -2694,7 +2694,7 @@ const SUB_EQUIP={'排煙':SMOKE.map(([k,n,w])=>[k,`${n}（${w}）`,n]),'撒水':
 const EQ_DEFS={'排煙':SMOKE.map(([k,n,w])=>[k,n,w]),'撒水':SPRK.map(([k,n,w])=>[k,n,w]),'照明':LIGHT.map(([k,n,w])=>[k,n,w]),'開關':SWITCH.map(([k,n,w])=>[k,n,w]),'空調監控':ACCTL.map(([k,n,w])=>[k,n,w]),'廣播避難':EVAC.map(([k,n,w])=>[k,n,w]),'火警':FIREAL.map(([k,n,w])=>[k,n,w]),'插座':OUTLET.map(([k,n,w])=>[k,n,w]),'監控':MONITOR.map(([k,n,w])=>[k,n,w]),'弱電(資訊)':INFO.map(([k,n,sp,w])=>[k,n,w])};
 /* 設置於頂版（當層頂板）的設備：柱/牆接線盒不列 */
 const onSlab=(o,k)=>{const D=EQ_DEFS[o];const q=D&&D.find(z=>z[0]===k);return !!(q&&/頂板/.test(q[2]))};
-const EQ_COLOR={'排煙':'#495057','撒水':'#1971c2','照明':'#f08c00','開關':'#868e96','空調監控':'#0c8599','廣播避難':'#2b8a3e','火警':'#e03131','插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'排煙':'🌫️','撒水':'💧','照明':'💡','開關':'🔘','空調監控':'❄️','廣播避難':'📢','火警':'🔥','插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
+const EQ_COLOR={'排煙':'#9c36b5','撒水':'#1971c2','照明':'#f08c00','開關':'#868e96','空調監控':'#0c8599','廣播避難':'#2b8a3e','火警':'#e03131','插座':'#e8590c','護士呼叫':'#d6336c','監控':'#1c7ed6','弱電(資訊)':'#2f9e44'};const EQ_ICON={'排煙':'💨','撒水':'💧','照明':'💡','開關':'🔘','空調監控':'❄️','廣播避難':'📢','火警':'🔥','插座':'🟠','護士呼叫':'🔴','監控':'🔵','弱電(資訊)':'🟢'};
 /* 設備選單：護士呼叫／監控 滑過或點一下，右邊跳出細項 */
 function closeEqMenu(){document.querySelectorAll('.eqmenu').forEach(m=>m.remove())}
 function openEqMenu(btn){closeEqMenu();if(!cur||cur.kind!=='slab')return;const i=+btn.dataset.eqbtn,x=cur.form.items[i];if(!x)return;

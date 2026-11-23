@@ -1457,7 +1457,7 @@ function testPhotoText(r,p){
   const f=r.form,l=r.loc||{},row=(f.rows||[]).find(x=>x.id===p.ref),pn=(proj(r.projectId)||{}).name||'';
   const item=`${pn.replace(/興建工程$/,'')}施工配管查驗`;
   let ar=[];if(row){testRowFix(row);ar=uniq(row.gs.map(g=>[g.space,(g.area||'').replace(/\s*\/\s*/,' Line ')].filter(Boolean).join(' ')))}
-  const fm=(l.floor||'').match(/^(.*?)(\(.+\))$/),where=fm?[fm[1],(l.part||'')+fm[2],ar.join('、')].filter(Boolean).join(' '):[l.floor,ar.join('、'),l.part].filter(Boolean).join(' ');
+  const fm=(l.floor||'').match(/^(.*?)(\(.+\))$/),where=fm?[fm[1],(l.part||'')+fm[2],ar.join('、')].filter(Boolean).join(' '):[l.floor,l.part,ar.join('、')].filter(Boolean).join(' ');
   const k=row?rowStd(f,row):stdsOf(f)[0],note=STD_NOTE[k]||'';
   if(p.cap)return {item,where,desc:p.cap.split(/\s*\/\s*|\n/),note};
   if(!row)return {item,where,desc:[],note};

@@ -2516,7 +2516,7 @@ function axisHTML(b,x){
   return `<div class="field grow axisf"><span>位置（軸線）</span><div class="axis">${f('px1','5')}<i>~</i>${f('px2','6')}<b>/</b>${f('py1','C')}<i>~</i>${f('py2','D')}</div></div>`;
 }
 /* ---------- 穿樑套管（依「施工抽查紀錄表-(穿梁套管)」） ---------- */
-const FLOORS_ALL=['B3F','B2F','B1F',...Array.from({length:10},(_,i)=>`${i+1}F`),'R1F','R2F','RLF','停機坪']; // 第二期醫療大樓
+const FLOORS_ALL=['B3F','B2F','B1F',...Array.from({length:10},(_,i)=>i>=2&&i<=4?[`${i+1}F`,`${i+1}F(教研棟)`]:[`${i+1}F`]).flat(),'R1F','R2F','RLF','停機坪']; // 第二期醫療大樓
 const floorsOf=pid=>isDorm(pid)?FLOORS:FLOORS_ALL;
 const newSleeve=()=>({id:uid(),no:'',pos:'',member:'梁',space:'',sys:'',sysOther:'',shape:'套管',sizeD:'',sizeA:'',
   botD:'',botA:'',botRef:false,topD:'',topA:'',topRef:'',ring:'',capped:false,dir:'',ref:'',distD:'',distA:''});

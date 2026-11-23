@@ -2347,7 +2347,7 @@ function viewTest(r){
 function testSpaceInput(r,v,n,si){const list=roomsFor(r.projectId,(r.loc||{}).floor),a=`data-tg="space" data-tn="${n}" data-si="${si}"`;
   if(!list)return `<input type="text" ${a} value="${esc(v||'')}" placeholder="${['p-nycuh-med2','p-nycuh-dorm'].includes(r.projectId)&&!(r.loc||{}).floor?'請先選樓層':'例：浴廁'}">`;
   return `<select ${a}><option value="">請選擇空間</option>${list.map(q=>`<option value="${esc(q[0])}" ${q[0]===v?'selected':''}>${esc(q[0])}${q[1]&&!q[0].includes(q[1])?'　'+esc(q[1]):''}</option>`).join('')}${v&&!list.some(q=>q[0]===v)?`<option selected>${esc(v)}</option>`:''}</select>`}
-const TEST_FX=['淋浴','面盆','電熱水器','馬桶','小便斗','機房龍頭','其他'];
+const TEST_FX=['淋浴','面盆','電熱水器','馬桶','小便斗','機房龍頭','飲水機','洗窗機','其他'];
 /* 一筆試驗可同時含多種器具、冷熱水、多個空間 */
 /* 一筆試驗可含多組：每組＝器具＋冷熱水＋空間＋軸線 */
 function testRowFix(x){

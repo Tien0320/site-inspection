@@ -2358,7 +2358,7 @@ function testRowFix(x){
 }
 let isDr=false;
 const DRAIN_FX=['廢水管','汙水管','廚房排水管','除濕機+熱水器管','透氣管','其他'];
-const gName=g=>Array.isArray(g.fxs)&&g.fxs.length?g.fxs.map(v=>v==='其他'?(g.fxOther||'其他'):v).join('、'):[g.fx==='其他'?(g.fxOther||'其他'):g.fx,g.water].filter(Boolean).join(' ');
+const gName=g=>Array.isArray(g.fxs)&&g.fxs.length?g.fxs.map(v=>v==='其他'?(g.fxOther||'其他'):v).join('、'):[g.fx==='其他'?(g.fxOther||'其他'):g.fx,g.water,g.dia?'ψ'+g.dia:''].filter(Boolean).join(' ');
 function drNorm(x){const out=[];for(const g of x.gs){g.water='';if(!Array.isArray(g.fxs))g.fxs=g.fx&&DRAIN_FX.includes(g.fx)?[g.fx]:[];g.fx='';
   const m=g.space&&out.find(o=>o.space===g.space&&o.area===g.area);if(m){g.fxs.forEach(v=>{if(!m.fxs.includes(v))m.fxs.push(v)});if(g.fxOther&&!m.fxOther)m.fxOther=g.fxOther}else out.push(g)}
   x.gs=out.length?out:[{fx:'',fxs:[],fxOther:'',water:'',space:'',area:''}];x.gs.forEach(g=>g.fxs.sort((a,b)=>DRAIN_FX.indexOf(a)-DRAIN_FX.indexOf(b)))}
@@ -2386,11 +2386,11 @@ function renderTestRows(){
           <div class="opts">${g.fxs.map((v,i)=>`<span class="opt on">${esc(v==='其他'?(g.fxOther||'其他'):v)} <button type="button" class="chipx" data-tgfxdel="${i}" ${at} aria-label="移除">✕</button></span>`).join('')}
             <select data-tgfx="1" ${at} style="width:auto;min-height:36px"><option value="">＋ 加入排水管別</option>${DRAIN_FX.filter(o=>!g.fxs.includes(o)).map(o=>`<option>${o}</option>`).join('')}</select></div>
           ${g.fxs.includes('其他')?`<input type="text" data-tg="fxOther" ${at} value="${esc(g.fxOther||'')}" placeholder="其他排水管名稱">`:''}</div>`;
-        return `<div class="tgrp"><div class="tgrp-h"><span class="muted">第 ${si+1} 組</span>${sel('fx',TEST_FX,'器具')+sel('water',['冷水','熱水'],'冷／熱水')}${x.gs.length>1?`<button type="button" class="btn small danger" data-tgdel="${si}" data-tn="${n}" aria-label="刪除此組">✕</button>`:''}</div>
+        return `<div class="tgrp"><div class="tgrp-h"><span class="muted">第 ${si+1} 組</span>${sel('fx',TEST_FX,'器具')+sel('water',['冷水','熱水'],'冷／熱水')+sel('dia',['1/2"','3/4"','1"'],'管徑')}${x.gs.length>1?`<button type="button" class="btn small danger" data-tgdel="${si}" data-tn="${n}" aria-label="刪除此組">✕</button>`:''}</div>
           ${g.fx==='其他'?`<input type="text" data-tg="fxOther" ${at} value="${esc(g.fxOther||'')}" placeholder="其他器具名稱">`:''}
           <div class="tgrp-h">${testSpaceInput(r,g.space,n,si)}<input type="text" data-tg="area" ${at} value="${esc(g.area||'')}" placeholder="區域／軸線"></div></div>`}).join('')}
       ${x.sys&&!x.gs.some(g=>g.fx||g.water||(g.fxs||[]).length)?`<div class="muted small">原系統別：${esc(x.sys)}</div>`:''}
-      <button type="button" class="btn addgrp" data-tgadd="${n}">＋ 新增一組（${isDr?'空間／排水管別':'器具／冷熱水／空間'}）</button>
+      <button type="button" class="btn addgrp" data-tgadd="${n}">＋ 新增一組（${isDr?'空間／排水管別':'器具／冷熱水／管徑／空間'}）</button>
       ${multi?`<div class="row"><span class="muted">此系統標準</span><select data-tk="std" data-tn="${n}" style="width:auto">${stdsOf(f).map(k=>`<option value="${k}" ${k===rs?'selected':''}>${testC(k).short}</option>`).join('')}</select></div>`:''}
       <div class="tgrid">
         <label>開始時間${hm('t0')}</label><label>結束時間${hm('t1')}</label>
@@ -2434,7 +2434,7 @@ function renderTestRows(){
     if(j.auto==='ng')toast(`⚠ 第 ${n+1} 個系統不符檢查標準，請確認`)};
   box.onclick=e=>{
     const fd=e.target.closest('[data-tgfxdel]');if(fd){const row=f.rows[+fd.dataset.tn],g=row.gs[+fd.dataset.si];g.fxs.splice(+fd.dataset.tgfxdel,1);row.sys=testSysName(row);renderTestRows();dirty();return}
-    const ad=e.target.closest('[data-tgadd]');if(ad){const row=f.rows[+ad.dataset.tgadd],last=row.gs[row.gs.length-1]||{};row.gs.push(rowStd(f,row)==='drain'?{fx:'',fxs:[],fxOther:'',water:'',space:'',area:''}:{fx:'',fxOther:'',water:last.water||'',space:'',area:''});renderTestRows();dirty();return}
+    const ad=e.target.closest('[data-tgadd]');if(ad){const row=f.rows[+ad.dataset.tgadd],last=row.gs[row.gs.length-1]||{};row.gs.push(rowStd(f,row)==='drain'?{fx:'',fxs:[],fxOther:'',water:'',space:'',area:''}:{fx:'',fxOther:'',water:last.water||'',dia:last.dia||'',space:'',area:''});renderTestRows();dirty();return}
     const sd=e.target.closest('[data-tgdel]');if(sd){const row=f.rows[+sd.dataset.tn];row.gs.splice(+sd.dataset.tgdel,1);row.sys=testSysName(row);renderTestRows();dirty();return}
     const b=e.target.closest('[data-tdel]');if(!b)return;
     if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}

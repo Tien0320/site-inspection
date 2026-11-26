@@ -113,6 +113,23 @@ textarea{min-height:72px;resize:vertical}
 
 /* 子項分頁 */
 .seg.seg3{grid-template-columns:repeat(3,1fr)}
+.seg.seg4{grid-template-columns:repeat(2,1fr)}
+/* 發電機廠驗 */
+.gen4{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.gen4 input{min-width:0}
+.genplate{display:flex;flex-direction:column;gap:0;padding:4px 14px}
+.gpl{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}.gpl:last-child{border-bottom:0}
+.gpl-t{flex:1;min-width:160px;display:flex;flex-direction:column}.gpl-t b{font-size:13px;color:var(--ink-2)}.gpl-t span{font-size:15px}
+.gpl-b{display:flex;gap:6px}.gpl.ng .gpl-t span{color:var(--ng);font-weight:700}
+.opt.ngopt.on,.opt.ngon{background:var(--ng);border-color:var(--ng);color:#fff;font-weight:700}
+.genstages button{flex-direction:column;gap:0;align-items:center;padding:6px 14px}.genstages button b{font-size:16px}
+.gcalc{display:flex;flex-wrap:wrap;gap:6px}.gc{background:var(--surface-2);border-radius:8px;padding:4px 8px;font-size:12px;color:var(--ink-2)}.gc b{color:var(--ink);font-size:14px;font-family:var(--mono)}
+.gc.bad{background:var(--ng-bg);color:var(--ng)}.gc.bad b{color:var(--ng)}
+.gensum{display:flex;flex-direction:column;padding:4px 14px}.gsum{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.gsum:last-child{border-bottom:0}
+.gsum>div:first-child{display:flex;flex-direction:column;min-width:0}.gsum.ng b{color:var(--ng)}.gsv{display:flex;align-items:center;gap:6px;white-space:nowrap}.gsv b{font-size:16px}
+.gstd{font-size:13px;line-height:1.5}.gsec{margin:8px 0 0}
+.gsheet .gload td,.gsheet .gload th{font-size:7.5pt;padding:1px 2px}
+.gsheet .gsign td{height:16mm}
+.genrow .tgrid{grid-template-columns:repeat(3,1fr);gap:6px}.genrow .tgrid label{font-size:11px}.genrow .tgrid input{min-height:38px;padding:4px 6px;font-family:var(--mono);font-size:16px}.genrow .gtime{grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr;gap:6px;align-items:end}
 .seg.seg1{grid-template-columns:minmax(0,1fr)}
 .axis{display:flex;align-items:center;gap:4px}
 .axis input{width:0;flex:1;min-width:0;text-align:center;font-family:var(--mono)}
@@ -475,7 +492,7 @@ dialog::backdrop{background:rgba(10,20,28,.5)}
 
 <script>
 "use strict";
-const APP_VERSION='2026.11.06-90';
+const APP_VERSION='2026.11.26-91';
 /* ---------- 基本設定 ---------- */
 const ICON = {
   elec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
@@ -505,7 +522,7 @@ const PLUMB_TYPES = [
   {key:'test', name:'試水',   code:'T', hint:'壓力／滿水試驗'}
 ];
 const BEAM_TYPES = [{key:'sleeve', name:'穿樑', code:'', hint:'穿樑套管・澆置混凝土前'},{key:'wall', name:'穿牆', code:'W', hint:'穿牆套管・澆置混凝土前'}];
-const typesOf = ck => ck==='plumb' ? PLUMB_TYPES : ck==='beam' ? BEAM_TYPES : TYPES;
+const typesOf = ck => ck==='plumb' ? PLUMB_TYPES : ck==='beam' ? BEAM_TYPES : ck==='elec' ? [...TYPES,GEN_TYPE] : TYPES;
 const typN = (ck,tk) => typesOf(ck).find(t=>t.key===tk) || typ(tk);
 const MODES = [
   {key:'work', name:'施工查驗', code:'',  hint:'現場施工品質'},
@@ -793,6 +810,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');cl
 function status(r){const b=baseStatus(r);return r.done&&b.k!=='ng'?{k:'ok',t:'完成'}:b}
 function baseStatus(r){
   if(r.kind==='wtest') return testStatus(r);
+  if(r.kind==='gen') return genStatus(r);
   if(r.kind==='sleeve'||r.kind==='slab'||r.kind==='dfit'||r.kind==='wpipe') return sleeveStatus(r);
   if(r.kind==='drain'){
     const f=r.form;
@@ -1002,9 +1020,9 @@ function viewCat(ck,tk,md){
   setTop(ck==='beam'?`${c.name}・${typN(ck,tk).name}<span class="sub">${esc(p.name)}</span>`:`${c.name}・${mode(md).name}<span class="sub">${esc(p.name)}</span>`,ck==='beam'?`cat-beam-pick-${md}`:'home');
   const recs=all.filter(r=>modeOf(r)===md);
   const list=recs.filter(r=>r.type===tk).sort((a,b)=>b.date.localeCompare(a.date)||(b.updated-a.updated));
-  const T=`${typN(ck,tk).name}${mode(md).name}`;
+  const T=tk==='gen'?typN(ck,tk).name:`${typN(ck,tk).name}${mode(md).name}`;
   $('#view').innerHTML=`
-    <div ${ck==='beam'?'hidden':''} class="seg ${typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
+    <div ${ck==='beam'?'hidden':''} class="seg ${typesOf(ck).length>3?'seg4':typesOf(ck).length>2?'seg3':typesOf(ck).length<2?'seg1':''}" style="--c:var(--c-${ck})">${typesOf(ck).map(t=>{const n=recs.filter(r=>r.type===t.key).length;
       return `<button class="${t.key===tk?'on':''}" data-t="${t.key}"><b>${t.name.replace(/^(柱\/牆|樓板)(接線盒)$/,'$1<br>$2')}</b><span class="muted">${md==='mat'?'材料進場':t.hint} · <span class="num">${n}</span> 筆</span></button>`}).join('')}</div>
     <div class="row">
       <button class="btn primary grow" id="newRec">＋ 新增${T}</button>
@@ -1012,7 +1030,7 @@ function viewCat(ck,tk,md){
       ${list.length?`<button class="btn" id="printAll">列印全部（${list.length}）</button>`:''}
     </div>
     ${list.length?`<div class="list">${list.map(r=>recRow(r,r.kind==='slab'&&typeof SYS_OF!=='undefined'&&SYS_OF[ck]?SYS_OF[ck]:'')).join('')}</div>`
-      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tk==='box'&&md==='work'&&SYS_OF[ck]?'柱/牆接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
+      :`<div class="empty">還沒有${c.name}・${T}的紀錄。<br>按「新增」會帶入 ${tk==='gen'?'發電機廠驗專用表單（銘牌確認、負載試驗、CNS 2901／消防試驗項目，自動計算判定）':md==='work'&&ck==='plumb'&&tk==='hang'?'排水吊管專用表單':tk==='test'?'試水專用表單（試壓抽查紀錄表）':tk==='sleeve'?'穿樑套管專用表單':tk==='wall'?'穿牆套管專用表單':tk==='slab'?'樓板接線盒＋配管專用表單':tk==='box'&&md==='work'&&SYS_OF[ck]?'柱/牆接線盒＋配管專用表單':tplOf(ck,tk,md).length+' 項標準檢查項目'}。</div>`}`;
   document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>go(`cat-${ck}-${b.dataset.t}-${md}`));
   $('#newRec').onclick=()=>newRec(ck,tk,md);
   if($('#newDf'))$('#newDf').onclick=()=>newRec(ck,tk,md,'dfit');
@@ -1052,7 +1070,7 @@ async function newRec(ck,tk,md,variant){
   const r={id:uid(),projectId:curProj,cat:ck,type:tk,mode:md,date:d,location:'',stage:md==='mat'?'材料進場':'施工完成',inspector:'',
     mat:{name:'',brand:'',spec:'',qty:'',ref:''},
     formNo:nextFormNo(curProj,`${cat(ck).code}${typN(ck,tk).code}${mode(md).code}-${d.replace(/-/g,'')}-${String(seq).padStart(2,'0')}`),
-    items:(tk==='test'||tk==='sleeve'||tk==='wall'||tk==='slab'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
+    items:(tk==='test'||tk==='sleeve'||tk==='wall'||tk==='slab'||tk==='gen'?[]:tplOf(ck,tk,md)).map(([t,s])=>({id:uid(),t,s,result:'',note:''})),
     defect:'',fix:'',recheckDate:'',recheck:'',remark:'',photos:[],signs:{},created:Date.now(),updated:Date.now()};
   if(md==='mat'&&isPipeType(tk)){if(PIPE_GROUPS[tk])r.sub=PIPE_DEFAULT[tk];r.pipes=[newPipeRow(stdKey(r))]}
   if(md==='work'&&tk==='sleeve'){r.kind='sleeve';r.form=newSleeveForm()}
@@ -1061,6 +1079,7 @@ async function newRec(ck,tk,md,variant){
   if(variant==='dfit'){r.kind='dfit';r.items=[];r.form=newDfForm()}
   if(variant==='wpipe'){r.kind='wpipe';r.items=[];r.form=newWpForm()}
   if(variant==='wbox'){r.kind='slab';r.items=[];r.form=newSlabForm(ck);r.form.zone='wall';r.form.part='';r.form.items[0].face='牆'}
+  if(md==='work'&&tk==='gen'){r.kind='gen';r.form=newGenForm();r.location=r.form.info.place;r.stage='廠驗'}
   if(md==='work'&&tk==='test'){r.kind='wtest';r.form=newTestForm();r.loc={floor:'',part:'',note:''}}
   if(md==='work'&&ck==='plumb'&&tk==='hang'){r.kind='drain';r.items=[];r.form=newDrainForm(curProj);}
   r.isNew=true;
@@ -1082,6 +1101,7 @@ function viewRec(id){
   if(!r.kind&&r.cat==='plumb'&&r.type==='box'&&modeOf(r)==='work'&&!(r.photos||[]).length&&!(r.items||[]).some(i=>i.result||i.note)){r.kind='wpipe';r.items=[];r.form=newWpForm()} // 尚未填寫的舊版預埋管轉為新表單
   if(r.kind==='wpipe'){r.form.items.forEach(x=>{if(!x.id)x.id=uid()});return viewWp(r)}
   if(r.kind==='wtest'){r.form.rows.forEach(x=>{if(!x.id)x.id=uid()});return viewTest(r)}
+  if(r.kind==='gen'){r.form.rows.forEach(x=>{if(!x.id)x.id=uid()});return viewGen(r)}
   if(r.kind==='drain'){r.form.spaces.forEach(sp=>{if(!sp.id)sp.id=uid();sp.pipes.forEach(p=>{if(!p.id)p.id=uid()})});return viewDrain(r)}
   setTop(`${modeOf(r)==='mat'?'材料・'+typeName(r):c.name+'・'+t.name}<span class="sub">${esc(p?.name)}</span>`,backOf(r));
   const v=$('#view');
@@ -2490,6 +2510,230 @@ function testSheet(r){
   </div>`;
 }
 
+/* ---------- 發電機廠驗（負載試驗）：kind='gen' ----------
+   標準值：廠驗計畫書第3版 P-4（消防署規定）、P-5（CNS 2901）；契約施工規範第16231章（115.8.13 修正） */
+const GEN_TYPE={key:'gen',name:'發電機廠驗',code:'G',hint:'負載試驗・CNS 2901'};
+const GEN_STAGES=[['0','0%','無載'],['25','25%','15 分'],['50','50%','15 分'],['75','75%','15 分'],['100','100%','＞30 分']];
+const GEN_MINS={'0':[0],'25':[0,5,10,15],'50':[0,5,10,15],'75':[0,5,10,15],'100':[0,10,20,30,40]};
+const GEN_COLS=[['v12','L1-L2','V'],['v23','L2-L3','V'],['v31','L3-L1','V'],['ir','R 相','A'],['is','S 相','A'],['it','T 相','A'],['kw','輸出','kW'],['hz','頻率','Hz'],['amb','環境','℃'],['oil','油壓','kPa'],['wt','水溫','℃'],['bat','電池','V'],['ot','油溫','℃']];
+const GEN_PLATE=[
+  ['機組型號','C300D6E'],['機組製造號碼','G26I815633'],['ESP 備用額定','375 kVA / 300 kW / 569.8 A'],['電壓／頻率／功因','380 V / 60 Hz / 0.8'],
+  ['引擎型號／號碼','Cummins QSL9 G7 / 95012071'],['引擎備用輸出','346 kWm（規範 ≧345 kWm）'],['EPA 族系','TCEXL0540AAB'],
+  ['發電機型號／號碼','STAMFORD HCI444E1 / N26F249731'],['絕緣／防護','H 級 / IP23'],['控制器','PowerCommand PC1.2'],
+  ['原產地','INDIA（規範 2.1.1 歐美日製造）'],['認證','CE、UKCA']];
+const genRated=f=>({kw:num(f.info.kw)||300,v:num(f.info.v)||380,hz:num(f.info.hz)||60,a:num(f.info.a)||569.8,ex:num(f.info.ex)||48});
+const GEN_ITEMS=[
+  {k:'start',sec:'消防署規定項目（CNS 10204）',name:'自動起動性能',std:'＜20 秒（消防）；契約：10 秒內承擔負載',basis:'計畫書 P-4；規範 2.2.1(8)D',f:[['s1','第 1 次','秒'],['s2','第 2 次','秒'],['s3','第 3 次','秒']],
+    j:v=>{const a=['s1','s2','s3'].map(k=>v[k]).filter(x=>x!=null);if(!a.length)return null;const m=Math.max(...a),msg=[];if(m>=20)msg.push(`最長 ${m} 秒，未達 ＜20 秒`);else if(m>10)msg.push(`最長 ${m} 秒，超過契約 10 秒`);return {ok:m<20&&m<=10,msg}}},
+  {k:'vd08',sec:'消防署規定項目（CNS 10204）',name:'瞬時電壓變動率（PF 0.8）',std:'＜30%；2 秒內回復至額定 ±3%',basis:'計畫書 P-4',f:[['v','變動率','%'],['t','回復時間','秒']],
+    j:v=>{if(v.v==null&&v.t==null)return null;const msg=[];if(v.v!=null&&!(v.v<30))msg.push(`變動率 ${v.v}% 未 ＜30%`);if(v.t!=null&&v.t>2)msg.push(`回復 ${v.t} 秒超過 2 秒`);return {ok:!msg.length,msg}}},
+  {k:'vd04',sec:'消防署規定項目（CNS 10204）',name:'瞬時電壓變動率（PF 0.4）',std:'＜25%；2 秒內回復至額定 ±2.5%',basis:'計畫書 P-4',f:[['v','變動率','%'],['t','回復時間','秒']],
+    j:v=>{if(v.v==null&&v.t==null)return null;const msg=[];if(v.v!=null&&!(v.v<25))msg.push(`變動率 ${v.v}% 未 ＜25%`);if(v.t!=null&&v.t>2)msg.push(`回復 ${v.t} 秒超過 2 秒`);return {ok:!msg.length,msg}}},
+  {k:'fd',sec:'消防署規定項目（CNS 10204）',name:'頻率變動率（PF 0.8）',std:'＜5%',basis:'計畫書 P-4',f:[['v','變動率','%']],
+    j:v=>v.v==null?null:{ok:v.v<5,msg:v.v<5?[]:[`變動率 ${v.v}% 未 ＜5%`]}},
+  {k:'ospd',sec:'消防署規定項目（CNS 10204）',name:'超速特性試驗',std:'額定轉速 120%（2160 rpm）能耐 1 分鐘',basis:'計畫書 P-4 備註',f:[['rpm','轉速','rpm'],['t','時間','秒']],
+    j:v=>{if(v.rpm==null&&v.t==null)return null;const msg=[];if(v.rpm!=null&&v.rpm<2160)msg.push(`轉速 ${v.rpm} rpm 未達 2160 rpm`);if(v.t!=null&&v.t<60)msg.push(`時間 ${v.t} 秒未達 60 秒`);return {ok:!msg.length,msg}}},
+  {k:'wave',sec:'消防署規定項目（CNS 10204）',name:'波形試驗',std:'500 kVA 以下 ＜10%',basis:'計畫書 P-4',f:[['v','偏差率','%']],
+    j:v=>v.v==null?null:{ok:v.v<10,msg:v.v<10?[]:[`偏差率 ${v.v}% 未 ＜10%`]}},
+  {k:'temp',sec:'溫昇試驗（電阻法，H 種絕緣）',name:'溫昇試驗',std:'電樞、磁極、鐵心 ≦125 ℃；軸承外部 ≦40 ℃（溫昇＝與環境室溫之差）',basis:'計畫書 P-4',f:[['amb','環境溫度','℃'],['arm','電樞繞組','℃'],['fld','磁極繞組','℃'],['core','鐵心','℃'],['brg','軸承外部','℃']],
+    j:v=>{const L=[['arm','電樞',125],['fld','磁極',125],['core','鐵心',125],['brg','軸承',40]].filter(([k])=>v[k]!=null);if(!L.length)return null;const msg=L.filter(([k,,m])=>v[k]>m).map(([k,n,m])=>`${n}溫昇 ${v[k]} ℃ 超過 ${m} ℃`);return {ok:!msg.length,msg}}},
+  {k:'ins',sec:'絕緣電阻及耐壓試驗',name:'絕緣電阻試驗',std:R=>`＞1＋額定電壓／1000＝${r2(1+R.v/1000)} MΩ`,basis:'計畫書 P-4',f:[['arm','電樞–地','MΩ'],['fld','激磁–地','MΩ']],
+    j:(v,R)=>{const m=1+R.v/1000,L=[['arm','電樞'],['fld','激磁']].filter(([k])=>v[k]!=null);if(!L.length)return null;const msg=L.filter(([k])=>!(v[k]>m)).map(([k,n])=>`${n} ${v[k]} MΩ 未大於 ${r2(m)} MΩ`);return {ok:!msg.length,msg}}},
+  {k:'hpa',sec:'絕緣電阻及耐壓試驗',name:'耐壓試驗（交流機・電樞）',std:R=>`2E＋1000＝${2*R.v+1000} V，1 分鐘無絕緣破壞`,basis:'計畫書 P-4',f:[['v','施加電壓','V'],['t','時間','秒']],
+    j:(v,R)=>{if(v.v==null&&v.t==null)return null;const need=2*R.v+1000,msg=[];if(v.v!=null&&v.v<need)msg.push(`電壓 ${v.v} V 未達 ${need} V`);if(v.t!=null&&v.t<60)msg.push(`時間 ${v.t} 秒未達 60 秒`);return {ok:!msg.length,msg}}},
+  {k:'hpe',sec:'絕緣電阻及耐壓試驗',name:'耐壓試驗（激磁機）',std:R=>`10Ex（最低 1500 V）＝${Math.max(1500,10*R.ex)} V，1 分鐘無絕緣破壞`,basis:'計畫書 P-4',f:[['v','施加電壓','V'],['t','時間','秒']],
+    j:(v,R)=>{if(v.v==null&&v.t==null)return null;const need=Math.max(1500,10*R.ex),msg=[];if(v.v!=null&&v.v<need)msg.push(`電壓 ${v.v} V 未達 ${need} V`);if(v.t!=null&&v.t<60)msg.push(`時間 ${v.t} 秒未達 60 秒`);return {ok:!msg.length,msg}}},
+  {k:'vib',sec:'CNS 2901 測試項目',name:'振動測試',std:'＜0.3 mm/s',basis:'計畫書 P-5',f:[['v','振動值','mm/s']],
+    j:v=>v.v==null?null:{ok:v.v<0.3,msg:v.v<0.3?[]:[`振動 ${v.v} mm/s 未 ＜0.3 mm/s`]}},
+  {k:'noise',sec:'CNS 2901 測試項目',name:'噪音測試',std:'＜120 dB(A) @1 m',basis:'計畫書 P-5',f:[['f','前','dB(A)'],['b','後','dB(A)'],['l','左','dB(A)'],['r','右','dB(A)']],
+    j:v=>{const a=['f','b','l','r'].map(k=>v[k]).filter(x=>x!=null);if(!a.length)return null;const m=Math.max(...a);return {ok:m<120,msg:m<120?[]:[`最大 ${m} dB(A) 未 ＜120 dB(A)`]}}},
+  {k:'oc',sec:'CNS 2901 測試項目',name:'電流特性測試',std:R=>`過載 1.5 倍（${r2(R.a*1.5)} A）運轉 15 秒`,basis:'計畫書 P-5',f:[['a','電流','A'],['t','時間','秒']],
+    j:(v,R)=>{if(v.a==null&&v.t==null)return null;const need=R.a*1.5,msg=[];if(v.a!=null&&v.a<need-0.05)msg.push(`電流 ${v.a} A 未達 ${r2(need)} A`);if(v.t!=null&&v.t<15)msg.push(`時間 ${v.t} 秒未達 15 秒`);return {ok:!msg.length,msg}}},
+  {k:'prot',sec:'保護及控制功能',name:'保護停機功能',std:'低油壓、高水溫、超速、超載、過電壓自動停機',basis:'規範 2.2.1(4)',chk:['低油壓','高水溫','超速','超載','過電壓']},
+  {k:'estop',sec:'保護及控制功能',name:'緊急停機／起動失敗',std:'緊急停止立即停機；起動失敗停止盤車並警報',basis:'規範 2.2.1(8)A、2.2.2(2)',chk:['緊急停機','起動失敗警報']}
+];
+const genStd=(it,R)=>typeof it.std==='function'?it.std(R):it.std;
+function newGenForm(){
+  const rows=[];GEN_STAGES.forEach(([s])=>GEN_MINS[s].forEach(m=>rows.push({id:uid(),stage:s,min:m,time:''})));
+  return {info:{model:'C300D6E',serial:'G26I815633',kw:'300',v:'380',hz:'60',a:'569.8',ex:'48',place:'超馬電機股份有限公司（楊梅廠）',witness:'台灣檢驗科技股份有限公司（SGS）',loader:'電阻器',fuel:'高級柴油',lube:'15W/40'},
+    plate:{},items:{},rows,result:'',defect:'',remark:''};
+}
+function genItemJudge(r,it){const f=r.form,x=f.items[it.k]||{},R=genRated(f);
+  if(it.chk){const c=x.c||{},done=it.chk.filter(k=>c[k]==='ok').length,bad=it.chk.filter(k=>c[k]==='ng');
+    const auto=bad.length?'ng':done===it.chk.length?'ok':'';return {auto,res:x.res||auto,msg:bad.map(k=>`${k} 動作異常`)}}
+  const v={};it.f.forEach(([k])=>v[k]=num(x[k]));const j=it.j(v,R);const auto=j?(j.ok?'ok':'ng'):'';
+  return {auto,res:x.res||auto,msg:j?j.msg:[]};
+}
+const genStageName=s=>(GEN_STAGES.find(x=>x[0]===s)||[s,s+'%'])[1];
+function genRowCalc(f,x){const R=genRated(f),V=['v12','v23','v31'].map(k=>num(x[k])).filter(v=>v!=null),I=['ir','is','it'].map(k=>num(x[k])).filter(v=>v!=null),kw=num(x.kw),hz=num(x.hz);
+  const vavg=V.length?V.reduce((a,b)=>a+b,0)/V.length:null,vdev=V.length?Math.max(...V.map(v=>Math.abs(v-R.v)))/R.v*100:null;
+  const iavg=I.length===3?I.reduce((a,b)=>a+b,0)/3:null,iunb=iavg?Math.max(...I.map(v=>Math.abs(v-iavg)))/iavg*100:null;
+  return {load:kw!=null?kw/R.kw*100:null,vavg,vdev,iunb,hzdev:hz!=null?Math.abs(hz-R.hz)/R.hz*100:null,vbad:vdev!=null&&vdev>3,hzbad:hz!=null&&Math.abs(hz-R.hz)/R.hz*100>1}}
+function genMinOf(t){const a=parseHM(t);return a?a[0]*60+a[1]:null}
+function genSpan(rows){const t=rows.map(x=>genMinOf(x.time)).filter(v=>v!=null);if(t.length<2)return null;let d=t[t.length-1]-t[0];if(d<0)d+=1440;return d}
+function genSummary(r){const f=r.form,R=genRated(f),rows=f.rows,msg=[];
+  const V=rows.flatMap(x=>['v12','v23','v31'].map(k=>num(x[k])).filter(v=>v!=null)),H=rows.map(x=>num(x.hz)).filter(v=>v!=null);
+  const vreg=V.length?Math.max(...V.map(v=>Math.abs(v-R.v)))/R.v*100:null,freg=H.length?Math.max(...H.map(h=>Math.abs(h-R.hz)))/R.hz*100:null;
+  let fst=null,fstStage='';GEN_STAGES.forEach(([s])=>{const h=rows.filter(x=>x.stage===s).map(x=>num(x.hz)).filter(v=>v!=null);if(h.length<2)return;const avg=h.reduce((a,b)=>a+b,0)/h.length,d=Math.max(...h.map(v=>Math.abs(v-avg)))/R.hz*100;if(fst==null||d>fst){fst=d;fstStage=s}});
+  const loadRows=rows.filter(x=>x.stage!=='0'),total=genSpan(loadRows),full=genSpan(rows.filter(x=>x.stage==='100'));
+  const L=[
+    {n:'穩態電壓調整率',std:'空載至滿載 ±3% 以內',basis:'規範 2.2.2(1)C',val:vreg==null?'':r2(vreg)+'%',ok:vreg==null?null:vreg<=3},
+    {n:'頻率變動率（空載至滿載）',std:'±1% 以內',basis:'規範 2.2.1(3)B',val:freg==null?'':r2(freg)+'%',ok:freg==null?null:freg<=1},
+    {n:'穩定負載下頻率變動率',std:'±0.5% 以內',basis:'規範 2.2.1(3)B',val:fst==null?'':`${r2(fst)}%（${genStageName(fstStage)}）`,ok:fst==null?null:fst<=0.5},
+    {n:'100% 負載運轉時間',std:'＞30 分鐘（至溫昇穩定）',basis:'計畫書 P-3',val:full==null?'':full+' 分',ok:full==null?null:full>30},
+    {n:'負載測試總時數',std:'至少 1 小時',basis:'規範 2.3.1；計畫書 P-3 註2',val:total==null?'':durTxt(total),ok:total==null?null:total>=60}];
+  return L;
+}
+function genStatus(r){const f=r.form;
+  const res=[...GEN_ITEMS.map(it=>genItemJudge(r,it).res),...genSummary(r).map(s=>s.ok==null?'':s.ok?'ok':'ng')];
+  if(f.result==='ng'||res.includes('ng'))return {k:'ng',t:'待改善'};
+  if(f.result==='ok')return {k:'ok',t:'合格'};
+  return {k:'warn',t:res.some(Boolean)?'填寫中':'未填寫'};
+}
+let genStage='25';
+const genChip=(res,t)=>res?`<span class="chip ${res==='ok'?'ok':res==='ng'?'ng':'na'}">${t||(res==='ok'?'○ 合格':res==='ng'?'× 不合格':'／ 無此項')}</span>`:'';
+const genFmt=(v,d=1)=>v==null||isNaN(v)?'—':(Math.round(v*10**d)/10**d).toString();
+function viewGen(r){
+  const p=proj(r.projectId),f=r.form;
+  if(!f.plate)f.plate={};if(!f.items)f.items={};
+  r.location=f.info.place||r.location;
+  setTop(`電氣・發電機廠驗<span class="sub">${esc(p&&p.name)}</span>`,backOf(r));
+  const inp=(path,ph,dec)=>`<input type="text" ${dec?'inputmode="decimal"':''} data-gp="${path}" value="${esc(getP(f,path)||'')}" placeholder="${ph||''}">`;
+  $('#view').innerHTML=`
+  <section><p class="label">基本資料</p>
+    <div class="panel fields">
+      <label class="field"><span>廠驗日期</span><input type="date" id="f_date" value="${esc(r.date)}"></label>
+      <label class="field"><span>廠驗地點</span>${inp('info.place')}</label>
+      <label class="field"><span>第三公證單位</span>${inp('info.witness')}</label>
+      <label class="field"><span>機組型號</span>${inp('info.model')}</label>
+      <label class="field"><span>製造號碼</span>${inp('info.serial')}</label>
+      <div class="gen4"><label class="field"><span>額定 kW</span>${inp('info.kw','300',1)}</label><label class="field"><span>額定 V</span>${inp('info.v','380',1)}</label><label class="field"><span>額定 Hz</span>${inp('info.hz','60',1)}</label><label class="field"><span>額定 A</span>${inp('info.a','569.8',1)}</label></div>
+      <label class="field"><span>激磁電壓 Ex（V）</span>${inp('info.ex','48',1)}</label>
+      <label class="field"><span>負載器</span><select data-gp="info.loader">${['電阻器','水阻器','電感器'].map(o=>`<option ${o===f.info.loader?'selected':''}>${o}</option>`).join('')}</select></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">銘牌確認（核對送審核定資料）</p><button class="btn small" id="plateAll" type="button">全部相符</button></div>
+    <div class="panel genplate" id="genPlate"></div></section>
+  <section><p class="label">負載試驗紀錄　<span class="muted" style="font-weight:400">規範 2.3.1：50%、75%、100%（PF 0.8）各 15 分，共 1 小時</span></p>
+    <div class="stabs genstages" id="genStages"></div>
+    <div id="genRows" class="prows" style="margin-top:10px"></div>
+    <button class="btn primary" id="genAddRow" type="button" style="width:100%;margin-top:10px">＋ 新增一筆讀值（此負載段）</button></section>
+  <section><p class="label">即時判定（自動計算）</p><div id="genSum" class="panel gensum"></div></section>
+  <section><p class="label">試驗項目　<span class="muted" style="font-weight:400">輸入實測值自動判定，可手動改判</span></p><div id="genItems" class="prows"></div></section>
+  <section><p class="label">廠驗結論</p>
+    <div class="panel fields">
+      <div class="fld wide"><span>結論</span><div class="opts">${[['ok','合格，准予出廠'],['cond','有條件合格'],['ng','不合格，改善後重驗']].map(([k,t])=>`<button type="button" class="opt ${f.result===k?'on':''}" data-gres="${k}">${t}</button>`).join('')}</div></div>
+      <label class="field" style="grid-column:1/-1"><span>缺失及改善事項</span><textarea data-gp="defect">${esc(f.defect)}</textarea></label>
+      <label class="field" style="grid-column:1/-1"><span>備註</span><textarea data-gp="remark">${esc(f.remark)}</textarea></label>
+    </div></section>
+  <section><div class="row" style="margin-bottom:8px"><p class="label grow" style="margin:0">廠驗照片</p>
+    <label class="btn small">拍照／選照片<input type="file" data-phref="" accept="image/*" multiple hidden></label></div>
+    <div class="photos" id="photos"></div></section>`;
+  renderGenPlate();renderGenStages();renderGenRows();renderGenSum();renderGenItems();renderPhotos();
+  const v=$('#view');
+  $('#f_date').oninput=e=>{r.date=e.target.value;dirty()};
+  v.oninput=e=>{const el=e.target;if(!el.dataset.gp)return;setP(f,el.dataset.gp,el.value);if(el.dataset.gp==='info.place')r.location=el.value;
+    if(/^info\.(kw|v|hz|a|ex)$/.test(el.dataset.gp)){renderGenRows();renderGenSum();renderGenItems()}dirty()};
+  v.onchange=e=>{const el=e.target;if(el.tagName==='SELECT'&&el.dataset.gp){setP(f,el.dataset.gp,el.value);dirty()}};
+  v.onclick=e=>{const b=e.target.closest('[data-gres]');if(b){f.result=f.result===b.dataset.gres?'':b.dataset.gres;v.querySelectorAll('[data-gres]').forEach(x=>x.classList.toggle('on',x.dataset.gres===f.result));dirty()}};
+  $('#plateAll').onclick=()=>{GEN_PLATE.forEach(([k])=>{if(!f.plate[k])f.plate[k]='ok'});renderGenPlate();dirty()};
+  $('#genAddRow').onclick=()=>{const L=f.rows.filter(x=>x.stage===genStage),last=L[L.length-1];
+    const nr={id:uid(),stage:genStage,min:last?last.min+(genStage==='100'?10:5):0,time:''};
+    if(last&&genMinOf(last.time)!=null){const t=(genMinOf(last.time)+(nr.min-last.min))%1440;nr.time=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`}
+    const idx=f.rows.lastIndexOf(last);f.rows.splice(idx<0?f.rows.length:idx+1,0,nr);renderGenStages();renderGenRows();dirty()};
+  saveBar(r);
+}
+function renderGenPlate(){const f=cur.form,box=$('#genPlate');if(!box)return;
+  box.innerHTML=GEN_PLATE.map(([k,val])=>`<div class="gpl ${f.plate[k]==='ng'?'ng':''}"><div class="gpl-t"><b>${esc(k)}</b><span>${esc(val)}</span></div>
+    <div class="gpl-b"><button type="button" class="opt ${f.plate[k]==='ok'?'on':''}" data-pl="${esc(k)}" data-v="ok">☑ 相符</button><button type="button" class="opt ngopt ${f.plate[k]==='ng'?'on':''}" data-pl="${esc(k)}" data-v="ng">☒ 不符</button></div></div>`).join('');
+  box.onclick=e=>{const b=e.target.closest('[data-pl]');if(!b)return;const k=b.dataset.pl;f.plate[k]=f.plate[k]===b.dataset.v?'':b.dataset.v;renderGenPlate();dirty()}}
+function renderGenStages(){const f=cur.form,box=$('#genStages');if(!box)return;
+  box.innerHTML=GEN_STAGES.map(([s,n,h])=>{const L=f.rows.filter(x=>x.stage===s),done=L.filter(x=>num(x.kw)!=null||num(x.hz)!=null).length;
+    return `<button type="button" class="${s===genStage?'on':''}" data-gs="${s}"><b>${n}</b><span class="num">${done}/${L.length}・${h}</span></button>`}).join('');
+  box.onclick=e=>{const b=e.target.closest('[data-gs]');if(!b)return;genStage=b.dataset.gs;renderGenStages();renderGenRows()}}
+function genRowCalcHTML(f,x){const c=genRowCalc(f,x);
+  return `<span class="gc">負載率 <b>${genFmt(c.load)}%</b></span><span class="gc">V 平均 <b>${genFmt(c.vavg)}</b></span><span class="gc ${c.vbad?'bad':''}">電壓偏差 <b>${genFmt(c.vdev,2)}%</b></span><span class="gc">電流不平衡 <b>${genFmt(c.iunb)}%</b></span><span class="gc ${c.hzbad?'bad':''}">頻率偏差 <b>${genFmt(c.hzdev,2)}%</b></span>`}
+function renderGenRows(){const r=cur,f=r.form,box=$('#genRows');if(!box)return;
+  const L=f.rows.map((x,i)=>[x,i]).filter(([x])=>x.stage===genStage),R=genRated(f);
+  box.innerHTML=L.length?L.map(([x,i],n)=>{const t=parseHM(x.time),hh=t?String(t[0]).padStart(2,'0'):'',mm=t?String(t[1]).padStart(2,'0'):'';
+    return `<div class="prow genrow" data-gi="${i}">
+      <div class="prow-h"><b class="num">${n+1}</b><span class="grow" style="font-weight:700">${genStageName(x.stage)}（${Math.round(R.kw*x.stage/100)} kW）・第 ${x.min} 分</span>
+        <button type="button" class="btn small danger" data-gdel="${i}">刪除</button></div>
+      <div class="tgrid">
+        <div class="gtime"><label>時間<div class="hm"><input type="text" inputmode="numeric" maxlength="2" data-ghm="h" data-gi="${i}" value="${hh}" placeholder="時"><b>:</b><input type="text" inputmode="numeric" maxlength="2" data-ghm="m" data-gi="${i}" value="${mm}" placeholder="分"></div></label>
+        <button type="button" class="btn small" data-gnow="${i}" style="min-height:38px">現在時間</button></div>
+        ${GEN_COLS.map(([k,l,u])=>`<label>${l}（${u}）<input type="text" inputmode="decimal" data-gk="${k}" data-gi="${i}" value="${esc(x[k]||'')}"></label>`).join('')}
+      </div>
+      <div class="gcalc" data-gcalc="${i}">${genRowCalcHTML(f,x)}</div></div>`}).join('')
+    :'<div class="empty">此負載段尚無讀值，按下方「新增一筆讀值」。</div>';
+  box.oninput=e=>{const el=e.target,i=+el.dataset.gi,x=f.rows[i];if(!x)return;
+    if(el.dataset.ghm){el.value=el.value.replace(/\D/g,'').slice(0,2);const h=box.querySelector(`[data-ghm="h"][data-gi="${i}"]`),m=box.querySelector(`[data-ghm="m"][data-gi="${i}"]`);
+      if(el===h&&(el.value.length===2||+el.value>2)&&e.inputType!=='deleteContentBackward')m.focus();
+      x.time=h.value!==''&&m.value!==''?`${h.value.padStart(2,'0')}:${m.value.padStart(2,'0')}`:'';renderGenSum();dirty();return}
+    const k=el.dataset.gk;if(!k)return;x[k]=el.value;
+    const c=box.querySelector(`[data-gcalc="${i}"]`);if(c)c.innerHTML=genRowCalcHTML(f,x);renderGenSum();dirty()};
+  box.onkeydown=e=>{if(e.key!=='Enter')return;const all=[...box.querySelectorAll('input')],k=all.indexOf(e.target);if(k>=0&&all[k+1]){e.preventDefault();all[k+1].focus()}};
+  box.onclick=e=>{const nw=e.target.closest('[data-gnow]');if(nw){const d=new Date(),x=f.rows[+nw.dataset.gnow];x.time=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;renderGenRows();renderGenSum();dirty();return}
+    const b=e.target.closest('[data-gdel]');if(!b)return;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='刪除'}},2500);return}
+    f.rows.splice(+b.dataset.gdel,1);renderGenStages();renderGenRows();renderGenSum();dirty()}}
+function renderGenSum(){const box=$('#genSum');if(!box||!cur)return;
+  box.innerHTML=genSummary(cur).map(s=>`<div class="gsum ${s.ok===false?'ng':''}"><div><b>${s.n}</b><span class="muted">${s.std}・${s.basis}</span></div><div class="gsv"><b class="num">${s.val||'—'}</b>${s.ok==null?'':genChip(s.ok?'ok':'ng')}</div></div>`).join('')}
+function renderGenItems(){const r=cur,f=r.form,box=$('#genItems');if(!box)return;const R=genRated(f);let sec='';
+  box.innerHTML=GEN_ITEMS.map(it=>{const x=f.items[it.k]||{},j=genItemJudge(r,it),hd=it.sec!==sec?(sec=it.sec,`<p class="label gsec">${esc(it.sec)}</p>`):'';
+    return `${hd}<div class="prow ${j.res==='ng'?'ng':''}" data-git="${it.k}">
+      <div class="prow-h"><span class="grow" style="font-weight:700">${esc(it.name)}</span><span data-gires="${it.k}">${genChip(j.res)}</span></div>
+      <div class="gstd">標準：${esc(genStd(it,R))}<span class="muted">（${esc(it.basis)}）</span></div>
+      ${it.chk?`<div class="opts">${it.chk.map(c=>{const s=(x.c||{})[c];return `<button type="button" class="opt ${s==='ok'?'on':''} ${s==='ng'?'ngon':''}" data-gchk="${esc(c)}" data-git2="${it.k}">${s==='ng'?'☒':s==='ok'?'☑':'☐'} ${esc(c)}</button>`}).join('')}</div><p class="muted" style="margin:0">點一下＝動作正常 ☑，再點＝異常 ☒，再點＝清除</p>`
+        :`<div class="tgrid">${it.f.map(([k,l,u])=>`<label>${l}（${u}）<input type="text" inputmode="decimal" data-gik="${k}" data-git2="${it.k}" value="${esc(x[k]||'')}"></label>`).join('')}</div>`}
+      <div class="row"><span class="muted">判定</span><select data-gires2="${it.k}" style="width:auto">${[['','自動判定'+(j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':'')],['ok','○ 合格'],['ng','× 不合格'],['na','／ 無此項目']].map(([v,t])=>`<option value="${v}" ${(x.res||'')===v?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="pwarn" data-giw="${it.k}" ${j.msg.length?'':'hidden'}>${j.msg.map(m=>'⚠ '+esc(m)).join('<br>')}</div></div>`}).join('');
+  const upd=k=>{const it=GEN_ITEMS.find(q=>q.k===k),j=genItemJudge(r,it);
+    box.querySelector(`[data-gires="${k}"]`).innerHTML=genChip(j.res);
+    const w=box.querySelector(`[data-giw="${k}"]`);w.hidden=!j.msg.length;w.innerHTML=j.msg.map(m=>'⚠ '+esc(m)).join('<br>');
+    const s=box.querySelector(`[data-gires2="${k}"]`);s.options[0].text='自動判定'+(j.auto?'（'+(j.auto==='ok'?'○':'×')+'）':'');
+    box.querySelector(`[data-git="${k}"]`).classList.toggle('ng',j.res==='ng')};
+  box.oninput=e=>{const el=e.target,k=el.dataset.git2;if(!k||!el.dataset.gik)return;(f.items[k]??={})[el.dataset.gik]=el.value;upd(k);dirty()};
+  box.onchange=e=>{const el=e.target,k=el.dataset.gires2;if(!k)return;(f.items[k]??={}).res=el.value;upd(k);dirty()};
+  box.onclick=e=>{const b=e.target.closest('[data-gchk]');if(!b)return;const x=(f.items[b.dataset.git2]??={}),c=(x.c??={}),k=b.dataset.gchk;c[k]=c[k]==='ok'?'ng':c[k]==='ng'?'':'ok';renderGenItems();dirty()}}
+function genSheet(r){
+  const p=proj(r.projectId)||{},f=r.form,R=genRated(f),v=x=>esc(x==null?'':x),sym=s=>s==='ok'?'○':s==='ng'?'×':s==='na'?'／':'';
+  const itemVal=it=>{const x=f.items[it.k]||{};if(it.chk)return it.chk.map(c=>`${(x.c||{})[c]==='ok'?'■':(x.c||{})[c]==='ng'?'☒':'□'}${c}`).join('　');
+    return it.f.map(([k,l,u])=>x[k]?`${l} ${v(x[k])} ${u}`:'').filter(Boolean).join('；')};
+  const rows=f.rows;
+  return `<div class="sheet tsheet gsheet">
+    <h3>${v(SUB_GEN(p))}</h3><h4>發電機組廠驗紀錄表（CNS 2901／CNS 10204）</h4>
+    <table><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col style="width:35%"></colgroup>
+      <tr><td class="k">工程名稱</td><td colspan="3">${v(p.name)}</td></tr>
+      <tr><td class="k">主辦機關</td><td>${v(p.owner)}</td><td class="k">專管單位</td><td>${v(p.pm)}</td></tr>
+      <tr><td class="k">監造單位</td><td>${v(p.sup)}</td><td class="k">承攬廠商</td><td>${v(p.con)}</td></tr>
+      <tr><td class="k">廠驗日期</td><td>${rocDate(r.date)}</td><td class="k">第三公證</td><td>${v(f.info.witness)}</td></tr>
+      <tr><td class="k">廠驗地點</td><td colspan="3">${v(f.info.place)}</td></tr>
+      <tr><td class="k">機組型號</td><td>${v(f.info.model)}／${v(f.info.serial)}</td><td class="k">額定</td><td>${R.kw} kW／${R.v} V／${R.hz} Hz／${R.a} A</td></tr>
+    </table>
+    <table class="sec"><colgroup><col style="width:22%"><col style="width:58%"><col style="width:20%"></colgroup>
+      <tr><th>銘牌項目</th><th>核定值</th><th>確認</th></tr>
+      ${GEN_PLATE.map(([k,val])=>`<tr><td>${v(k)}</td><td class="small">${v(val)}</td><td class="c">${f.plate[k]==='ok'?'■':'□'}相符 ${f.plate[k]==='ng'?'■':'□'}不符</td></tr>`).join('')}
+    </table>
+    <table class="sec"><colgroup><col style="width:20%"><col style="width:30%"><col style="width:40%"><col style="width:10%"></colgroup>
+      <tr><th>試驗項目</th><th>判定基準</th><th>實測紀錄</th><th>判定</th></tr>
+      ${GEN_ITEMS.map(it=>`<tr><td class="small">${v(it.name)}</td><td class="small">${v(genStd(it,R))}<br><span style="color:#555">${v(it.basis)}</span></td><td class="small">${itemVal(it)}</td><td class="res-sym">${sym(genItemJudge(r,it).res)}</td></tr>`).join('')}
+    </table>
+    <table class="sec gload"><tr><th>負載</th><th>分</th><th>時間</th><th>環境<br>℃</th><th>L1-L2</th><th>L2-L3</th><th>L3-L1</th><th>R<br>A</th><th>S<br>A</th><th>T<br>A</th><th>kW</th><th>負載<br>率%</th><th>Hz</th><th>油壓<br>kPa</th><th>水溫<br>℃</th><th>電池<br>V</th><th>油溫<br>℃</th></tr>
+      ${rows.map(x=>{const c=genRowCalc(f,x);return `<tr><td class="c">${genStageName(x.stage)}</td><td class="c">${x.min}</td><td class="c">${v(x.time)}</td>${['amb','v12','v23','v31','ir','is','it','kw'].map(k=>`<td class="c">${v(x[k])}</td>`).join('')}<td class="c">${c.load==null?'':genFmt(c.load)}</td>${['hz','oil','wt','bat','ot'].map(k=>`<td class="c">${v(x[k])}</td>`).join('')}</tr>`}).join('')}
+    </table>
+    <table class="sec"><colgroup><col style="width:28%"><col style="width:34%"><col style="width:28%"><col style="width:10%"></colgroup>
+      <tr><th>穩態特性（自動計算）</th><th>判定基準</th><th>計算值</th><th>判定</th></tr>
+      ${genSummary(r).map(s=>`<tr><td class="small">${s.n}</td><td class="small">${s.std}（${s.basis}）</td><td class="c">${v(s.val)}</td><td class="res-sym">${s.ok==null?'':s.ok?'○':'×'}</td></tr>`).join('')}
+    </table>
+    <table class="sec">
+      <tr><td>負載器：${v(f.info.loader)}　燃料：${v(f.info.fuel)}　潤滑油：${v(f.info.lube)}</td></tr>
+      <tr><td>廠驗結論：${f.result==='ok'?'■':'□'}合格，准予出廠　${f.result==='cond'?'■':'□'}有條件合格　${f.result==='ng'?'■':'□'}不合格，改善後重驗</td></tr>
+      <tr><td class="small">缺失及改善事項：${v(f.defect)}${f.remark?'<br>備註：'+v(f.remark):''}</td></tr>
+    </table>
+    <table class="sec signrow gsign"><tr><th>主辦機關</th><th>專管單位</th><th>設計監造</th><th>承攬廠商</th><th>協力廠商</th><th>第三公證</th></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+  </div>`;
+}
+const SUB_GEN=p=>`${(p&&p.name)||''}`;
+
 /* 二期各樓層空間：由 CAD 平面圖（1150604 二期平面修正，xref 陽明附設醫院_二期醫療大樓 B3F~10F、RR1F）房名圖塊與柱心線計算
    每筆：[空間名稱, 空間編號, 軸1, 軸2, 軸A, 軸B] */
 let MED2_ROOMS={}; // 由雲端載入（meta/rooms），不放在程式碼
@@ -3402,7 +3646,7 @@ function showPrint(list,back,title,editId){
       ${editId?`<button class="btn primary" id="doEdit">編輯</button>`:''}
       <button class="btn ${editId?'':'primary'}" id="doPrint">列印</button></div>
     ${list.length===1&&list[0].kind==='slab'&&list[0].form.items.some(x=>x.sys)?`<div class="stabs psys" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 10px">${['全部','電氣','弱電','消防','空調','其他'].filter(t=>t==='全部'||list[0].form.items.some(x=>x.sys===t)).map(t=>`<button type="button" class="${(printSys||'全部')===t?'on':''}" data-psys="${t}"${SYS_KEY[t]?` style="--c:var(--c-${SYS_KEY[t]})"`:''}>${t}</button>`).join('')}</div>`:''}
-    <div class="psheets" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):r.kind==='wpipe'?wpSheet(r):isPipeMat(r)?(r.fitting?fitSheet(r):pipeSheet(r)):sheetHTML(r))+photoPages(r)).join('')}</div>`;
+    <div class="psheets" style="padding:0 max(16px,env(safe-area-inset-left,0px)) 96px">${list.map(r=>(r.kind==='gen'?genSheet(r):r.kind==='drain'?drainSheet(r):r.kind==='wtest'?testSheet(r):r.kind==='sleeve'?sleeveSheet(r):r.kind==='slab'?slabSheet(r):r.kind==='dfit'?dfSheet(r):r.kind==='wpipe'?wpSheet(r):isPipeMat(r)?(r.fitting?fitSheet(r):pipeSheet(r)):sheetHTML(r))+photoPages(r)).join('')}</div>`;
   $('#doPrint').onclick=()=>window.print();
   const bar=document.createElement('div');bar.className='printbar';
   bar.innerHTML=`<div class="savebar-in">${editId?`<button class="btn" id="doEdit2" type="button">編輯</button>`:''}<span class="grow"></span><button class="btn" id="doPdf2" type="button">⬇ 下載</button><button class="btn primary" id="doPrint2" type="button">列印</button></div>`;
